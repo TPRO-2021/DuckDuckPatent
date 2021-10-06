@@ -1,10 +1,22 @@
 <template>
-    <div id="nav">
+    <!-- <div id="nav">
         <router-link to="/">Home</router-link> |
         <router-link to="/about">About</router-link>
-    </div>
-    <router-view />
+    </div> -->
+    <SearchBar />
+    <!-- <router-view /> -->
 </template>
+
+<script>
+import SearchBar from './components/searchBar.vue'
+
+export default ({
+    name: "App",
+    components: {
+        SearchBar,
+    }
+})
+</script>
 
 <style lang="scss">
 #app {
