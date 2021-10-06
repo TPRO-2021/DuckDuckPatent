@@ -1,12 +1,12 @@
-import { Body, Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { MockPatentsService } from './patents.service.mock';
 
-@Controller()
+@Controller('patents')
 export class PatentsController {
     constructor(private readonly patentService: MockPatentsService) {}
 
-    @Get('search')
-    query(@Body() body: any): any[] {
-        return this.patentService.query(body.terms);
+    @Get('')
+    query(@Query() query): any[] {
+        return this.patentService.query(query.keywords);
     }
 }
