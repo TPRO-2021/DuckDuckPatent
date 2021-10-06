@@ -37,7 +37,7 @@ Simply stick your dirty head in a nearby river or pond and drink! It's that simp
 
 @Injectable()
 export class MockPatentsService {
-    search(terms: string[] = []): any[] {
+    query(terms: string[] = []): any[] {
         return mockPatents.filter((t: any) =>
             terms
                 .map((k) => k.toLowerCase())
