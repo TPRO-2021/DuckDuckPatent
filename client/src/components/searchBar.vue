@@ -1,14 +1,25 @@
 <template>
     <div>
-        <input id="search" placeholder="Enter keywords" />
-        <button type="button" id="search-btn"><span class="material-icons search-icon">search</span></button>
+        <input id="search" placeholder="Enter keywords" v-model="enteredKeywords" @keyup.enter="clicked = true" />
+        <button type="button" id="search-btn" @click="clicked = true">
+            <span class="material-icons search-icon">search</span>
+        </button>
+        <h2 v-if="clicked">You printed {{ enteredKeywords }}</h2>
     </div>
 </template>
 
 <script>
 import { Vue, Options } from 'vue-class-component';
 
-@Options({})
+@Options({
+    data() {
+        return {
+            clicked: false,
+            enteredKeywords: '',
+        };
+    },
+    // inject: ['parentKey'],
+})
 export default class Searchbar extends Vue {}
 </script>
 

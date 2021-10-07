@@ -17,12 +17,13 @@ import Logo from '@/components/Logo.vue';
         Searchbar,
         Logo,
     },
+    // provide() {
+    //     return {
+    //         parentKey: [],
+    //     };
+    // },
 })
-export default class Search extends Vue {
-    triggerSearch(): void {
-        console.log('test');
-    }
-}
+export default class Search extends Vue {}
 </script>
 
 <style lang="scss" scoped>
