@@ -10,6 +10,18 @@
 <script lang="ts">
 import { Options, Vue } from 'vue-class-component';
 
+/**
+ * Simple component which provides a button.
+ *
+ * The button text can be modified with the property btnText.
+ * Additionally an icon can be passed to the button using the iconKey value.
+ *
+ * This component uses google icons (https://fonts.google.com/icons)
+ *
+ * Once the button is pressed it emits an event called 'onClicked'
+ * which can be handled by the parent component using @on-clicked="handler"
+ *
+ * */
 @Options({
     props: {
         btnText: String,
@@ -17,19 +29,6 @@ import { Options, Vue } from 'vue-class-component';
     },
     emits: ['onClicked'],
 })
-
-/**
- * Simple component which provides a button.
- *
- * The button text can be modified with the property btnText.
- * Additionally an icon can be passed to the button using the iconKey value.
- *
- * This component uses google icons
- *
- * Once the button is pressed it emits an event called 'onClicked'
- * which can be handled by the parent component using @on-clicked="handler"
- *
- * */
 export default class Button extends Vue {}
 </script>
 
