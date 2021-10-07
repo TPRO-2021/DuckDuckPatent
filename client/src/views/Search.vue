@@ -1,6 +1,8 @@
 <template>
+    <div class="container logo-container">
+        <Logo class="logo" />
+    </div>
     <div class="container">
-        <Logo />
         <Searchbar id="search-bar" />
     </div>
 </template>
@@ -33,6 +35,15 @@ export default class Search extends Vue {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+.logo-container {
+    pointer-events: none;
+    position: absolute;
+
+    .logo {
+        padding-bottom: 150px;
+    }
 }
 
 #search-bar {

@@ -31,7 +31,6 @@ export default class Searchbar extends Vue {}
     background: black;
     color: white;
     border-left-color: grey;
-    border-left-style: solid;
     border-left-width: 1px;
     border-left: none;
     cursor: pointer;
@@ -41,7 +40,7 @@ export default class Searchbar extends Vue {}
     margin-left: -62px;
 }
 
-search-icon {
+.search-icon {
     font-size: 30px !important;
 }
 
