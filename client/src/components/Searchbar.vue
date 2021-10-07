@@ -1,7 +1,9 @@
 <template>
     <div>
         <input id="search" placeholder="Enter keywords" />
-        <button type="button" id="search-btn"><span class="material-icons search-icon">search</span></button>
+        <button id="search-btn">
+            <span class="material-icons search-icon">search</span>
+        </button>
     </div>
 </template>
 
@@ -30,9 +32,6 @@ export default class Searchbar extends Vue {}
     padding: 10px;
     background: black;
     color: white;
-    border-left-color: grey;
-    border-left-width: 1px;
-    border-left: none;
     cursor: pointer;
     border-bottom-right-radius: 25px;
     border-top-right-radius: 25px;
