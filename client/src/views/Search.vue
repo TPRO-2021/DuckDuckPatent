@@ -2,8 +2,8 @@
     <div class="container logo-container">
         <Logo class="logo" />
     </div>
-    <div class="container">
-        <Searchbar id="search-bar" />
+    <div class="container searchbar-container">
+        <Searchbar />
     </div>
 </template>
 
@@ -47,7 +47,10 @@ export default class Search extends Vue {}
     }
 }
 
-#search-bar {
-    padding: 20px 0;
+.searchbar-container {
+    height: 50vh;
+    position: absolute;
+    justify-content: start;
+    bottom: 0;
 }
 </style>
