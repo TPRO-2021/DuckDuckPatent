@@ -11,20 +11,17 @@
     color: #2c3e50;
 }
 
-button {
-    border: none;
+/* You can add global styles to this file, and also import other style files */
+
+// removes default padding
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-#nav {
-    padding: 30px;
-
-    a {
-        font-weight: bold;
-        color: #2c3e50;
-
-        &.router-link-exact-active {
-            color: #42b983;
-        }
-    }
+// removes default border from button
+button {
+    border: none;
 }
 </style>
