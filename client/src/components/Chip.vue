@@ -6,7 +6,7 @@
 </template>
 
 <script lang="ts">
-import { Options, Vue } from 'vue-class-component';
+import { defineComponent } from 'vue';
 
 /**
  * Simple chip component.
@@ -20,15 +20,15 @@ import { Options, Vue } from 'vue-class-component';
  * Usually used icons:
  * cancel || add_circle
  */
-@Options({
+export default defineComponent({
+    name: 'Chip',
     props: {
         text: String,
         iconKey: String,
         isSuggestion: Boolean,
     },
     emits: ['onSelect'],
-})
-export default class Chip extends Vue {}
+});
 </script>
 
 <style lang="scss">

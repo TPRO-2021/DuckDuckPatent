@@ -8,7 +8,7 @@
 </template>
 
 <script lang="ts">
-import { Options, Vue } from 'vue-class-component';
+import { defineComponent } from 'vue';
 
 /**
  * Simple component which provides a button.
@@ -22,14 +22,14 @@ import { Options, Vue } from 'vue-class-component';
  * which can be handled by the parent component using @on-clicked="handler"
  *
  * */
-@Options({
+export default defineComponent({
+    name: 'Button',
     props: {
         btnText: String,
         iconKey: String,
     },
     emits: ['onClicked'],
-})
-export default class Button extends Vue {}
+});
 </script>
 
 <style lang="scss" scoped>

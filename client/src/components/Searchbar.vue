@@ -27,115 +27,114 @@
 </template>
 
 <script lang="ts">
-import { Vue, Options } from 'vue-class-component';
-import { Ref, Watch } from 'vue-property-decorator';
 import Chip from '@/components/Chip.vue';
+import { defineComponent } from 'vue';
 
-@Options({
+export default defineComponent({
+    name: 'Searchbar',
     components: {
         Chip,
     },
-})
-export default class Searchbar extends Vue {
-    public currentKeyword = '';
-    public enteredKeywords: string[] = [];
-    public clicked = false;
-
-    // HTML references
-    @Ref() readonly searchBar!: HTMLInputElement;
-    @Ref() readonly searchInput!: HTMLElement;
-    @Ref() readonly keywordDiv!: HTMLElement;
-
-    /**
-     * Watcher which checks the current search input for a space bar input
-     * @param val
-     */
-    @Watch('currentKeyword')
-    public checkKeyword(val: string): void {
-        if (!val || val.charAt(val.length - 1) !== ' ') {
-            return;
-        }
-
-        this.addKeyword();
-    }
-
-    /**
-     * Handler for the back-key
-     */
-    public handleDeleteKey(): void {
-        if (this.enteredKeywords.length < 1 || this.currentKeyword.length > 0) {
-            return;
-        }
-
-        const keyword = this.removeKeyword(this.enteredKeywords.length - 1);
-        setTimeout(() => (this.currentKeyword = keyword), 20);
-    }
-
-    /**
-     * Adds a keyword to the keywords array and resets the v-model value of currentKeyword
-     */
-    public addKeyword(): void {
-        if (this.currentKeyword.length === 0) {
-            return;
-        }
-
-        if (this.currentKeyword.trim().length === 0) {
-            this.currentKeyword = '';
-            return;
-        }
-
-        this.enteredKeywords.push(this.currentKeyword.trim());
-        this.currentKeyword = '';
-
-        this.setFocus();
-        setTimeout(this.checkSearchBarSize, 20);
-    }
-
-    /**
-     * Removes an item from the enteredKeywords array specified by the index
-     * @param index
-     */
-    public removeKeyword(index: number): string {
-        const returnItem = this.enteredKeywords.splice(index, 1)[0];
-
-        this.checkSearchBarSize(true);
-        return returnItem;
-    }
-
-    /**
-     * Attempts to set the focus back on the searchBar
-     */
-    public setFocus(): void {
-        this.searchBar.focus();
-    }
-
-    /**
-     * Checks the size of the keyword-div in order to move the input to the next line
-     * @private
-     */
-    private checkSearchBarSize(deleteAction = false): void {
-        if (this.keywordDiv.clientWidth <= 320) {
-            if (!deleteAction) {
+    data() {
+        return {
+            currentKeyword: '',
+            enteredKeywords: [] as string[],
+            clicked: false,
+        };
+    },
+    watch: {
+        /**
+         * Watcher which checks the current search input for a space bar input
+         * @param val
+         */
+        currentKeyword(val: string): void {
+            if (!val || val.charAt(val.length - 1) !== ' ') {
                 return;
             }
 
-            this.searchInput.style.paddingTop = 'unset';
-            this.searchInput.style.flexDirection = 'row';
-            this.searchInput.style.paddingLeft = 'unset';
-            return;
-        }
+            this.addKeyword();
+        },
+    },
+    methods: {
+        /**
+         * Adds a keyword to the keywords array and resets the v-model value of currentKeyword
+         */
+        addKeyword() {
+            if (this.currentKeyword.length === 0) {
+                return;
+            }
 
-        this.searchInput.style.paddingTop = '10px';
-        this.searchInput.style.flexDirection = 'column';
-        this.searchInput.style.paddingLeft = '10px';
-    }
-}
+            if (this.currentKeyword.trim().length === 0) {
+                this.currentKeyword = '';
+                return;
+            }
+
+            this.enteredKeywords.push(this.currentKeyword.trim());
+            this.currentKeyword = '';
+
+            this.setFocus();
+            setTimeout(this.checkSearchBarSize, 20);
+        },
+
+        /**
+         * Removes an item from the enteredKeywords array specified by the index
+         * @param index
+         */
+        removeKeyword(index: number): string {
+            const returnItem = this.enteredKeywords.splice(index, 1)[0];
+
+            this.checkSearchBarSize(true);
+            return returnItem;
+        },
+
+        /**
+         * Attempts to set the focus back on the searchBar
+         */
+        setFocus(): void {
+            (this.$refs.searchBar as HTMLInputElement).focus();
+        },
+
+        /**
+         * Checks the size of the keyword-div in order to move the input to the next line
+         * @private
+         */
+        checkSearchBarSize(deleteAction = false): void {
+            if ((this.$refs.keywordDiv as HTMLElement).clientWidth <= 320) {
+                if (!deleteAction) {
+                    return;
+                }
+
+                (this.$refs.searchInput as HTMLElement).style.paddingTop = 'unset';
+                (this.$refs.searchInput as HTMLElement).style.flexDirection = 'row';
+                (this.$refs.searchInput as HTMLElement).style.paddingLeft = 'unset';
+                (this.$refs.searchBar as HTMLElement).style.alignSelf = 'center;';
+                return;
+            }
+
+            (this.$refs.searchInput as HTMLElement).style.paddingTop = '10px';
+            (this.$refs.searchInput as HTMLElement).style.flexDirection = 'column';
+            (this.$refs.searchInput as HTMLElement).style.paddingLeft = '10px';
+            (this.$refs.searchBar as HTMLElement).style.alignSelf = 'unset';
+        },
+
+        /**
+         * Handler for the back-key
+         */
+        handleDeleteKey(): void {
+            if (this.enteredKeywords.length < 1 || this.currentKeyword.length > 0) {
+                return;
+            }
+
+            const keyword = this.removeKeyword(this.enteredKeywords.length - 1);
+            setTimeout(() => (this.currentKeyword = keyword), 20);
+        },
+    },
+});
 </script>
 
 <style lang="scss" scoped>
 .search-wrapper {
-    width: 600px;
-    max-width: 600px;
+    width: 100%;
     height: auto;
     border: 0.5px solid #cccccc;
     border-radius: 25px;
@@ -151,7 +150,6 @@ export default class Searchbar extends Vue {
 
 .keywords {
     padding: 0 5px;
-    //display: flex;
     align-self: center;
     max-width: 500px;
     overflow-wrap: break-word;
@@ -168,6 +166,7 @@ export default class Searchbar extends Vue {
     padding-inline-start: 10px;
     outline: none;
     font-size: 14px;
+    align-self: center;
 
     // remove default input style
     -moz-appearance: none;

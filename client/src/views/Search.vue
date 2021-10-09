@@ -8,24 +8,18 @@
 </template>
 
 <script lang="ts">
-import { Options, Vue } from 'vue-class-component';
-import Button from '@/components/Button.vue';
+import { defineComponent } from 'vue';
+
 import Searchbar from '@/components/Searchbar.vue';
 import Logo from '@/components/Logo.vue';
 
-@Options({
+export default defineComponent({
+    name: 'Search',
     components: {
-        Button,
         Searchbar,
         Logo,
     },
-    // provide() {
-    //     return {
-    //         parentKey: [],
-    //     };
-    // },
-})
-export default class Search extends Vue {}
+});
 </script>
 
 <style lang="scss" scoped>
@@ -52,5 +46,9 @@ export default class Search extends Vue {}
     position: absolute;
     justify-content: start;
     bottom: 0;
+
+    div {
+        width: 600px;
+    }
 }
 </style>

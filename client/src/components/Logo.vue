@@ -3,10 +3,11 @@
 </template>
 
 <script lang="ts">
-import { Options, Vue } from 'vue-class-component';
+import { defineComponent } from 'vue';
 
-@Options({})
-export default class Logo extends Vue {}
+export default defineComponent({
+    name: 'Logo',
+});
 </script>
 
 <style scoped></style>
