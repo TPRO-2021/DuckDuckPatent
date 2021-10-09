@@ -1,7 +1,7 @@
 <template>
-    <div class="chip" :class="{ 'chip-suggestion': isSuggestion }">
-        <span class="chip-text">{{ text }}</span>
-        <span class="chip-icon material-icons" @click="$emit('onSelect')">{{ iconKey || 'add_circle' }}</span>
+    <div class="chip" :class="{ 'chip-suggestion': isSuggestion, 'box-shadow': hasShadow }">
+        <span class="chip-text no-select">{{ text }}</span>
+        <span class="chip-icon material-icons no-select" @click="$emit('onSelect')">{{ iconKey || 'add_circle' }}</span>
     </div>
 </template>
 
@@ -26,12 +26,18 @@ export default defineComponent({
         text: String,
         iconKey: String,
         isSuggestion: Boolean,
+        hasShadow: {
+            type: Boolean,
+            default: true,
+        },
     },
     emits: ['onSelect'],
 });
 </script>
 
 <style lang="scss">
+@import '~@/styles/global';
+
 .chip {
     display: flex;
     justify-content: space-between;
@@ -54,14 +60,9 @@ export default defineComponent({
     color: white;
     width: 20px;
     font-size: 20px;
-
-    // disable selection of the icon
-    -webkit-user-select: none;
-    user-select: none;
-    -moz-user-select: none;
 }
 
-.chip-icon:hover {
+.chip:hover {
     cursor: pointer;
 }
 

@@ -1,13 +1,14 @@
 <template>
-    <div class="search-wrapper" @click="setFocus">
+    <div class="search-wrapper box-shadow" @click="setFocus">
         <div class="search-input" ref="searchInput">
             <div class="keywords" ref="keywordDiv">
                 <Chip
-                    v-for="(keyword, index) in enteredKeywords"
+                    v-for="(keyword, index) in searchTerms"
                     icon-key="cancel"
                     :text="keyword"
                     :key="keyword"
                     v-on:on-select="removeKeyword(index)"
+                    :has-shadow="false"
                 ></Chip>
             </div>
             <input
@@ -35,10 +36,20 @@ export default defineComponent({
     components: {
         Chip,
     },
+    props: {
+        searchTerms: Array,
+    },
+    emits: {
+        onAddKeyword: (event: { value: string }) => {
+            return event;
+        },
+        onRemoveKeyword: (event: { index: number; value: string }) => {
+            return event;
+        },
+    },
     data() {
         return {
             currentKeyword: '',
-            enteredKeywords: [] as string[],
             clicked: false,
         };
     },
@@ -69,11 +80,12 @@ export default defineComponent({
                 return;
             }
 
-            this.enteredKeywords.push(this.currentKeyword.trim());
+            const newKeyword = this.currentKeyword.trim();
+            // this.$props.enteredKeywords.push(newKeyword);
+            this.$emit('onAddKeyword', { value: newKeyword });
             this.currentKeyword = '';
 
             this.setFocus();
-            setTimeout(this.checkSearchBarSize, 20);
         },
 
         /**
@@ -81,9 +93,9 @@ export default defineComponent({
          * @param index
          */
         removeKeyword(index: number): string {
-            const returnItem = this.enteredKeywords.splice(index, 1)[0];
+            const returnItem = (this.$props.searchTerms as string[]).splice(index, 1)[0];
 
-            this.checkSearchBarSize(true);
+            this.$emit('onRemoveKeyword', { index, value: returnItem });
             return returnItem;
         },
 
@@ -95,37 +107,14 @@ export default defineComponent({
         },
 
         /**
-         * Checks the size of the keyword-div in order to move the input to the next line
-         * @private
-         */
-        checkSearchBarSize(deleteAction = false): void {
-            if ((this.$refs.keywordDiv as HTMLElement).clientWidth <= 320) {
-                if (!deleteAction) {
-                    return;
-                }
-
-                (this.$refs.searchInput as HTMLElement).style.paddingTop = 'unset';
-                (this.$refs.searchInput as HTMLElement).style.flexDirection = 'row';
-                (this.$refs.searchInput as HTMLElement).style.paddingLeft = 'unset';
-                (this.$refs.searchBar as HTMLElement).style.alignSelf = 'center;';
-                return;
-            }
-
-            (this.$refs.searchInput as HTMLElement).style.paddingTop = '10px';
-            (this.$refs.searchInput as HTMLElement).style.flexDirection = 'column';
-            (this.$refs.searchInput as HTMLElement).style.paddingLeft = '10px';
-            (this.$refs.searchBar as HTMLElement).style.alignSelf = 'unset';
-        },
-
-        /**
          * Handler for the back-key
          */
         handleDeleteKey(): void {
-            if (this.enteredKeywords.length < 1 || this.currentKeyword.length > 0) {
+            if ((this.searchTerms as string[]).length < 1 || (this.currentKeyword as string).length > 0) {
                 return;
             }
 
-            const keyword = this.removeKeyword(this.enteredKeywords.length - 1);
+            const keyword = this.removeKeyword((this.searchTerms as string[]).length - 1);
             setTimeout(() => (this.currentKeyword = keyword), 20);
         },
     },
@@ -133,14 +122,15 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+@import '~@/styles/global.scss';
+
 .search-wrapper {
     width: 100%;
     height: auto;
-    border: 0.5px solid #cccccc;
+    //border: 0.5px solid #cccccc;
     border-radius: 25px;
     display: flex;
     justify-content: space-between;
-    box-shadow: 3px 4px 10px rgba(0, 0, 0, 0.25);
 }
 
 .search-wrapper:hover,
@@ -149,7 +139,8 @@ export default defineComponent({
 }
 
 .keywords {
-    padding: 0 5px;
+    padding: 8px 8px;
+    padding-right: 0 !important;
     align-self: center;
     max-width: 500px;
     overflow-wrap: break-word;
@@ -163,7 +154,7 @@ export default defineComponent({
     flex-grow: 1;
     height: 50px;
     border: none;
-    padding-inline-start: 10px;
+    padding-left: 16px;
     outline: none;
     font-size: 14px;
     align-self: center;
@@ -176,6 +167,7 @@ export default defineComponent({
 
 /* Style the submit button */
 #search-btn {
+    outline: none;
     position: relative;
     right: 20px;
     width: 30px;
