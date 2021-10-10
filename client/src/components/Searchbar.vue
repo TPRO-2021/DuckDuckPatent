@@ -16,12 +16,12 @@
                 ref="searchBar"
                 placeholder="Enter keywords"
                 v-model="currentKeyword"
-                @keyup.enter="clicked = true"
+                @keyup.enter="$emit('onSearch')"
                 @keydown.tab="addKeyword"
                 @keydown.delete="handleDeleteKey"
             />
         </div>
-        <button type="button" id="search-btn" @click="clicked = true">
+        <button type="button" id="search-btn" @click="$emit('onSearch')">
             <span class="material-icons search-icon">search</span>
         </button>
     </div>
@@ -44,6 +44,9 @@ export default defineComponent({
             return event;
         },
         onRemoveKeyword: (event: { index: number; value: string }) => {
+            return event;
+        },
+        onSearch: (event = null) => {
             return event;
         },
     },

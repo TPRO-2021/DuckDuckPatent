@@ -7,6 +7,7 @@
             v-on:on-add-keyword="onAddKeyword($event)"
             v-on:on-remove-keyword="onRemoveKeyword"
             :search-terms="searchTerms"
+            v-on:on-search="onSearch"
         />
 
         <KeywordSuggestions :provided-keywords="suggestedTerms" v-on:on-add-keyword="onAddKeyword"></KeywordSuggestions>
@@ -44,6 +45,10 @@ export default defineComponent({
 
         async onRemoveKeyword() {
             this.suggestedTerms = await this.keywordService.getSuggestions(this.searchTerms);
+        },
+
+        onSearch() {
+            this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
         },
     },
 });
