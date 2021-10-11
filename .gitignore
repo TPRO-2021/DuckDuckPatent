@@ -17,6 +17,8 @@
 *.launch
 .settings/
 *.sublime-workspace
+/package.json
+/package-lock.json
 
 # Logs
 logs
