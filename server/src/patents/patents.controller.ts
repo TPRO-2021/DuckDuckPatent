@@ -6,7 +6,14 @@ export class PatentsController {
     constructor(private readonly patentService: MockPatentsService) {}
 
     @Get('')
-    query(@Query() query): any[] {
-        return this.patentService.query(query.keywords);
+    query(@Query() query): string[] {
+        let { keywords } = query;
+
+        // If only one query parameter is sent it's treated as a string, not an array
+        if (typeof keywords === 'string') {
+            keywords = [].concat(keywords);
+        }
+
+        return this.patentService.query(keywords);
     }
 }
