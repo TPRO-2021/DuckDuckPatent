@@ -1,9 +1,20 @@
 <template>
     <div class="container">
-        <div class="search-input"></div>
-        <div>
-            <h1>ifo</h1>
-            <table class="table table-bordered">
+        <div class="search-input card box-shadow">
+            <Searchbar
+                :search-terms="terms"
+                v-on:on-add-keyword="onAddKeyword"
+                v-on:on-search="refreshResults"
+                v-on:on-remove-keyword="refreshResults"
+            ></Searchbar>
+            <KeywordSuggestions
+                :provided-keywords="suggestedTerms"
+                v-on:on-add-keyword="onAddKeyword"
+            ></KeywordSuggestions>
+        </div>
+        <div class="search-result">
+            <h1>Results</h1>
+            <table class="search-table card box-shadow table table-bordered">
                 <thead class="thead-dark">
                     <tr>
                         <th scope="col">Title</th>
@@ -31,14 +42,20 @@
 import { defineComponent } from 'vue';
 import PatentService from '@/services/patent.service';
 import { Patent } from '@/models/Patent';
+import Searchbar from '@/components/Searchbar.vue';
+import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
+import KeywordService from '@/services/keyword.service';
 
 export default defineComponent({
     name: 'Results',
+    components: { Searchbar, KeywordSuggestions },
     data() {
         return {
             info: [] as Patent[],
             terms: [] as string[],
+            suggestedTerms: [] as string[],
             patentService: new PatentService(),
+            keywordService: new KeywordService(),
         };
     },
     async created() {
@@ -57,6 +74,23 @@ export default defineComponent({
         }
 
         this.info = await this.patentService.get(this.terms);
+        this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+    },
+    methods: {
+        async onAddKeyword(event: { value: string }): Promise<void> {
+            this.terms.push(event.value);
+            this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+            await this.refreshResults();
+        },
+        async onRemoveKeyword() {
+            await this.refreshResults();
+            this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+        },
+        async refreshResults(): Promise<void> {
+            this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+            await this.$router.push({ query: { terms: this.terms } });
+            this.info = await this.patentService.get(this.terms);
+        },
     },
 });
 </script>
@@ -70,5 +104,25 @@ export default defineComponent({
 .thead-dark {
     border: 1px solid black;
     width: 100%;
+}
+
+.search-input {
+    position: absolute;
+    top: 0;
+    width: 600px;
+}
+
+.search-result {
+    display: flex;
+    flex-direction: column;
+    margin-top: 25vh;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100vw;
+}
+
+.search-table {
+    width: 80vw;
+    border: none;
 }
 </style>

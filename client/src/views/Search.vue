@@ -11,8 +11,6 @@
         />
 
         <KeywordSuggestions :provided-keywords="suggestedTerms" v-on:on-add-keyword="onAddKeyword"></KeywordSuggestions>
-
-        {{ searchTerms }}
     </div>
 </template>
 
