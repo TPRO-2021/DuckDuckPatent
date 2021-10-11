@@ -1,32 +1,51 @@
 <template>
-    <button type="button" class="roundButton" @click="onClick" :class="{ 'button-active': isClicked }">
+    <button
+        type="button"
+        class="roundButton"
+        @click="onClick"
+        :class="{ 'button-active': isClicked || type === 'light' }"
+    >
         <span class="btn-icon material-icons">{{ this.iconKey }}</span>
     </button>
 </template>
 
 <script lang="ts">
-import { Options, Vue } from 'vue-class-component';
-import { Prop } from 'vue-property-decorator';
+import { defineComponent } from 'vue';
 
-@Options({
+export default defineComponent({
+    props: {
+        isToggle: {
+            type: Boolean,
+            default: false,
+        },
+        iconKey: {
+            type: String,
+            default: '',
+        },
+        type: {
+            type: String,
+            default: 'dark',
+        },
+    },
     emits: ['onClicked'],
-})
-export default class RoundButton extends Vue {
-    @Prop({ type: Boolean })
-    public isToggle = false;
-    @Prop({ type: String })
-    public iconKey = '';
+    data() {
+        return {
+            isClicked: false,
+        };
+    },
+    methods: {
+        onClick(): void {
+            if (this.isToggle) {
+                this.isClicked = !this.isClicked;
+                this.$emit('onClicked', this.isClicked);
+                console.log('emitted');
+                return;
+            }
 
-    public isClicked = false;
-    // when the button is clicked the background color is toggled another color and the parent component Search.vue is informed
-    public onClick(): void {
-        if (this.isToggle) {
-            this.isClicked = !this.isClicked;
-            this.$emit('clicked', this.isClicked);
-            return;
-        }
-    }
-}
+            this.$emit('onClicked');
+        },
+    },
+});
 </script>
 
 <style lang="scss" scoped>

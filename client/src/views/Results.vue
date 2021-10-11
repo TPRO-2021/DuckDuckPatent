@@ -35,6 +35,10 @@
                 </tbody>
             </table>
         </div>
+        <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
+        <div class="bottom-controls">
+            <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
+        </div>
     </div>
 </template>
 
@@ -45,10 +49,10 @@ import { Patent } from '@/models/Patent';
 import Searchbar from '@/components/Searchbar.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
-
+import RoundButton from '@/components/RoundButton.vue';
 export default defineComponent({
     name: 'Results',
-    components: { Searchbar, KeywordSuggestions },
+    components: { Searchbar, KeywordSuggestions, RoundButton },
     data() {
         return {
             info: [] as Patent[],
@@ -56,6 +60,7 @@ export default defineComponent({
             suggestedTerms: [] as string[],
             patentService: new PatentService(),
             keywordService: new KeywordService(),
+            showTimeline: false,
         };
     },
     async created() {
@@ -91,6 +96,9 @@ export default defineComponent({
             await this.$router.push({ query: { terms: this.terms } });
             this.info = await this.patentService.get(this.terms);
         },
+        toggleTimeline($event: boolean): void {
+            this.showTimeline = $event;
+        },
     },
 });
 </script>
@@ -124,5 +132,12 @@ export default defineComponent({
 .search-table {
     width: 80vw;
     border: none;
+}
+
+.bottom-controls {
+    padding: 10px;
+    position: absolute;
+    bottom: 0;
+    right: 0;
 }
 </style>
