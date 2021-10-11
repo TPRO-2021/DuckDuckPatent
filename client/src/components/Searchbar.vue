@@ -16,12 +16,12 @@
                 ref="searchBar"
                 placeholder="Enter keywords"
                 v-model="currentKeyword"
-                @keyup.enter="$emit('onSearch')"
+                @keyup.enter="initializeSearch"
                 @keydown.tab="addKeyword"
                 @keydown.delete="handleDeleteKey"
             />
         </div>
-        <button type="button" id="search-btn" @click="$emit('onSearch')">
+        <button type="button" id="search-btn" @click="initializeSearch">
             <span class="material-icons search-icon">search</span>
         </button>
     </div>
@@ -46,7 +46,7 @@ export default defineComponent({
         onRemoveKeyword: (event: { index: number; value: string }) => {
             return event;
         },
-        onSearch: (event = null) => {
+        onSearch: (event: { searchTerms: string[] }) => {
             return event;
         },
     },
@@ -106,7 +106,7 @@ export default defineComponent({
          * Attempts to set the focus back on the searchBar
          */
         setFocus(): void {
-            (this.$refs.searchBar as HTMLInputElement).focus();
+            (this.$refs.searchBar as HTMLInputElement)?.focus();
         },
 
         /**
@@ -119,6 +119,22 @@ export default defineComponent({
 
             const keyword = this.removeKeyword((this.searchTerms as string[]).length - 1);
             setTimeout(() => (this.currentKeyword = keyword), 20);
+        },
+
+        /**
+         * Handler for the enter key and search icon press
+         */
+        initializeSearch(): void {
+            if (this.currentKeyword.trim().length > 0) {
+                this.addKeyword();
+            }
+
+            // if no search terms are specified we need to prevent the state change.
+            if (!this.searchTerms || this.searchTerms.length === 0 || this.$route.path === '/search') {
+                return;
+            }
+
+            this.$emit('onSearch', { searchTerms: this.searchTerms as string[] | [] });
         },
     },
 });

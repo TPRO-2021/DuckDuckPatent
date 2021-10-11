@@ -41,10 +41,17 @@ export default defineComponent({
     async created() {
         // If only one query parameter is sent it's treated as a string, not an array
         let queryParams = this.$route.query.terms as string | string[];
+
         if (typeof queryParams === 'string') {
             queryParams = [queryParams];
         }
-        this.terms = queryParams;
+
+        this.terms = queryParams || [];
+
+        // if no search-term is present change back to the search page!
+        if (this.terms.length === 0) {
+            await this.$router.push({ path: '/' });
+        }
 
         let queryString = '';
         this.terms.forEach((term, index) => {
