@@ -29,13 +29,16 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import PatentService from '@/services/patent.service';
+import { Patent } from '@/models/Patent';
 
 export default defineComponent({
     name: 'Results',
     data() {
         return {
-            info: [] as string[],
+            info: [] as Patent[],
             terms: [] as string[],
+            patentService: new PatentService(),
         };
     },
     async created() {
@@ -53,18 +56,7 @@ export default defineComponent({
             await this.$router.push({ path: '/' });
         }
 
-        let queryString = '';
-        this.terms.forEach((term, index) => {
-            if (index === 0) {
-                queryString = `keywords=${term}`;
-                return;
-            }
-
-            queryString += `&keywords=${term}`;
-        });
-
-        const response = await fetch(`http://localhost:3000/patents?${queryString}`, { method: 'GET' });
-        this.info = (await response.json()) as string[];
+        this.info = await this.patentService.get(this.terms);
     },
 });
 </script>
