@@ -6,13 +6,14 @@
         type="light"
         v-show="openMenu === false"
         @click="
-            openMenu = true;
-            timeOut();
+            openMenu = true
         "
     />
 
     <!--  This div the menu container with nodes, togglers, and filters  -->
-    <div class="main-container" v-show="openMenu === true">
+    <div class="main-container box-shadow card" v-show="openMenu === true"
+         @mouseleave='timeOut()'
+         @mouseenter='resetTimer()'>
         <!--  This is where the nodes can be activated and deactivated using togglers  -->
         <h4 class="labels">Selected data</h4>
         <div class="nodes-container">
@@ -47,17 +48,26 @@ export default defineComponent({
     data() {
         return {
             openMenu: false,
+            timer: 0
         };
     },
     methods: {
         /**
-         *  @function to hide the options menu after 5 seconds
+         *  @function to hide the options menu once the mouse left the panel for 5 seconds
          * - openMenu is set to false
          * - timeout can be adjusted, if needed
          */
-        timeOut: function () {
-            setTimeout(() => (this.openMenu = !this.openMenu), 5000);
+        timeOut(): void {
+            this.timer = setTimeout(() => ( this.openMenu = !this.openMenu), 5000);
         },
+        /**
+         *  @function to reset the timer once the mouse enters the panel again
+         * - timer var is reset
+         *
+         */
+        resetTimer(): void {
+            clearTimeout(this.timer);
+        }
     },
 });
 </script>
@@ -70,21 +80,20 @@ export default defineComponent({
 }
 .main-container {
     width: 240px;
-    border-radius: 5px;
-    padding: 10px 20px;
     display: flex;
     justify-content: start;
     flex-direction: column;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     transition: 0.5s;
-    background-color: white;
 }
 
 .nodes-container {
     display: flex;
     flex-direction: row;
     justify-content: start;
-    margin: 8px;
+}
+
+.labels {
+    text-align: start;
 }
 .nodes-labels {
     width: 50%;
@@ -99,6 +108,6 @@ export default defineComponent({
     align-items: center;
 }
 p {
-    margin: 7px 0;
+    margin: 16px 0;
 }
 </style>
