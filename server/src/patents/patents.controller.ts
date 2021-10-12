@@ -1,12 +1,13 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { MockPatentsService } from './patents.service.mock';
+import { PatentsService } from './patents.service';
+import { PatentAPIResponse } from '../models';
 
 @Controller('patents')
 export class PatentsController {
-    constructor(private readonly patentService: MockPatentsService) {}
+    constructor(private readonly patentService: PatentsService) {}
 
     @Get('')
-    query(@Query() query): string[] {
+    async query(@Query() query): Promise<any[]> {
         let { keywords } = query;
 
         // If only one query parameter is sent it's treated as a string, not an array
@@ -14,6 +15,7 @@ export class PatentsController {
             keywords = [].concat(keywords);
         }
 
-        return this.patentService.query(keywords);
+        const response = await this.patentService.query(keywords);
+        return (response.data as PatentAPIResponse).patents;
     }
 }
