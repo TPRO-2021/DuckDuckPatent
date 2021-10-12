@@ -1,32 +1,59 @@
 <template>
-    <button type="button" class="roundButton" @click="onClick" :class="{ 'button-active': isClicked }">
+    <button
+        type="button"
+        class="roundButton"
+        @click="onClick"
+        :class="{ 'button-active': isToggle && isClicked, 'button-light': !isToggle && type === 'light' }"
+    >
         <span class="btn-icon material-icons">{{ this.iconKey }}</span>
     </button>
 </template>
 
 <script lang="ts">
-import { Options, Vue } from 'vue-class-component';
-import { Prop } from 'vue-property-decorator';
+import { defineComponent } from 'vue';
 
-@Options({
+/**
+ * Round button which can contain an icon.
+ * - Can be turned into a toggle button by specifying "is-toggle" on the component
+ * - The color of the button can be changed by specifying the type (light or dark) this is only available when isToggle==false
+ */
+export default defineComponent({
+    props: {
+        isToggle: {
+            type: Boolean,
+            default: false,
+        },
+        iconKey: {
+            type: String,
+            default: '',
+        },
+        type: {
+            type: String,
+            default: 'dark',
+        },
+    },
     emits: ['onClicked'],
-})
-export default class RoundButton extends Vue {
-    @Prop({ type: Boolean })
-    public isToggle = false;
-    @Prop({ type: String })
-    public iconKey = '';
+    data() {
+        return {
+            isClicked: false,
+        };
+    },
+    methods: {
+        /**
+         * Click handler which emits the 'onClicked' event to the parent.
+         * If the isToggle property is set it will contain the current state of the button
+         * */
+        onClick(): void {
+            if (this.isToggle) {
+                this.isClicked = !this.isClicked;
+                this.$emit('onClicked', this.isClicked);
+                return;
+            }
 
-    public isClicked = false;
-    // when the button is clicked the background color is toggled another color and the parent component Search.vue is informed
-    public onClick(): void {
-        if (this.isToggle) {
-            this.isClicked = !this.isClicked;
-            this.$emit('clicked', this.isClicked);
-            return;
-        }
-    }
-}
+            this.$emit('onClicked');
+        },
+    },
+});
 </script>
 
 <style lang="scss" scoped>
@@ -48,6 +75,7 @@ export default class RoundButton extends Vue {
     box-shadow: 3px 4px 10px rgba(0, 0, 0, 0.3);
 }
 
+.button-light,
 .button-active {
     background: white;
     .btn-icon {
