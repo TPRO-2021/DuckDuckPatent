@@ -1,16 +1,24 @@
 <template>
     <div class="container">
-        <div class="search-input card box-shadow">
-            <Searchbar
-                :search-terms="terms"
-                v-on:on-add-keyword="onAddKeyword"
-                v-on:on-search="refreshResults"
-                v-on:on-remove-keyword="refreshResults"
-            ></Searchbar>
-            <KeywordSuggestions
-                :provided-keywords="suggestedTerms"
-                v-on:on-add-keyword="onAddKeyword"
-            ></KeywordSuggestions>
+        <!-- This div contains searchbar and options menu -->
+        <div class="top-left-controls">
+            <!-- This div contains the searchbar and keyword suggestions -->
+            <div class="search-input card box-shadow">
+                <Searchbar
+                    :search-terms="terms"
+                    v-on:on-add-keyword="onAddKeyword"
+                    v-on:on-search="refreshResults"
+                    v-on:on-remove-keyword="refreshResults"
+                ></Searchbar>
+                <KeywordSuggestions
+                    :provided-keywords="suggestedTerms"
+                    v-on:on-add-keyword="onAddKeyword"
+                ></KeywordSuggestions>
+            </div>
+            <!-- This div contains the options menu for user to add more nodes/filters -->
+            <div class="options-menu">
+                <OptionsMenu />
+            </div>
         </div>
         <div class="search-result">
             <h1>Results</h1>
@@ -19,7 +27,7 @@
                     <tr>
                         <th scope="col">Title</th>
                         <th scope="col">Date</th>
-                        <th scope="col">abstract</th>
+                        <th scope="col">Abstract</th>
                         <th scope="col">Full Text</th>
                         <th scope="col">Citation</th>
                     </tr>
@@ -50,9 +58,12 @@ import Searchbar from '@/components/Searchbar.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
+import OptionsMenu from '@/components/OptionsMenu.vue';
+
+
 export default defineComponent({
     name: 'Results',
-    components: { Searchbar, KeywordSuggestions, RoundButton },
+    components: { Searchbar, KeywordSuggestions, RoundButton, OptionsMenu },
     data() {
         return {
             info: [] as Patent[],
@@ -104,6 +115,22 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+.top-left-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    position: absolute;
+    top: 0;
+    width: 800px;
+}
+.search-input {
+    width: 600px;
+}
+.options-menu {
+    width: 20%;
+    height: 15vh;
+    margin: 10px;
+}
 .table {
     border: 1px solid black;
     width: 100%;
@@ -112,12 +139,6 @@ export default defineComponent({
 .thead-dark {
     border: 1px solid black;
     width: 100%;
-}
-
-.search-input {
-    position: absolute;
-    top: 0;
-    width: 600px;
 }
 
 .search-result {
