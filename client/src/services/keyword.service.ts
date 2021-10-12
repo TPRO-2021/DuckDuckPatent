@@ -1,7 +1,12 @@
 export default class KeywordService {
+    /**
+     * Gets keyword suggestions from the server for the passed keywords
+     * @param keywords
+     */
     public async getSuggestions(keywords: string[]): Promise<string[]> {
-        // TODO: Implement the fetching of keywords from the backend
-        return ['keyword1', 'keyword2', 'keyword3', 'keyword4', 'keyword5', 'keyword6'].filter((value) => {
+        const response = await fetch(`http://localhost:3000/keyword?${keywords}`, { method: 'GET' });
+        const suggestion = (await response.json()) as string[];
+        return suggestion.filter((value) => {
             return keywords.indexOf(value) === -1;
         });
     }
