@@ -118,7 +118,7 @@ export default defineComponent({
 .top-left-controls {
     display: flex;
     flex-direction: column;
-    align-items: start;
+    align-items: flex-start;
     position: absolute;
     top: 0;
     width: 800px;
