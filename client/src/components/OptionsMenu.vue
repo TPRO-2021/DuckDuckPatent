@@ -5,24 +5,43 @@
         icon-key="settings"
         type="light"
         v-show="openMenu === false"
-        @click="
-            openMenu = true
-        "
+        @click="openMenu = true"
     />
 
     <!--  This div the menu container with nodes, togglers, and filters  -->
-    <div class="main-container box-shadow card" v-show="openMenu === true"
-         @mouseleave='timeOut()'
-         @mouseenter='resetTimer()'>
+    <div
+        class="main-container box-shadow card"
+        v-show="openMenu === true"
+        @mouseleave="timeOut()"
+        @mouseenter="resetTimer()"
+    >
         <!--  This is where the nodes can be activated and deactivated using togglers  -->
         <h4 class="labels">Selected data</h4>
         <div class="nodes-container">
-            <div class='nodes-labels' > <p v-for='node in nodes' :key='node.type'>{{ node.type }}</p> </div>
+            <div class="nodes-labels">
+                <p v-for="node in nodes" :key="node.type">{{ node.type }}</p>
+            </div>
             <div class="nodes-togglers">
-                <ToggleSwitch :default-state="true" custom-color="#a88529" v-on:on-clicked='onClicked($event, nodes[0].type)' ></ToggleSwitch>
-                <ToggleSwitch :default-state="false" custom-color="#A82929" v-on:on-clicked='onClicked($event, nodes[1].type)'></ToggleSwitch>
-                <ToggleSwitch :default-state="false" custom-color="#2973A8" v-on:on-clicked='onClicked($event, nodes[2].type)'></ToggleSwitch>
-                <ToggleSwitch :default-state="false" custom-color="#487909" v-on:on-clicked='onClicked($event, nodes[3].type)'></ToggleSwitch>
+                <ToggleSwitch
+                    :default-state="true"
+                    custom-color="#a88529"
+                    v-on:on-clicked="onClicked($event, nodes[0].type)"
+                ></ToggleSwitch>
+                <ToggleSwitch
+                    :default-state="false"
+                    custom-color="#A82929"
+                    v-on:on-clicked="onClicked($event, nodes[1].type)"
+                ></ToggleSwitch>
+                <ToggleSwitch
+                    :default-state="false"
+                    custom-color="#2973A8"
+                    v-on:on-clicked="onClicked($event, nodes[2].type)"
+                ></ToggleSwitch>
+                <ToggleSwitch
+                    :default-state="false"
+                    custom-color="#487909"
+                    v-on:on-clicked="onClicked($event, nodes[3].type)"
+                ></ToggleSwitch>
             </div>
         </div>
 
@@ -44,13 +63,8 @@ export default defineComponent({
         return {
             openMenu: false,
             timer: 0,
-            nodes: [
-                { type: "patents" },
-                { type: "authors" },
-                { type: "companies" },
-                { type: "citations" }
-            ]
-        }
+            nodes: [{ type: 'patents' }, { type: 'authors' }, { type: 'companies' }, { type: 'citations' }],
+        };
     },
     methods: {
         /**
@@ -59,7 +73,7 @@ export default defineComponent({
          * - timeout can be adjusted, if needed
          */
         timeOut(): void {
-            this.timer = setTimeout(() => ( this.openMenu = !this.openMenu), 5000);
+            this.timer = setTimeout(() => (this.openMenu = !this.openMenu), 5000);
         },
         /**
          *  @function to reset the timer once the mouse enters the panel again
@@ -76,12 +90,12 @@ export default defineComponent({
          * - if state of toggle is true, the node type is requested to be added. else, it's requested to be removed
          */
         onClicked(togglerState: boolean, nodeType: string): void {
-            if(togglerState) {
+            if (togglerState) {
                 this.$emit('addNode', nodeType);
-            }else {
+            } else {
                 this.$emit('removeNode', nodeType);
             }
-        }
+        },
     },
 });
 </script>
