@@ -20,28 +20,12 @@
                 <OptionsMenu />
             </div>
         </div>
-        <div class="search-result">
-            <h1>Results</h1>
-            <table class="search-table card box-shadow table table-bordered">
-                <thead class="thead-dark">
-                    <tr>
-                        <th scope="col">Title</th>
-                        <th scope="col">Date</th>
-                        <th scope="col">Abstract</th>
-                        <th scope="col">Full Text</th>
-                        <th scope="col">Citation</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="inff in info" :key="inff.id">
-                        <td>{{ inff.title }}</td>
-                        <td>{{ inff.date }}</td>
-                        <td>{{ inff.abstract }}</td>
-                        <td>{{ inff.fulltext }}</td>
-                        <td>{{ inff.citations }}</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="result-wrapper">
+            <div class="search-result">
+                <div class="card box-shadow" v-for="patent in info" :key="patent.patent_number">
+                    <PatentPreview :patent="patent"></PatentPreview>
+                </div>
+            </div>
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
@@ -58,12 +42,12 @@ import Searchbar from '@/components/Searchbar.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
+import PatentPreview from '@/components/PatentPreview.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
-
 
 export default defineComponent({
     name: 'Results',
-    components: { Searchbar, KeywordSuggestions, RoundButton, OptionsMenu },
+    components: { Searchbar, KeywordSuggestions, RoundButton, PatentPreview, OptionsMenu },
     data() {
         return {
             info: [] as Patent[],
@@ -141,9 +125,26 @@ export default defineComponent({
     width: 100%;
 }
 
-.search-result {
+.search-input {
+    position: absolute;
+    top: 0;
+    width: 600px;
+}
+
+.result-wrapper {
+    width: 100vw;
+    height: 100vh;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
+}
+
+.search-result {
+    max-width: 90%;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    flex-wrap: wrap;
+    overflow: scroll;
     margin-top: 25vh;
     justify-content: flex-start;
     align-items: center;

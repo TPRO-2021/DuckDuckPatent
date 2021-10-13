@@ -22,7 +22,13 @@ export class PatentsService {
                 q: JSON.stringify({
                     _or: [{ _and: titles }, { _and: abstracts }],
                 }),
-                f: JSON.stringify(['patent_number', 'patent_title', 'patent_date', 'patent_abstract']),
+                f: JSON.stringify([
+                    'patent_number',
+                    'patent_title',
+                    'patent_date',
+                    'patent_abstract',
+                    'cited_patent_number',
+                ]),
                 o: JSON.stringify({ page: 1, per_page: 1000 }),
             },
         };
