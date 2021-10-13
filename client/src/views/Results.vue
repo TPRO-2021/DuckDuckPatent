@@ -25,7 +25,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="inff in info" :key="inff.id">
+                    <tr v-for="inff in patents" :key="inff.id">
                         <td>{{ inff.title }}</td>
                         <td>{{ inff.date }}</td>
                         <td>{{ inff.abstract }}</td>
@@ -40,6 +40,7 @@
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
     </div>
+    <ResultsVisualizationDemo :patents="patents" />
 </template>
 
 <script lang="ts">
@@ -50,12 +51,13 @@ import Searchbar from '@/components/Searchbar.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
+import ResultsVisualizationDemo from '@/components/ResultsVisualizationDemo.vue';
 export default defineComponent({
     name: 'Results',
-    components: { Searchbar, KeywordSuggestions, RoundButton },
+    components: { Searchbar, KeywordSuggestions, RoundButton, ResultsVisualizationDemo },
     data() {
         return {
-            info: [] as Patent[],
+            patents: [] as Patent[],
             terms: [] as string[],
             suggestedTerms: [] as string[],
             patentService: new PatentService(),
@@ -78,8 +80,10 @@ export default defineComponent({
             await this.$router.push({ path: '/' });
         }
 
-        this.info = await this.patentService.get(this.terms);
+        this.patents = await this.patentService.get(this.terms);
+
         this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+
     },
     methods: {
         async onAddKeyword(event: { value: string }): Promise<void> {
@@ -94,7 +98,7 @@ export default defineComponent({
         async refreshResults(): Promise<void> {
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
             await this.$router.push({ query: { terms: this.terms } });
-            this.info = await this.patentService.get(this.terms);
+            this.patents = await this.patentService.get(this.terms);
         },
         toggleTimeline($event: boolean): void {
             this.showTimeline = $event;
