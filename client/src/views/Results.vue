@@ -32,6 +32,7 @@
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
     </div>
+    <ResultsVisualizationDemo :patents="patents" />
 </template>
 
 <script lang="ts">
@@ -44,13 +45,14 @@ import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
 import PatentPreview from '@/components/PatentPreview.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
+import ResultsVisualizationDemo from '@/components/ResultsVisualizationDemo.vue';
 
 export default defineComponent({
     name: 'Results',
-    components: { Searchbar, KeywordSuggestions, RoundButton, PatentPreview, OptionsMenu },
+    components: { Searchbar, KeywordSuggestions, RoundButton, PatentPreview, OptionsMenu, ResultsVisualizationDemo },
     data() {
         return {
-            info: [] as Patent[],
+            patents: [] as Patent[],
             terms: [] as string[],
             suggestedTerms: [] as string[],
             patentService: new PatentService(),
@@ -73,7 +75,8 @@ export default defineComponent({
             await this.$router.push({ path: '/' });
         }
 
-        this.info = await this.patentService.get(this.terms);
+        this.patents = await this.patentService.get(this.terms);
+
         this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
     },
     methods: {
@@ -89,7 +92,7 @@ export default defineComponent({
         async refreshResults(): Promise<void> {
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
             await this.$router.push({ query: { terms: this.terms } });
-            this.info = await this.patentService.get(this.terms);
+            this.patents = await this.patentService.get(this.terms);
         },
         toggleTimeline($event: boolean): void {
             this.showTimeline = $event;
