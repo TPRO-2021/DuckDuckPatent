@@ -1,11 +1,5 @@
 <template>
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        :width="width + 'px'"
-        :height="height + 'px'"
-        @mousemove="drag($event)"
-        @mouseup="drop()"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" @mousemove="drag($event)" @mouseup="drop()">
         <line
             v-for="link in graph.links"
             :key="link.index"
@@ -33,19 +27,25 @@
 import { defineComponent } from 'vue';
 import * as d3 from 'd3';
 import { Patent } from '@/models/Patent';
-import { SimulationNodeDatum, SimulationLinkDatum, Simulation } from 'd3';
+import { SimulationLinkDatum, Simulation, SimulationNodeDatum } from 'd3';
+import { CitedPatent } from '@/models/CitedPatent';
+import { PatentNode } from '@/models/PatentNode';
 
-type d3Event = { x: number; y: number; node: SimulationNodeDatum };
-type forceSim = Simulation<SimulationNodeDatum, SimulationLinkDatum<SimulationNodeDatum>>;
-type d3Graph = { nodes: SimulationNodeDatum[]; links: SimulationLinkDatum<SimulationNodeDatum>[]; };
+type d3Event = { x: number; y: number; node: PatentNode };
+type d3ForceSim = Simulation<SimulationNodeDatum, SimulationLinkDatum<SimulationNodeDatum>>;
+type d3Graph = { nodes: SimulationNodeDatum[]; links: SimulationLinkDatum<SimulationNodeDatum>[] };
 
 export default defineComponent({
     name: 'ResultsVisualizationDemo',
     props: {
-        width: { default: 1000, type: Number },
-        height: { default: 500, type: Number },
-        padding: { default: 100, type: Number },
-        patents: { required: true, type: Array },
+        padding: {
+            default: 1,
+            type: Number,
+        },
+        patents: {
+            required: true,
+            type: Array,
+        },
     },
     data() {
         return {
@@ -53,83 +53,157 @@ export default defineComponent({
                 nodes: [],
                 links: [],
             } as d3Graph,
-            simulation: null as forceSim | null,
+            simulation: null as d3ForceSim | null,
             currentMove: null as d3Event | null,
+            resizeEvent: -1,
+            documentWidth: document.documentElement.clientWidth,
+            documentHeight: document.documentElement.clientHeight,
         };
     },
-    created() { 
+    created() {
+        // adding the event listener for the resize event here
+        window.addEventListener('resize', this.onResize);
         this.updateGraph();
     },
+    unmounted() {
+        // unregistering the event listener for the resize event
+        window.removeEventListener('resize', this.onResize);
+    },
     computed: {
-        bounds() {
-            return { minX: 0, maxX: this.$props.width, minY: 0, maxY: this.$props.height };
+        /**
+         * Computed property which specifies the bounds of the d3 playground based on the available size
+         */
+        bounds(): { minX: number; maxX: number; minY: number; maxY: number } {
+            return {
+                minX: 0,
+                maxX: this.documentWidth,
+                minY: 0,
+                maxY: this.documentHeight,
+            };
         },
         coords() {
             // Typescript has funny ideas about how encapsulation works in JavaScript
             const graph = this.graph as d3Graph;
-            const bounds = this.bounds as { minX: number; maxX: number; minY: number; maxY: number };
+            const bounds = this.bounds;
             const padding = this.$props.padding;
-            const width = this.$props.width;
-            const height = this.$props.height;
+            const width = document.documentElement.clientWidth;
+            const height = document.documentElement.clientHeight;
 
             return graph.nodes.map((node) => {
                 return {
-                    x:
-                        padding +
-                        (((node.x || 0) - bounds.minX) * (width - 2 * padding)) / (bounds.maxX - bounds.minX),
-                    y:
-                        padding +
-                        (((node.y || 0) - bounds.minY) * (height - 2 * padding)) / (bounds.maxY - bounds.minY),
+                    x: padding + (((node.x || 0) - bounds.minX) * (width - 2 * padding)) / (bounds.maxX - bounds.minX),
+                    y: padding + (((node.y || 0) - bounds.minY) * (height - 2 * padding)) / (bounds.maxY - bounds.minY),
                 };
             });
         },
     },
     watch: {
-        patents(val, oldVal) { this.updateGraph(); }
+        /**
+         * Watches the patents value and updates the graph
+         */
+        patents(): void {
+            this.updateGraph();
+        },
     },
     methods: {
+        /**
+         * Updates the graph simulation
+         */
         updateGraph() {
-            const patents = this.$props.patents as Patent[];
-            this.graph.nodes = patents.map((t, index) => ({ index, x: 100, y: 500 })) as SimulationNodeDatum[];
-            this.graph.links = patents
-                .reduce((a, b) => a.concat(b.citations.map((t: string) => ({ from: b.id, to: t}))), [] as { from: string, to: string }[])
-                .map((t, index) => ({ 
-                    index, 
-                    source: this.graph.nodes[patents.findIndex((k) => k.id === t.from)], 
-                    target: this.graph.nodes[patents.findIndex((k) => k.id === t.to)], 
-                }))
-                .filter((t: SimulationLinkDatum<SimulationNodeDatum>) => t.source != null && t.target != null)
+            this.graph.nodes = this.getPatentNodes();
+            this.graph.links = this.getPatentLinks();
 
             this.simulation = d3
-                .forceSimulation<SimulationNodeDatum>(this.graph.nodes)
-                .force("link", d3.forceLink(this.graph.links).strength(0.01))
-                .force("charge", d3.forceManyBody().strength(-30))
-                .force("center", d3.forceCenter(this.$props.width / 2, this.$props.height / 2));
+                .forceSimulation(this.graph.nodes)
+                // center the results
+                .force('center', d3.forceCenter(this.documentWidth / 2, this.documentHeight / 2))
+                // adds the links
+                .force('link', d3.forceLink(this.graph.links).strength(0.01))
+                // set the attraction level between the nodes (default -30)
+                .force('charge', d3.forceManyBody().strength(-10));
         },
         drag(e: { screenX: number; screenY: number }) {
-            if (this.currentMove == null) { return; }
+            if (this.currentMove === null) {
+                return;
+            }
 
             this.currentMove.node.fx =
-                this.currentMove.node.x! -
-                ((this.currentMove.x! - e.screenX) * (this.bounds.maxX - this.bounds.minX)) /
-                    (this.$props.width - 2 * this.$props.padding);
+                (this.currentMove.node.x || 0) -
+                ((this.currentMove.x - e.screenX) * (this.bounds.maxX - this.bounds.minX)) /
+                    (document.documentElement.clientWidth - 2 * this.$props.padding);
             this.currentMove.node.fy =
-                this.currentMove.node.y! -
-                ((this.currentMove.y! - e.screenY) * (this.bounds.maxY - this.bounds.minY)) /
-                    (this.$props.height - 2 * this.$props.padding);
-            this.currentMove!.x = e.screenX;
-            this.currentMove!.y = e.screenY;
+                (this.currentMove.node.y || 0) -
+                ((this.currentMove.y - e.screenY) * (this.bounds.maxY - this.bounds.minY)) /
+                    (document.documentElement.clientHeight - 2 * this.$props.padding);
+            this.currentMove.x = e.screenX;
+            this.currentMove.y = e.screenY;
         },
         drop() {
-            if (this.currentMove == null) { return; }
+            if (this.currentMove == null) {
+                return;
+            }
 
-            delete this.currentMove.node!.fx;
-            delete this.currentMove.node!.fy;
+            delete this.currentMove.node?.fx;
+            delete this.currentMove.node?.fy;
             this.currentMove = null;
 
-            if (this.simulation == null) { return; }
-            this.simulation!.alpha(1);
-            this.simulation!.restart();
+            if (this.simulation == null) {
+                return;
+            }
+            this.simulation?.alpha(1);
+            this.simulation?.restart();
+        },
+        /**
+         * Processes the passed patents and returns them as nodes for D3 to display them.
+         * A SimulationNodeDatum needs a unique identifier which we can provide by using the
+         * unique patent_number
+         */
+        getPatentNodes(): SimulationNodeDatum[] {
+            return (this.patents as Patent[]).map((patent) => ({
+                id: patent.patent_number,
+                patent: patent,
+            })) as SimulationNodeDatum[];
+        },
+        /**
+         * Processes the passed patents and finds relations between them.
+         */
+        getPatentLinks(): SimulationLinkDatum<SimulationNodeDatum>[] {
+            return (
+                (this.patents as Patent[])
+                    // first we need to create an array, containing the relations
+                    .reduce(
+                        (relations, patent) =>
+                            relations.concat(
+                                patent.cited_patents.map((citedPatent: CitedPatent) => ({
+                                    source: patent.patent_number,
+                                    target: citedPatent.cited_patent_number,
+                                })),
+                            ),
+                        [] as { source: string; target: string }[],
+                    )
+                    .map((relation, index) => ({
+                        index,
+                        source: this.graph.nodes[
+                            (this.patents as Patent[]).findIndex((k) => k.patent_number === relation.source)
+                        ],
+                        target: this.graph.nodes[
+                            (this.patents as Patent[]).findIndex((k) => k.patent_number === relation.target)
+                        ],
+                    }))
+                    .filter((t: SimulationLinkDatum<SimulationNodeDatum>) => t.source != null && t.target != null)
+            );
+        },
+        /**
+         * Function which triggers the updateGraph function after a specific delay is hit
+         */
+        onResize(): void {
+            if (this.resizeEvent > -1) {
+                clearTimeout(this.resizeEvent);
+            }
+
+            this.documentHeight = document.documentElement.clientHeight;
+            this.documentWidth = document.documentElement.clientWidth;
+            this.resizeEvent = setTimeout(this.updateGraph, 200);
         },
     },
 });

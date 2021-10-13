@@ -21,18 +21,13 @@
             </div>
         </div>
         <div class="result-wrapper">
-            <div class="search-result">
-                <div class="card box-shadow" v-for="patent in info" :key="patent.patent_number">
-                    <PatentPreview :patent="patent"></PatentPreview>
-                </div>
-            </div>
+            <ResultsVisualizationDemo :patents="patents" />
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
     </div>
-    <ResultsVisualizationDemo :patents="patents" />
 </template>
 
 <script lang="ts">
@@ -43,13 +38,18 @@ import Searchbar from '@/components/Searchbar.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
-import PatentPreview from '@/components/PatentPreview.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
 import ResultsVisualizationDemo from '@/components/ResultsVisualizationDemo.vue';
 
 export default defineComponent({
     name: 'Results',
-    components: { Searchbar, KeywordSuggestions, RoundButton, PatentPreview, OptionsMenu, ResultsVisualizationDemo },
+    components: {
+        Searchbar,
+        KeywordSuggestions,
+        RoundButton,
+        OptionsMenu,
+        ResultsVisualizationDemo,
+    },
     data() {
         return {
             patents: [] as Patent[],
@@ -59,6 +59,11 @@ export default defineComponent({
             keywordService: new KeywordService(),
             showTimeline: false,
         };
+    },
+    computed: {
+        graphWidth(): number {
+            return parseInt((this.$refs.graph as SVGElement).style.width);
+        },
     },
     async created() {
         // If only one query parameter is sent it's treated as a string, not an array
@@ -139,6 +144,10 @@ export default defineComponent({
     height: 100vh;
     display: flex;
     justify-content: center;
+    svg {
+        width: 100vw;
+        height: 100vh;
+    }
 }
 
 .search-result {

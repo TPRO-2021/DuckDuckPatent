@@ -75,7 +75,7 @@ export default defineComponent({
     height: 50vh;
     transform: translateY(-50px);
     position: absolute;
-    justify-content: start;
+    justify-content: flex-start;
     bottom: 0;
 
     div {

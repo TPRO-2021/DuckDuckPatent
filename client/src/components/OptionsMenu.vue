@@ -109,7 +109,7 @@ export default defineComponent({
 .main-container {
     width: 240px;
     display: flex;
-    justify-content: start;
+    justify-content: flex-start;
     flex-direction: column;
     transition: 0.5s;
     margin-left: 0;
@@ -118,7 +118,7 @@ export default defineComponent({
 .nodes-container {
     display: flex;
     flex-direction: row;
-    justify-content: start;
+    justify-content: flex-start;
 }
 
 .labels {
