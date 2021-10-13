@@ -17,17 +17,12 @@
         <!--  This is where the nodes can be activated and deactivated using togglers  -->
         <h4 class="labels">Selected data</h4>
         <div class="nodes-container">
-            <div class='nodes-labels'>
-                <p>patents</p>
-                <p>authors</p>
-                <p>companies</p>
-                <p>citations</p>
-            </div>
+            <div class='nodes-labels' > <p v-for='node in nodes' :key='node.type'>{{ node.type }}</p> </div>
             <div class="nodes-togglers">
-                <ToggleSwitch :default-state="true" custom-color="#a88529" ></ToggleSwitch>
-                <ToggleSwitch :default-state="false" custom-color="#A82929" ></ToggleSwitch>
-                <ToggleSwitch :default-state="false" custom-color="#2973A8" ></ToggleSwitch>
-                <ToggleSwitch :default-state="false" custom-color="#487909" ></ToggleSwitch>
+                <ToggleSwitch :default-state="true" custom-color="#a88529" v-on:on-clicked='onClicked($event, nodes[0].type)' ></ToggleSwitch>
+                <ToggleSwitch :default-state="false" custom-color="#A82929" v-on:on-clicked='onClicked($event, nodes[1].type)'></ToggleSwitch>
+                <ToggleSwitch :default-state="false" custom-color="#2973A8" v-on:on-clicked='onClicked($event, nodes[2].type)'></ToggleSwitch>
+                <ToggleSwitch :default-state="false" custom-color="#487909" v-on:on-clicked='onClicked($event, nodes[3].type)'></ToggleSwitch>
             </div>
         </div>
 
@@ -48,8 +43,14 @@ export default defineComponent({
     data() {
         return {
             openMenu: false,
-            timer: 0
-        };
+            timer: 0,
+            nodes: [
+                { type: "patents" },
+                { type: "authors" },
+                { type: "companies" },
+                { type: "citations" }
+            ]
+        }
     },
     methods: {
         /**
@@ -67,6 +68,19 @@ export default defineComponent({
          */
         resetTimer(): void {
             clearTimeout(this.timer);
+        },
+        /**
+         *  @function emits events to adjust (add or remove) the type of nodes available on the network graph. Accepts two params:
+         *  - @param {boolean} togglerState -  state of toggle which is retrieved from ToggleSwitch
+         * -  @param {string} nodeType - type of node , passed as a string (nodes[index].type), depending on the toggle clicked
+         * - if state of toggle is true, the node type is requested to be added. else, it's requested to be removed
+         */
+        onClicked(togglerState: boolean, nodeType: string): void {
+            if(togglerState) {
+                this.$emit('addNode', nodeType);
+            }else {
+                this.$emit('removeNode', nodeType);
+            }
         }
     },
 });
@@ -84,6 +98,7 @@ export default defineComponent({
     justify-content: start;
     flex-direction: column;
     transition: 0.5s;
+    margin-left: 0;
 }
 
 .nodes-container {
