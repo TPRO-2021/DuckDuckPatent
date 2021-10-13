@@ -71,6 +71,9 @@ export default defineComponent({
     cursor: pointer;
     border-radius: 100%;
     height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 58px;
     box-shadow: 3px 4px 10px rgba(0, 0, 0, 0.3);
 }
