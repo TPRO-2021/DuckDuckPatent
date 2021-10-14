@@ -1,5 +1,5 @@
 <template>
-    <div><h1>duckduckpatent</h1></div>
+    <div><img src="../assets/duckduckpatent.png" class="logo" /></div>
 </template>
 
 <script lang="ts">
@@ -10,4 +10,10 @@ export default defineComponent({
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+.logo {
+    position: relative;
+    top: -50px;
+    height: 110px;
+}
+</style>
