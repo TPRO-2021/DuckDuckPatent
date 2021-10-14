@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Saira:wght@100&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
 .no-select {
   -webkit-user-select: none;
@@ -16,10 +17,15 @@
   border-radius: 5px;
   background: white;
 }
-// removes default padding and sets font family
+
+// removes default padding
 * {
-  font-family: 'Saira', sans-serif;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+// sets font family
+#app, input {
+  font-family: 'Saira', sans-serif;
 }
