@@ -3,18 +3,19 @@
         <line
             v-for="link in graph.links"
             :key="link.index"
-            :x1="coords[link.source.index].x"
-            :y1="coords[link.source.index].y"
-            :x2="coords[link.target.index].x"
-            :y2="coords[link.target.index].y"
+            :x1="link.source.x"
+            :y1="link.source.y"
+            :x2="link.target.x"
+            :y2="link.target.y"
             stroke="grey"
             stroke-width="2"
         />
         <circle
-            v-for="(node, i) in graph.nodes"
+            class=".node"
+            v-for="node in graph.nodes"
             :key="node.index"
-            :cx="coords[i].x"
-            :cy="coords[i].y"
+            :cx="node.x"
+            :cy="node.y"
             :r="20"
             stroke="black"
             stroke-width="1"
@@ -29,19 +30,14 @@ import * as d3 from 'd3';
 import { Patent } from '@/models/Patent';
 import { SimulationLinkDatum, Simulation, SimulationNodeDatum } from 'd3';
 import { CitedPatent } from '@/models/CitedPatent';
-import { PatentNode } from '@/models/PatentNode';
 
-type d3Event = { x: number; y: number; node: PatentNode };
+type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<SimulationNodeDatum, SimulationLinkDatum<SimulationNodeDatum>>;
 type d3Graph = { nodes: SimulationNodeDatum[]; links: SimulationLinkDatum<SimulationNodeDatum>[] };
 
 export default defineComponent({
     name: 'ResultsVisualizationDemo',
     props: {
-        padding: {
-            default: 1,
-            type: Number,
-        },
         patents: {
             required: true,
             type: Array,
@@ -81,21 +77,6 @@ export default defineComponent({
                 maxY: this.documentHeight,
             };
         },
-        coords() {
-            // Typescript has funny ideas about how encapsulation works in JavaScript
-            const graph = this.graph as d3Graph;
-            const bounds = this.bounds;
-            const padding = this.$props.padding;
-            const width = document.documentElement.clientWidth;
-            const height = document.documentElement.clientHeight;
-
-            return graph.nodes.map((node) => {
-                return {
-                    x: padding + (((node.x || 0) - bounds.minX) * (width - 2 * padding)) / (bounds.maxX - bounds.minX),
-                    y: padding + (((node.y || 0) - bounds.minY) * (height - 2 * padding)) / (bounds.maxY - bounds.minY),
-                };
-            });
-        },
     },
     watch: {
         /**
@@ -118,26 +99,30 @@ export default defineComponent({
                 // center the results
                 .force('center', d3.forceCenter(this.documentWidth / 2, this.documentHeight / 2))
                 // adds the links
-                .force('link', d3.forceLink(this.graph.links).strength(0.01))
+                .force('link', d3.forceLink(this.graph.links).strength(0.1))
+                // the x and y alignment of the nodes
+                .force('x', d3.forceX(this.documentWidth / 2).strength(0.1))
+                .force('y', d3.forceY(this.documentHeight / 2).strength(0.13))
                 // set the attraction level between the nodes (default -30)
-                .force('charge', d3.forceManyBody().strength(-10));
+                .force('charge', d3.forceManyBody().strength(-400))
+                // avoid collision
+                .force('collide', d3.forceCollide().radius(40));
         },
-        drag(e: { screenX: number; screenY: number }) {
+        /**
+         * Handles the mouse down event on a node
+         * @param e
+         */
+        drag(e: MouseEvent) {
             if (this.currentMove === null) {
                 return;
             }
 
-            this.currentMove.node.fx =
-                (this.currentMove.node.x || 0) -
-                ((this.currentMove.x - e.screenX) * (this.bounds.maxX - this.bounds.minX)) /
-                    (document.documentElement.clientWidth - 2 * this.$props.padding);
-            this.currentMove.node.fy =
-                (this.currentMove.node.y || 0) -
-                ((this.currentMove.y - e.screenY) * (this.bounds.maxY - this.bounds.minY)) /
-                    (document.documentElement.clientHeight - 2 * this.$props.padding);
-            this.currentMove.x = e.screenX;
-            this.currentMove.y = e.screenY;
+            this.currentMove.node.fx = e.clientX;
+            this.currentMove.node.fy = e.clientY;
         },
+        /**
+         * Handler for when the mouse button is released.
+         */
         drop() {
             if (this.currentMove == null) {
                 return;
@@ -150,6 +135,7 @@ export default defineComponent({
             if (this.simulation == null) {
                 return;
             }
+
             this.simulation?.alpha(1);
             this.simulation?.restart();
         },
@@ -190,7 +176,7 @@ export default defineComponent({
                             (this.patents as Patent[]).findIndex((k) => k.patent_number === relation.target)
                         ],
                     }))
-                    .filter((t: SimulationLinkDatum<SimulationNodeDatum>) => t.source != null && t.target != null)
+                    .filter((t: SimulationLinkDatum<SimulationNodeDatum>) => t.source && t.target)
             );
         },
         /**
@@ -203,7 +189,7 @@ export default defineComponent({
 
             this.documentHeight = document.documentElement.clientHeight;
             this.documentWidth = document.documentElement.clientWidth;
-            this.resizeEvent = setTimeout(this.updateGraph, 200);
+            this.resizeEvent = setTimeout(this.updateGraph, 300);
         },
     },
 });
