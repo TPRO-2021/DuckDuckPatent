@@ -48,7 +48,7 @@ export default defineComponent({
     border: none;
     min-height: 26px;
     max-width: fit-content;
-    padding: 2px 10px;
+    padding: 2px 6px 2px 10px;
     margin: 5px 5px;
 }
 
@@ -58,8 +58,7 @@ export default defineComponent({
 
 .chip-icon {
     color: white;
-    width: 20px;
-    font-size: 20px;
+    font-size: 22px;
 }
 
 .chip:hover {

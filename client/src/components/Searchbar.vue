@@ -141,12 +141,9 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import '~@/styles/global.scss';
-
 .search-wrapper {
     width: 100%;
     height: auto;
-    //border: 0.5px solid #cccccc;
     border-radius: 25px;
     display: flex;
     justify-content: space-between;
