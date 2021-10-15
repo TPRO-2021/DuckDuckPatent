@@ -21,7 +21,7 @@
             </div>
         </div>
         <div class="result-wrapper">
-            <ResultsVisualizationDemo :patents="patents" />
+            <ResultsVisualization :patents="patents" />
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
@@ -39,7 +39,7 @@ import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
-import ResultsVisualizationDemo from '@/components/ResultsVisualizationDemo.vue';
+import ResultsVisualization from '@/components/ResultVisualization.vue';
 
 export default defineComponent({
     name: 'Results',
@@ -48,7 +48,7 @@ export default defineComponent({
         KeywordSuggestions,
         RoundButton,
         OptionsMenu,
-        ResultsVisualizationDemo,
+        ResultsVisualization,
     },
     data() {
         return {
@@ -59,11 +59,6 @@ export default defineComponent({
             keywordService: new KeywordService(),
             showTimeline: false,
         };
-    },
-    computed: {
-        graphWidth(): number {
-            return parseInt((this.$refs.graph as SVGElement).style.width);
-        },
     },
     async created() {
         // If only one query parameter is sent it's treated as a string, not an array
@@ -80,9 +75,10 @@ export default defineComponent({
             await this.$router.push({ path: '/' });
         }
 
+        this.keywordService.getSuggestions(this.terms).then((res) => {
+            this.suggestedTerms = res;
+        });
         this.patents = await this.patentService.get(this.terms);
-
-        this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
     },
     methods: {
         async onAddKeyword(event: { value: string }): Promise<void> {
