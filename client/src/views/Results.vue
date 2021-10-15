@@ -47,6 +47,10 @@
         <div class="bottom-controls">
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
+
+        <div>
+            <PatentPreview class="patent-preview" :info="info"> </PatentPreview>
+        </div>
     </div>
 </template>
 
@@ -59,11 +63,11 @@ import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
-
+import PatentPreview from '@/components/PatentPreview.vue';
 
 export default defineComponent({
     name: 'Results',
-    components: { Searchbar, KeywordSuggestions, RoundButton, OptionsMenu },
+    components: { Searchbar, KeywordSuggestions, RoundButton, OptionsMenu, PatentPreview },
     data() {
         return {
             info: [] as Patent[],
@@ -160,5 +164,14 @@ export default defineComponent({
     position: absolute;
     bottom: 0;
     right: 0;
+}
+.patent-preview {
+    padding: 10px;
+    position: absolute;
+    display: flex;
+    left: 400px;
+    height: 30%;
+    width: 30%;
+    bottom: 50px;
 }
 </style>
