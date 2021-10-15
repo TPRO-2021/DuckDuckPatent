@@ -20,45 +20,38 @@ export class PatentsController {
     }
 
     /**
-     * @function to retrieve a specific patent
-     * @param accepts the id of the patent
-     * @return a single patent
+     * Function which retrieves a specific patent
+     * @param id accepts the id of the patent
      * */
-    @Get('/id=:id')
-    async querySinglePatent(@Param('id') id: string): Promise<Patent> {
-        //getSinglePatent
+    @Get('/:id')
+    async getPatent(@Param('id') id: string): Promise<Patent> {
         //patent can be retrieved using: patent number, title
-        const patentID = id;
-
-        const response = await this.patentService.getSingle(patentID);
+        const response = await this.patentService.get(id);
         return (response.data as PatentAPIResponse).patents[0];
     }
 
     /**
-     * @function to retrieve full data on citing patents for a given one
-     * @param accepts the id of the source patent
-     * @return complete data on citing patents
+     * Function which retrieves full data on citing patents for a given one
+     * @param id the id of the source patent
      * */
-    @Get('/id=:id/similar')
+    @Get('/:id/similar')
     async querySimilarPatents(@Param('id') id: string): Promise<any> {
         // retrieve only objects with cited_patent_numbers
         const citationsSourcePatent = await this.patentService.getCitedPatents(id);
-        const citationsUnfiltered = citationsSourcePatent.data.patents[0]; //is a nested object of cited_patent_numbers
+        const citationsUnfiltered = citationsSourcePatent.data.patents[0];
 
         //export cited_patent_numbers as strings for easier operation later on
         const filteredPatentIDs = [];
-        for (let i = 0; i < citationsUnfiltered['cited_patents'].length; i++) {
-            filteredPatentIDs.push(citationsUnfiltered['cited_patents'][i]['cited_patent_number']);
-        }
+        citationsUnfiltered['cited_patents'].forEach((item, index) => {
+            filteredPatentIDs.push(citationsUnfiltered['cited_patents'][index]['cited_patent_number']);
+        });
 
-        // retrieve full information on cited patents
-        const response = Promise.all(
+        // return full information on cited patents
+        return await Promise.all(
             filteredPatentIDs.map(async (patent_number) => {
-                const patentCited = await this.patentService.getSingle(patent_number);
+                const patentCited = await this.patentService.get(patent_number);
                 return (patentCited.data as PatentAPIResponse).patents[0];
             }),
         );
-
-        return response;
     }
 }

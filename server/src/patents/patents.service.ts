@@ -39,7 +39,7 @@ export class PatentsService {
     }
 
     // to query for a single patent
-    async getSingle(patentNum: string): Promise<AxiosResponse<PatentAPIResponse>> {
+    async get(patentNum: string): Promise<AxiosResponse<PatentAPIResponse>> {
         const patentID = patentNum;
 
         const config = {
