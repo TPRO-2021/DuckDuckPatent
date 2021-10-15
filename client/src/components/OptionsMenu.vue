@@ -66,6 +66,7 @@ export default defineComponent({
             nodes: [{ type: 'patents' }, { type: 'authors' }, { type: 'companies' }, { type: 'citations' }],
         };
     },
+    emits: ['addNode', 'removeNode'],
     methods: {
         /**
          *  @function to hide the options menu once the mouse left the panel for 5 seconds
