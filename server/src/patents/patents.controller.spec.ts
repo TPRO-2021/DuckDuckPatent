@@ -20,7 +20,7 @@ describe('PatentsController', () => {
         });
 
         it('should return one or more results for bread', () => {
-            expect(patentsController.query({ terms: ['bread'] }).length).toBeGreaterThan(0);
+            expect(patentsController.query({ terms: ['bread'] })).toBeGreaterThan(0);
         });
     });
 });

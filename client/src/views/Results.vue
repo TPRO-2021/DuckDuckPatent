@@ -20,28 +20,8 @@
                 <OptionsMenu />
             </div>
         </div>
-        <div class="search-result">
-            <h1>Results</h1>
-            <table class="search-table card box-shadow table table-bordered">
-                <thead class="thead-dark">
-                    <tr>
-                        <th scope="col">Title</th>
-                        <th scope="col">Date</th>
-                        <th scope="col">Abstract</th>
-                        <th scope="col">Full Text</th>
-                        <th scope="col">Citation</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="inff in info" :key="inff.id">
-                        <td>{{ inff.title }}</td>
-                        <td>{{ inff.date }}</td>
-                        <td>{{ inff.abstract }}</td>
-                        <td>{{ inff.fulltext }}</td>
-                        <td>{{ inff.citations }}</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="result-wrapper">
+            <ResultsVisualization :patents="patents" />
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
@@ -59,14 +39,20 @@ import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
-
+import ResultsVisualization from '@/components/ResultVisualization.vue';
 
 export default defineComponent({
     name: 'Results',
-    components: { Searchbar, KeywordSuggestions, RoundButton, OptionsMenu },
+    components: {
+        Searchbar,
+        KeywordSuggestions,
+        RoundButton,
+        OptionsMenu,
+        ResultsVisualization,
+    },
     data() {
         return {
-            info: [] as Patent[],
+            patents: [] as Patent[],
             terms: [] as string[],
             suggestedTerms: [] as string[],
             patentService: new PatentService(),
@@ -89,8 +75,10 @@ export default defineComponent({
             await this.$router.push({ path: '/' });
         }
 
-        this.info = await this.patentService.get(this.terms);
-        this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+        this.keywordService.getSuggestions(this.terms).then((res) => {
+            this.suggestedTerms = res;
+        });
+        this.patents = await this.patentService.get(this.terms);
     },
     methods: {
         async onAddKeyword(event: { value: string }): Promise<void> {
@@ -105,7 +93,7 @@ export default defineComponent({
         async refreshResults(): Promise<void> {
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
             await this.$router.push({ query: { terms: this.terms } });
-            this.info = await this.patentService.get(this.terms);
+            this.patents = await this.patentService.get(this.terms);
         },
         toggleTimeline($event: boolean): void {
             this.showTimeline = $event;
@@ -141,9 +129,30 @@ export default defineComponent({
     width: 100%;
 }
 
-.search-result {
+.search-input {
+    position: absolute;
+    top: 0;
+    width: 600px;
+}
+
+.result-wrapper {
+    width: 100vw;
+    height: 100vh;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
+    svg {
+        width: 100vw;
+        height: 100vh;
+    }
+}
+
+.search-result {
+    max-width: 90%;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    flex-wrap: wrap;
+    overflow: scroll;
     margin-top: 25vh;
     justify-content: flex-start;
     align-items: center;
