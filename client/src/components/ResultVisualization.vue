@@ -219,19 +219,15 @@ export default defineComponent({
             if (!this.container) {
                 return;
             }
-            // Appending the tooltip
-            const tooltip = select('.tooltip')
-                .style('position', 'absolute')
-                .style('top', '500px')
 
-                .style('left', '500px')
-                .style('visibility', 'hidden')
-                .text('test');
-
+            // Select the tooltip
+            const tooltip = select('.tooltip');
             selectAll('circle')
                 .on('mouseover', () => tooltip.style('visibility', 'visible'))
                 .on('mousemove', (e) => {
-                    tooltip.style('top', `${e.pageY - 100}px`).style('left', `${e.pageX - 200}px`);
+                    tooltip
+                        .style('top', `${Math.max(0, e.pageY - 100)}px`)
+                        .style('left', `${Math.max(e.pageX - 200, 0)}px`);
                 })
                 .on('mouseout', () => tooltip.style('visibility', 'hidden'));
         },
@@ -280,6 +276,7 @@ export default defineComponent({
 .d3-container {
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
     svg {
         height: 100%;
         width: 100%;
@@ -287,7 +284,11 @@ export default defineComponent({
 }
 
 .tooltip {
+    position: absolute;
+    visibility: hidden;
     z-index: 1000;
     pointer-events: none;
+    top: 0;
+    left: 0;
 }
 </style>
