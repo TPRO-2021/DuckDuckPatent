@@ -1,0 +1,19 @@
+{
+  "name": "duckduckpatent",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "prettier": "^2.2.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TPRO-2021/DuckDuckPatent.git.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://github.com/TPRO-2021/DuckDuckPatent#duckduckpatent"
+}
