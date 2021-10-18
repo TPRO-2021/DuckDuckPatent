@@ -130,8 +130,6 @@ export default defineComponent({
 }
 
 .search-input {
-    position: absolute;
-    top: 0;
     width: 600px;
 }
 
