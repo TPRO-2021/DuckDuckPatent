@@ -1,6 +1,6 @@
 import { PatentsController } from './patents.controller';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MockPatentsService } from './patents.service.mock';
+import { PatentsService } from './patents.service';
 
 describe('PatentsController', () => {
     let patentsController: PatentsController;
@@ -8,19 +8,28 @@ describe('PatentsController', () => {
     beforeEach(async () => {
         const app: TestingModule = await Test.createTestingModule({
             controllers: [PatentsController],
-            providers: [MockPatentsService],
+            providers: [
+                {
+                    provide: PatentsService,
+                    useValue: {
+                        // TODO: Add mock-service logic here
+                        query: async (keywords: string[]) => {
+                            if (keywords.length === 0) {
+                                return { data: { patents: [] } };
+                            }
+                        },
+                    },
+                },
+            ],
         }).compile();
 
         patentsController = app.get<PatentsController>(PatentsController);
     });
 
     describe('/search', () => {
-        it('should return "[]" for bad search', () => {
-            expect(patentsController.query({ terms: [] })).toEqual([]);
-        });
-
-        it('should return one or more results for bread', () => {
-            expect(patentsController.query({ terms: ['bread'] })).toBeGreaterThan(0);
+        it('Should return "[]" for empty search', async () => {
+            const patents = await patentsController.query({ keywords: [] });
+            expect(patents).toEqual([]);
         });
     });
 });
