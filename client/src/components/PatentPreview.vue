@@ -1,58 +1,54 @@
 <template>
     <div class="main-container box-shadow card">
-        <div class="menu">
-            <div class="scrollbtn">
+        <!-- Menu Buttons for interacting with the patent -->
+        <div class="settings-container">
+            <div class="settings-btn">
                 <RoundButton
                     class="round-button"
                     style="margin-bottom: 15px"
                     icon-key="more_horiz"
-                    @click="scrollMenu = check()"
+                    @click="settingsMenu = !settingsMenu"
                 />
+            </div>
+            <div class="settings-menu" v-if="settingsMenu">
                 <RoundButton
+                    v-for="(option, index) in optionButtons"
+                    :key="index"
                     class="round-button"
-                    style="margin-bottom: 5px"
-                    icon-key="push_pin"
-                    v-show="scrollMenu === true"
-                />
-                <RoundButton
-                    class="round-button"
-                    style="margin-bottom: 5px"
-                    icon-key="visibility_off"
-                    v-show="scrollMenu === true"
-                    @click="showText = checkVisibility()"
-                />
-                <RoundButton
-                    class="round-button"
-                    style="margin-bottom: 5px"
-                    icon-key="done"
-                    v-show="scrollMenu === true"
-                />
-                <RoundButton
-                    class="round-button"
-                    style="margin-bottom: 5px"
-                    icon-key="read_more"
-                    v-show="scrollMenu === true"
+                    :icon-key="option.iconKey"
                 />
             </div>
         </div>
 
-        <button type="button" class="back-button" @click="displayPreviousPatent()">
-            <span class="material-icons search-icon">arrow_back</span>
-        </button>
-        <button type="button" class="forward-button" @click="(next = true), displayNextPatent()">
-            <span class="material-icons search-icon">arrow_forward</span>
-        </button>
-        <div class="info-style" v-show="showText === true">
-            <h1 id="title" style="margin-bottom: 25px">{{ patent.patent_title }}</h1>
+        <div class="patent-info">
+            <div class="patent-title">
+                <h2>{{ patent.patent_title }}</h2>
+            </div>
 
-            <p id="abstract">{{ patent.patent_abstract.slice(0, 400) }}...</p>
+            <div class="patent-owner">Company/Author</div>
+
+            <div class="patent-abstract">
+                <p>{{ patent.patent_abstract.slice(0, 400) }}...</p>
+            </div>
+        </div>
+
+        <div class="patent-navigation">
+            <!-- Navigation buttons -->
+            <span class="material-icons search-icon" @click="displayPreviousPatent()">arrow_back</span>
+            <span
+                class="material-icons search-icon"
+                @click="
+                    next = true;
+                    displayNextPatent();
+                "
+                >arrow_forward</span
+            >
         </div>
     </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { Patent } from '@/models/Patent';
 import RoundButton from '../components/RoundButton.vue';
 
 /**
@@ -75,35 +71,40 @@ export default defineComponent({
     data() {
         return {
             isCollapsed: true,
-            scrollMenu: false,
-            showText: false,
+            settingsMenu: false,
             next: false,
             index: 0,
+            /**
+             * Holds the info about available buttons
+             */
+            optionButtons: [
+                { iconKey: 'push_pin', action: 'pin' },
+                { iconKey: 'visibility_off', action: 'hide' },
+                { iconKey: 'done', action: 'suggestMore' },
+                { iconKey: 'read_more', action: 'readMore' },
+            ],
         };
     },
     methods: {
-        check(): boolean {
-            return !this.scrollMenu;
-        },
-        //check the visibility button to show the patent info
-        checkVisibility(): boolean {
-            return !this.showText;
-        },
-        //method to check if next button is clicked then emit an event to ask the parent to send next patent
+        /**
+         * Method to check if next button is clicked then emit an event to ask the parent to send next patent
+         */
         displayNextPatent(): void {
             if (this.next) {
                 this.index++;
             }
-            const nextIndex = this.index;
-            this.$emit('onClickNext', { index: nextIndex });
+
+            this.$emit('onClickNext', { index: this.index });
         },
-        //method to check if back button is clicked then emit an event to ask the parent to send previous patent
+        /**
+         * Method to check if back button is clicked then emit an event to ask the parent to send previous patent
+         */
         displayPreviousPatent(): void {
             if (this.next) {
                 this.index--;
             }
-            const previousIndex = this.index;
-            this.$emit('onClickBack', { index: previousIndex });
+
+            this.$emit('onClickBack', { index: this.index });
         },
     },
 });
@@ -114,9 +115,10 @@ export default defineComponent({
     display: flex;
     justify-content: start;
     flex-direction: column;
-    transition: 0.5s;
-    position: relative;
+    width: 800px;
+    min-height: 400px;
 }
+
 .menu {
     display: flex;
     justify-content: start;
@@ -124,47 +126,58 @@ export default defineComponent({
     right: 30px;
     top: 30px;
 }
-.scrollbtn {
-    float: right;
-    width: 40px;
-    justify-content: space-evenly;
+
+.settings-container {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
 }
+
 .round-button {
     width: 30px;
     height: 30px;
 }
 
-.info-style {
+.patent-info {
     justify-content: start;
     transition: 0.5s;
+    margin: 8px;
+}
 
-    margin-left: 20px;
-    margin-top: 20px;
-}
-#title {
+.patent-title {
     text-align: left;
-    padding-right: 60px;
-    font-size: 1vw;
+    padding-right: 42px;
 }
-#abstract {
+.patent-abstract {
     text-align: left;
     padding-right: 60px;
     font-size: 0.75vw;
 }
-.back-button {
-    background: none;
-    width: 40px;
-    height: 40px;
+
+.patent-navigation {
     position: absolute;
-    right: 55px;
-    bottom: 30px;
-}
-.forward-button {
-    background: none;
-    width: 40px;
-    height: 40px;
-    position: absolute;
+    bottom: 20px;
     right: 20px;
-    bottom: 30px;
+
+    display: flex;
+    gap: 20px;
+
+    span:hover {
+        cursor: pointer;
+    }
+}
+
+.patent-owner {
+    padding: 6px 0;
+    text-align: left;
+    font-weight: lighter;
+}
+
+.settings-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 </style>

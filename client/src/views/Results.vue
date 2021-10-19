@@ -27,15 +27,6 @@
         <div class="bottom-controls">
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
-        <!--        <div>-->
-        <!--            <PatentPreview-->
-        <!--                class="patent-preview"-->
-        <!--                :patent="patents.at(i)"-->
-        <!--                v-on:on-click-next="onClickNext($event)"-->
-        <!--                v-on:on-click-back="onClickNext($event)"-->
-        <!--            >-->
-        <!--            </PatentPreview>-->
-        <!--        </div>-->
     </div>
 </template>
 
@@ -49,7 +40,6 @@ import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
 import ResultsVisualization from '@/components/ResultVisualization.vue';
-import PatentPreview from '@/components/PatentPreview.vue';
 
 export default defineComponent({
     name: 'Results',
@@ -59,7 +49,6 @@ export default defineComponent({
         RoundButton,
         OptionsMenu,
         ResultsVisualization,
-        // PatentPreview,
     },
     data() {
         return {
@@ -69,7 +58,6 @@ export default defineComponent({
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
-            // i: 0,
         };
     },
     async created() {
@@ -110,14 +98,6 @@ export default defineComponent({
         toggleTimeline($event: boolean): void {
             this.showTimeline = $event;
         },
-        //emitted event when we click next in PatentPreview
-        // async onClickNext(event: { index: number }): Promise<void> {
-        //     this.i = event.index;
-        // },
-        //emitted event when we click back in PatentPreview
-        // async onClickBack(event: { index: number }): Promise<void> {
-        //     this.i = event.index;
-        // },
     },
 });
 </script>
@@ -188,13 +168,4 @@ export default defineComponent({
     bottom: 0;
     right: 0;
 }
-//.patent-preview {
-//    //padding: 10px;
-//    position: absolute;
-//    display: flex;
-//    right: 30px;
-//    height: 35%;
-//    width: 35%;
-//    bottom: 30px;
-//}
 </style>
