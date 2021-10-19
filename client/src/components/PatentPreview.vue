@@ -43,9 +43,9 @@
             <span class="material-icons search-icon">arrow_forward</span>
         </button>
         <div class="info-style" v-show="showText === true">
-            <h1 id="title" style="margin-bottom: 25px">{{ patent.at(this.i).patent_title }}</h1>
+            <h1 id="title" style="margin-bottom: 25px">{{ patent.patent_title }}</h1>
 
-            <p id="abstract">{{ patent.at(this.i).patent_abstract.slice(0, 400) }}...</p>
+            <p id="abstract">{{ patent.patent_abstract.slice(0, 400) }}...</p>
         </div>
     </div>
 </template>
@@ -62,7 +62,15 @@ export default defineComponent({
     name: 'PatentPreview',
     components: { RoundButton },
     props: {
-        patent: Array,
+        patent: { type: Object },
+    },
+    emits: {
+        onClickNext: (event: { index: number }) => {
+            return event;
+        },
+        onClickBack: (event: { index: number }) => {
+            return event;
+        },
     },
     data() {
         return {
@@ -70,25 +78,32 @@ export default defineComponent({
             scrollMenu: false,
             showText: false,
             next: false,
-            i: 0,
+            index: 0,
         };
     },
     methods: {
         check(): boolean {
             return !this.scrollMenu;
         },
+        //check the visibility button to show the patent info
         checkVisibility(): boolean {
             return !this.showText;
         },
+        //method to check if next button is clicked then emit an event to ask the parent to send next patent
         displayNextPatent(): void {
             if (this.next) {
-                this.i++;
+                this.index++;
             }
+            const nextIndex = this.index;
+            this.$emit('onClickNext', { index: nextIndex });
         },
+        //method to check if back button is clicked then emit an event to ask the parent to send previous patent
         displayPreviousPatent(): void {
             if (this.next) {
-                this.i--;
+                this.index--;
             }
+            const previousIndex = this.index;
+            this.$emit('onClickBack', { index: previousIndex });
         },
     },
 });
