@@ -96,10 +96,9 @@ export default defineComponent({
          * @param index
          */
         removeKeyword(index: number): string {
-            const returnItem = (this.$props.searchTerms as string[]).splice(index, 1)[0];
-
-            this.$emit('onRemoveKeyword', { index, value: returnItem });
-            return returnItem;
+            const value = (this.$props.searchTerms || [])[index] as string;
+            this.$emit('onRemoveKeyword', { index, value });
+            return value;
         },
 
         /**

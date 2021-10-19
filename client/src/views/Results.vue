@@ -8,7 +8,7 @@
                     :search-terms="terms"
                     v-on:on-add-keyword="onAddKeyword"
                     v-on:on-search="refreshResults"
-                    v-on:on-remove-keyword="refreshResults"
+                    v-on:on-remove-keyword="onRemoveKeyword"
                 ></Searchbar>
                 <KeywordSuggestions
                     :provided-keywords="suggestedTerms"
@@ -82,17 +82,19 @@ export default defineComponent({
     },
     methods: {
         async onAddKeyword(event: { value: string }): Promise<void> {
-            this.terms.push(event.value);
+            this.terms = this.terms.concat(event.value);
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
             await this.refreshResults();
         },
-        async onRemoveKeyword() {
-            await this.refreshResults();
+        async onRemoveKeyword(event: { value: string; index: number }) {
+            this.terms = this.terms.filter((t, index) => event.index !== index);
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+            await this.refreshResults();
         },
         async refreshResults(): Promise<void> {
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
-            await this.$router.push({ query: { terms: this.terms } });
+            const terms = this.terms;
+            await this.$router.push({ query: { terms } });
             this.patents = await this.patentService.get(this.terms);
         },
         toggleTimeline($event: boolean): void {
