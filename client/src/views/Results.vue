@@ -79,6 +79,7 @@ export default defineComponent({
             await this.$router.push({ path: '/' });
         }
 
+        // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
         this.keywordService.getSuggestions(this.terms).then((res) => {
             this.suggestedTerms = res;
         });
@@ -103,8 +104,8 @@ export default defineComponent({
             this.requestWaiting = true;
             if (this.inputFieldWaiting) debounceTime += debounceTime / 2;
             setTimeout(async () => {
-                //  console.log('delay. terms: ', this.terms); //TODO: remove once review approved
-                //  console.log('delay. time: ', debounceTime); //TODO: remove once review approved
+                // console.log('delay. terms: ', this.terms); //TODO: remove once review approved
+                // console.log('delay. time: ', debounceTime); //TODO: remove once review approved
                 try {
                     await this.refreshResults();
                 } catch (e) {
@@ -112,23 +113,54 @@ export default defineComponent({
                 }
                 this.requestWaiting = false;
                 this.inputFieldWaiting = false;
-                //   console.log('response returned. '); //TODO: remove once review approved
+                // console.log('response returned. '); //TODO: remove once review approved
             }, debounceTime);
         },
+        /*
+         * Adds a keyword to the current search terms and triggers a result refresh
+         *
+         * @param event The event containing the passed up keyword
+         */
         async onAddKeyword(event: { value: string }): Promise<void> {
-            this.terms.push(event.value);
-            this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
-            await this.debounce(1000);
+            // It can be important not to mutate state because it can cause unintended side-effects
+            // Adding to an array using the spread operator [...] or concat() makes the code easier to reason
+            // about because it can't change values outside of this code's scope.
+            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
+            this.terms = [...this.terms, event.value];
+            await this.debounce(2000);
         },
-        async onRemoveKeyword() {
-            this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
-            await this.debounce(1000);
+
+        /**
+         * Removes a keyword from the current search terms and triggers a result refresh
+         *
+         * @param event
+         */
+        async onRemoveKeyword(event: { value: string; index: number }) {
+            // It can be important not to mutate state because it can cause unintended side-effects
+            // Removing from an array using filter() makes the code easier to reason
+            // because it can't change values outside of this code's scope.
+            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
+            this.terms = this.terms.filter((t, index) => event.index !== index);
+            await this.debounce(2000);
         },
+
+        /**
+         * Refreshes suggested keywords and patent results
+         */
         async refreshResults(): Promise<void> {
-            this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+            // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
+            this.keywordService.getSuggestions(this.terms).then((suggestions) => {
+                this.suggestedTerms = suggestions;
+            });
+
             await this.$router.push({ query: { terms: this.terms } });
             this.patents = await this.patentService.get(this.terms);
         },
+
+        /**
+         * Toggles the visibility of the timeline
+         * @param $event
+         */
         toggleTimeline($event: boolean): void {
             this.showTimeline = $event;
         },
