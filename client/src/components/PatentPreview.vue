@@ -3,12 +3,7 @@
         <!-- Menu Buttons for interacting with the patent -->
         <div class="settings-container">
             <div class="settings-btn">
-                <RoundButton
-                    class="round-button"
-                    style="margin-bottom: 15px"
-                    icon-key="more_horiz"
-                    @click="settingsMenu = !settingsMenu"
-                />
+                <RoundButton class="round-button" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
             <div class="settings-menu" v-if="settingsMenu">
                 <RoundButton
@@ -21,14 +16,13 @@
         </div>
 
         <div class="patent-info">
-            <div class="patent-title">
-                <h2>{{ patent.patent_title }}</h2>
-            </div>
+            <div class="patent-title">{{ patent?.patent_title }}</div>
 
+            <!-- TODO: Add applicant/owner of the patent -->
             <div class="patent-owner">Company/Author</div>
 
             <div class="patent-abstract">
-                <p>{{ patent.patent_abstract.slice(0, 400) }}...</p>
+                <p>{{ patent?.patent_abstract?.slice(0, 400) }}...</p>
             </div>
         </div>
 
@@ -115,8 +109,7 @@ export default defineComponent({
     display: flex;
     justify-content: start;
     flex-direction: column;
-    width: 800px;
-    min-height: 400px;
+    width: 600px;
 }
 
 .menu {
@@ -129,15 +122,15 @@ export default defineComponent({
 
 .settings-container {
     position: absolute;
-    right: 20px;
-    top: 20px;
+    right: 28px;
+    top: 28px;
     display: flex;
     flex-direction: column;
 }
 
 .round-button {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
 }
 
 .patent-info {
@@ -149,20 +142,26 @@ export default defineComponent({
 .patent-title {
     text-align: left;
     padding-right: 42px;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 20px;
 }
 .patent-abstract {
     text-align: left;
     padding-right: 60px;
-    font-size: 0.75vw;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 16px;
+    margin-bottom: 66px;
 }
 
 .patent-navigation {
     position: absolute;
-    bottom: 20px;
-    right: 20px;
+    bottom: 32px;
+    right: 32px;
 
     display: flex;
-    gap: 20px;
+    gap: 12px;
 
     span:hover {
         cursor: pointer;
@@ -170,14 +169,20 @@ export default defineComponent({
 }
 
 .patent-owner {
-    padding: 6px 0;
+    padding-bottom: 12px;
     text-align: left;
-    font-weight: lighter;
+    font-style: normal;
+    font-weight: 200;
+    font-size: 15px;
 }
 
 .settings-menu {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.settings-btn {
+    margin-bottom: 14px;
 }
 </style>
