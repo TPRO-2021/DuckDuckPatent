@@ -82,11 +82,19 @@ export default defineComponent({
     },
     methods: {
         async onAddKeyword(event: { value: string }): Promise<void> {
-            this.terms = this.terms.concat(event.value);
+            // It can be important not to mutate state because it can cause unintended side-effects
+            // Adding to an array using the spread operator [...] or concat() makes the code easier to reason
+            // about because it can't change values outside of this code's scope.
+            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
+            this.terms = [...this.terms, event.value];
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
             await this.refreshResults();
         },
         async onRemoveKeyword(event: { value: string; index: number }) {
+            // It can be important not to mutate state because it can cause unintended side-effects
+            // Removing from an array using filter() makes the code easier to reason 
+            // because it can't change values outside of this code's scope.
+            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
             this.terms = this.terms.filter((t, index) => event.index !== index);
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
             await this.refreshResults();
