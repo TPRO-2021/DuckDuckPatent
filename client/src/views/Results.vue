@@ -8,7 +8,7 @@
                     :search-terms="terms"
                     v-on:on-add-keyword="onAddKeyword"
                     v-on:on-search="refreshResults"
-                    v-on:on-remove-keyword="refreshResults"
+                    v-on:on-remove-keyword="onRemoveKeyword"
                 ></Searchbar>
                 <KeywordSuggestions
                     :provided-keywords="suggestedTerms"
@@ -75,26 +75,58 @@ export default defineComponent({
             await this.$router.push({ path: '/' });
         }
 
+        // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
         this.keywordService.getSuggestions(this.terms).then((res) => {
             this.suggestedTerms = res;
         });
         this.patents = await this.patentService.get(this.terms);
     },
     methods: {
+        /**
+         * Adds a keyword to the current search terms and triggers a result refresh
+         *
+         * @param event The event containing the passed up keyword
+         */
         async onAddKeyword(event: { value: string }): Promise<void> {
-            this.terms.push(event.value);
-            this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+            // It can be important not to mutate state because it can cause unintended side-effects
+            // Adding to an array using the spread operator [...] or concat() makes the code easier to reason
+            // about because it can't change values outside of this code's scope.
+            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
+            this.terms = [...this.terms, event.value];
             await this.refreshResults();
         },
-        async onRemoveKeyword() {
+
+        /**
+         * Removes a keyword from the current search terms and triggers a result refresh
+         *
+         * @param event
+         */
+        async onRemoveKeyword(event: { value: string; index: number }) {
+            // It can be important not to mutate state because it can cause unintended side-effects
+            // Removing from an array using filter() makes the code easier to reason
+            // because it can't change values outside of this code's scope.
+            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
+            this.terms = this.terms.filter((t, index) => event.index !== index);
             await this.refreshResults();
-            this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
         },
+
+        /**
+         * Refreshes suggested keywords and patent results
+         */
         async refreshResults(): Promise<void> {
-            this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+            // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
+            this.keywordService.getSuggestions(this.terms).then((suggestions) => {
+                this.suggestedTerms = suggestions;
+            });
+
             await this.$router.push({ query: { terms: this.terms } });
             this.patents = await this.patentService.get(this.terms);
         },
+
+        /**
+         * Toggles the visibility of the timeline
+         * @param $event
+         */
         toggleTimeline($event: boolean): void {
             this.showTimeline = $event;
         },
