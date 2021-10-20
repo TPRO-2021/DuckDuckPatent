@@ -5,7 +5,7 @@
     <div class="container searchbar-container">
         <Searchbar
             v-on:on-add-keyword="onAddKeyword($event)"
-            v-on:on-remove-keyword="onRemoveKeyword"
+            v-on:on-remove-keyword="onRemoveKeyword($event)"
             :search-terms="searchTerms"
             v-on:on-search="onSearch"
         />
@@ -37,11 +37,12 @@ export default defineComponent({
     },
     methods: {
         async onAddKeyword(event: { value: string }) {
-            this.searchTerms.push(event.value);
+            this.searchTerms = this.searchTerms.concat(event.value);
             this.suggestedTerms = await this.keywordService.getSuggestions(this.searchTerms);
         },
 
-        async onRemoveKeyword() {
+        async onRemoveKeyword(event: { index: number; value: string }) {
+            this.searchTerms = this.searchTerms.filter((t, index) => index !== event.index);
             this.suggestedTerms = await this.keywordService.getSuggestions(this.searchTerms);
         },
 

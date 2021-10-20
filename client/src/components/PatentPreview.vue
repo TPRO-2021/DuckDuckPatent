@@ -1,41 +1,188 @@
 <template>
-    <div class="patent-small-preview" v-if="isCollapsed" @mouseover="isCollapsed = false">
-        <div class="patent-title">
-            {{ patent.patent_title }}
+    <div class="main-container box-shadow card">
+        <!-- Menu Buttons for interacting with the patent -->
+        <div class="settings-container">
+            <div class="settings-btn">
+                <RoundButton class="round-button" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
+            </div>
+            <div class="settings-menu" v-if="settingsMenu">
+                <RoundButton
+                    v-for="(option, index) in optionButtons"
+                    :key="index"
+                    class="round-button"
+                    :icon-key="option.iconKey"
+                />
+            </div>
         </div>
-    </div>
-    <div class="patent-preview" v-if="!isCollapsed" @mouseleave="isCollapsed = true" @mouseout="isCollapsed = true">
-        <div class="patent-title">
-            <h2>{{ patent.patent_title }}</h2>
+
+        <div class="patent-info">
+            <div class="patent-title">{{ patent?.patent_title }}</div>
+
+            <!-- TODO: Add applicant/owner of the patent -->
+            <div class="patent-owner">Company/Author</div>
+
+            <div class="patent-abstract">
+                <p>{{ patent?.patent_abstract?.slice(0, 400) }}...</p>
+            </div>
         </div>
-        <div class="patent-abstract">
-            {{ patent.patent_abstract }}
+
+        <div class="patent-navigation">
+            <!-- Navigation buttons -->
+            <span class="material-icons search-icon" @click="displayPreviousPatent()">arrow_back</span>
+            <span
+                class="material-icons search-icon"
+                @click="
+                    next = true;
+                    displayNextPatent();
+                "
+                >arrow_forward</span
+            >
         </div>
     </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { Patent } from '@/models/Patent';
+import RoundButton from '../components/RoundButton.vue';
 
 /**
  * This component previews the content of a patent
  */
 export default defineComponent({
     name: 'PatentPreview',
+    components: { RoundButton },
     props: {
-        patent: Object as () => Patent,
+        patent: { type: Object },
+    },
+    emits: {
+        onClickNext: (event: { index: number }) => {
+            return event;
+        },
+        onClickBack: (event: { index: number }) => {
+            return event;
+        },
     },
     data() {
         return {
             isCollapsed: true,
+            settingsMenu: false,
+            next: false,
+            index: 0,
+            /**
+             * Holds the info about available buttons
+             */
+            optionButtons: [
+                { iconKey: 'push_pin', action: 'pin' },
+                { iconKey: 'visibility_off', action: 'hide' },
+                { iconKey: 'done', action: 'suggestMore' },
+                { iconKey: 'read_more', action: 'readMore' },
+            ],
         };
+    },
+    methods: {
+        /**
+         * Method to check if next button is clicked then emit an event to ask the parent to send next patent
+         */
+        displayNextPatent(): void {
+            if (this.next) {
+                this.index++;
+            }
+
+            this.$emit('onClickNext', { index: this.index });
+        },
+        /**
+         * Method to check if back button is clicked then emit an event to ask the parent to send previous patent
+         */
+        displayPreviousPatent(): void {
+            if (this.next) {
+                this.index--;
+            }
+
+            this.$emit('onClickBack', { index: this.index });
+        },
     },
 });
 </script>
 
-<style lang="scss">
-.patent-preview {
-    width: 400px;
+<style lang="scss" scoped>
+.main-container {
+    display: flex;
+    justify-content: start;
+    flex-direction: column;
+    width: 600px;
+}
+
+.menu {
+    display: flex;
+    justify-content: start;
+    position: absolute;
+    right: 30px;
+    top: 30px;
+}
+
+.settings-container {
+    position: absolute;
+    right: 28px;
+    top: 28px;
+    display: flex;
+    flex-direction: column;
+}
+
+.round-button {
+    width: 28px;
+    height: 28px;
+}
+
+.patent-info {
+    justify-content: start;
+    transition: 0.5s;
+    margin: 8px;
+}
+
+.patent-title {
+    text-align: left;
+    padding-right: 42px;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 20px;
+}
+.patent-abstract {
+    text-align: left;
+    padding-right: 60px;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 16px;
+    margin-bottom: 66px;
+}
+
+.patent-navigation {
+    position: absolute;
+    bottom: 32px;
+    right: 32px;
+
+    display: flex;
+    gap: 12px;
+
+    span:hover {
+        cursor: pointer;
+    }
+}
+
+.patent-owner {
+    padding-bottom: 12px;
+    text-align: left;
+    font-style: normal;
+    font-weight: 200;
+    font-size: 15px;
+}
+
+.settings-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.settings-btn {
+    margin-bottom: 14px;
 }
 </style>

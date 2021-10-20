@@ -1,7 +1,7 @@
 <template>
     <button
         type="button"
-        class="roundButton"
+        class="roundButton box-shadow"
         @click="onClick"
         :class="{ 'button-active': isToggle && isClicked, 'button-light': !isToggle && type === 'light' }"
     >
@@ -75,7 +75,6 @@ export default defineComponent({
     align-items: center;
     justify-content: center;
     width: 58px;
-    box-shadow: 3px 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .button-light,
