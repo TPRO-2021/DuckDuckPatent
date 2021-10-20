@@ -37,13 +37,21 @@ export default defineComponent({
         };
     },
     methods: {
+        /**
+         * Update the array from store on inserting keyword and the suggestion terms
+         * $store is the global variable that have access to the all containers
+         * @param event - represent the inserted keyword either from suggestion list or typed word
+         */
         async onAddKeyword(event: { value: string }) {
             this.$store.commit('ADD_SEARCH_TERM', event.value);
 
             const newSuggestions = await this.keywordService.getSuggestions(this.$store.state.searchTerms);
             this.$store.commit('ADD_SUGGESTIONS', newSuggestions);
         },
-
+        /**
+         * Update the search and the suggestion terms arrays  from store
+         * @param event the remove keyword from the search input
+         */
         async onRemoveKeyword(event: { index: number; value: string }) {
             this.$store.commit('REMOVE_SEARCH_TERM', event);
 

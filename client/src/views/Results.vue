@@ -77,7 +77,9 @@ export default defineComponent({
         if (this.terms.length === 0) {
             await this.$router.push({ path: '/' });
         }
-
+        /**
+         * Update the keyword suggestion from store by retrieving from database API after a keyword was inserted
+         */
         // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
         this.keywordService.getSuggestions(this.terms).then((res) => {
             this.$store.commit('ADD_SUGGESTIONS', res);
