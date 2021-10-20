@@ -92,7 +92,7 @@ export default defineComponent({
         },
         async onRemoveKeyword(event: { value: string; index: number }) {
             // It can be important not to mutate state because it can cause unintended side-effects
-            // Removing from an array using filter() makes the code easier to reason 
+            // Removing from an array using filter() makes the code easier to reason
             // because it can't change values outside of this code's scope.
             // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
             this.terms = this.terms.filter((t, index) => event.index !== index);
