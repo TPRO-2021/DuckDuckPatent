@@ -6,9 +6,11 @@
             <div class="search-input card box-shadow">
                 <Searchbar
                     :search-terms="terms"
+                    @input-focused="inputFieldWaiting = true"
+                    @input-not-focused="inputFieldWaiting = false"
                     v-on:on-add-keyword="onAddKeyword"
                     v-on:on-search="refreshResults"
-                    v-on:on-remove-keyword="refreshResults"
+                    v-on:on-remove-keyword="onRemoveKeyword"
                 ></Searchbar>
                 <KeywordSuggestions
                     :provided-keywords="suggestedTerms"
@@ -58,6 +60,8 @@ export default defineComponent({
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
+            requestWaiting: false,
+            inputFieldWaiting: false,
         };
     },
     async created() {
@@ -81,14 +85,44 @@ export default defineComponent({
         this.patents = await this.patentService.get(this.terms);
     },
     methods: {
+        /**
+         * Function which delays refreshing the screen for provided time, i.e. debounces client requests.
+         * Since the Searchbar.vue is only responsible for converting terms to chips and sending them over,
+         * delay of the requests is fully handled here.
+         *
+         * If input focused, delay increases by half the time. Oftentimes users don't click the icon to initiate search,
+         * hence it might be better to simply prolong existing delay to allow for further search inputs.
+         *
+         */
+        async debounce(debounceTime: number): Promise<void> {
+            //do not add new request if the last one isn't finished yet
+            if (this.requestWaiting) {
+                return;
+            }
+            //toggle requestWaiting before&after request completion to avoid repeated requests
+            this.requestWaiting = true;
+            if (this.inputFieldWaiting) debounceTime += debounceTime / 2;
+            setTimeout(async () => {
+                //  console.log('delay. terms: ', this.terms); //TODO: remove once review approved
+                //  console.log('delay. time: ', debounceTime); //TODO: remove once review approved
+                try {
+                    await this.refreshResults();
+                } catch (e) {
+                    console.log('error: ', e); // has to be present until we have a better way of error-handling. otherwise, it doesn't reach the end.
+                }
+                this.requestWaiting = false;
+                this.inputFieldWaiting = false;
+                //   console.log('response returned. '); //TODO: remove once review approved
+            }, debounceTime);
+        },
         async onAddKeyword(event: { value: string }): Promise<void> {
             this.terms.push(event.value);
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
-            await this.refreshResults();
+            await this.debounce(1000);
         },
         async onRemoveKeyword() {
-            await this.refreshResults();
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);
+            await this.debounce(1000);
         },
         async refreshResults(): Promise<void> {
             this.suggestedTerms = await this.keywordService.getSuggestions(this.terms);

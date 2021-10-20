@@ -16,6 +16,8 @@
                 ref="searchBar"
                 placeholder="Enter keywords"
                 v-model="currentKeyword"
+                @focusin="$emit('inputFocused')"
+                @focusout="$emit('inputNotFocused')"
                 @keyup.enter="initializeSearch"
                 @keydown.tab="addKeyword"
                 @keydown.delete="handleDeleteKey"
