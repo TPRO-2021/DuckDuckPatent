@@ -79,6 +79,15 @@ export default defineComponent({
     async created() {
         this.$store.commit('showLoadingScreen');
 
+        // If only one query parameter is sent it's treated as a string, not an array
+        let queryParams = this.$route.query.terms as string | string[];
+
+        if (typeof queryParams === 'string') {
+            queryParams = [queryParams];
+        }
+
+        this.terms = queryParams || [];
+
         // if no search-term is present change back to the search page!
         if (this.terms.length === 0) {
             await this.$router.push({ path: '/' });
@@ -157,10 +166,16 @@ export default defineComponent({
          * Refreshes patent results
          */
         async refreshResults(): Promise<void> {
+            // start showing the smaller loading indicator
+            this.$store.commit('SHOW_LOADING_BAR');
+
             await this.$router.push({ query: { terms: this.terms } });
 
             const patents = await this.patentService.get(this.terms);
             this.$store.commit('ADD_PATENTS', patents);
+
+            // finally hide loading indicator
+            this.$store.commit('HIDE_LOADING_BAR');
         },
 
         /**
