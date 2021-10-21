@@ -16,8 +16,8 @@
                 ref="searchBar"
                 placeholder="Enter keywords"
                 v-model="currentKeyword"
-                @focusin="$emit('inputFocused')"
-                @focusout="$emit('inputNotFocused')"
+                @focusin="$emit('inputFocused', true)"
+                @focusout="$emit('inputNotFocused', true)"
                 @keyup.enter="initializeSearch"
                 @keydown.tab="addKeyword"
                 @keydown.delete="handleDeleteKey"
@@ -51,10 +51,10 @@ export default defineComponent({
         onSearch: (event: { searchTerms: string[] }) => {
             return event;
         },
-        inputFocused: (event: unknown) => {
+        inputFocused: (event: boolean) => {
             return event;
         },
-        inputNotFocused: (event: unknown) => {
+        inputNotFocused: (event: boolean) => {
             return event;
         },
     },
