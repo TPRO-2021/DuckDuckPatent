@@ -29,3 +29,21 @@
 #app, input {
   font-family: 'Saira', sans-serif;
 }
+
+
+/**
+ * Progress bar
+ */
+.p-progressbar {
+  height: 2px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.p-scrollpanel-content {
+  padding: 0 !important;
+}
+
+.p-progressbar-value {
+  background: black !important;
+}

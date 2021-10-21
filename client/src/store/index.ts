@@ -7,9 +7,16 @@ import { Patent } from '@/models/Patent';
  */
 export class AppState {
     /**
+     * Holds the loadingScreen state
      * True if the loading screen should be visible
      */
     public showLoadingScreen = false;
+
+    /**
+     * Holds the loadingBar state
+     * True if the loadingBar should be visible
+     */
+    public showLoadingBar = false;
 
     /**
      * Holds the current search terms of the user
@@ -90,6 +97,24 @@ export default createStore({
          */
         REMOVE_SEARCH_TERM(state, event: { index: number; value: string }) {
             state.searchTerms = state.searchTerms.filter((_t, index) => index !== event.index);
+        },
+
+        /**
+         * Shows loading bar
+         * @param state
+         * @constructor
+         */
+        SHOW_LOADING_BAR(state) {
+            state.showLoadingBar = true;
+        },
+
+        /**
+         * Hides loading bar
+         * @param state
+         * @constructor
+         */
+        HIDE_LOADING_BAR(state) {
+            state.showLoadingBar = false;
         },
     },
 

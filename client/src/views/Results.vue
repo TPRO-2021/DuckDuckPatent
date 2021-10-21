@@ -77,6 +77,17 @@ export default defineComponent({
         },
     },
     async created() {
+        this.$store.commit('showLoadingScreen');
+
+        // If only one query parameter is sent it's treated as a string, not an array
+        let queryParams = this.$route.query.terms as string | string[];
+
+        if (typeof queryParams === 'string') {
+            queryParams = [queryParams];
+        }
+
+        this.terms = queryParams || [];
+
         // if no search-term is present change back to the search page!
         if (this.terms.length === 0) {
             await this.$router.push({ path: '/' });
@@ -89,6 +100,9 @@ export default defineComponent({
 
         const patents = await this.patentService.get(this.terms);
         this.$store.commit('ADD_PATENTS', patents);
+
+        // after loading the patents the loading screen should disappear
+        this.$store.commit('hideLoadingScreen');
     },
     methods: {
         /**
@@ -112,13 +126,8 @@ export default defineComponent({
             }
 
             this.debounceHandler = setTimeout(async () => {
-                // console.log('delay. terms: ', this.terms); //TODO: remove once review approved
-                // console.log('delay. time: ', debounceTime); //TODO: remove once review approved
-
                 await this.refreshResults();
-
                 this.inputFieldWaiting = false;
-                // console.log('response returned. '); //TODO: remove once review approved
             }, debounceTime);
         },
         /**
@@ -157,10 +166,16 @@ export default defineComponent({
          * Refreshes patent results
          */
         async refreshResults(): Promise<void> {
+            // start showing the smaller loading indicator
+            this.$store.commit('SHOW_LOADING_BAR');
+
             await this.$router.push({ query: { terms: this.terms } });
 
             const patents = await this.patentService.get(this.terms);
             this.$store.commit('ADD_PATENTS', patents);
+
+            // finally hide loading indicator
+            this.$store.commit('HIDE_LOADING_BAR');
         },
 
         /**
