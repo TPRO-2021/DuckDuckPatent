@@ -6,6 +6,8 @@
             <div class="search-input card box-shadow">
                 <Searchbar
                     :search-terms="terms"
+                    @input-focused="inputFieldWaiting = true"
+                    @input-not-focused="inputFieldWaiting = false"
                     v-on:on-add-keyword="onAddKeyword"
                     v-on:on-search="refreshResults"
                     v-on:on-remove-keyword="onRemoveKeyword"
@@ -52,9 +54,11 @@ export default defineComponent({
     },
     data() {
         return {
+            debounceHandler: null as number | null,
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
+            inputFieldWaiting: false,
         };
     },
     /**
@@ -77,9 +81,7 @@ export default defineComponent({
         if (this.terms.length === 0) {
             await this.$router.push({ path: '/' });
         }
-        /**
-         * Update the keyword suggestion from store by retrieving from database API after a keyword was inserted
-         */
+
         // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
         this.keywordService.getSuggestions(this.terms).then((res) => {
             this.$store.commit('ADD_SUGGESTIONS', res);
@@ -90,34 +92,71 @@ export default defineComponent({
     },
     methods: {
         /**
-         * Adds a keyword to the current search terms and triggers a result refresh
+         * Function which delays refreshing the screen for provided time, i.e. debounces client requests.
+         * Since the Searchbar.vue is only responsible for converting terms to chips and sending them over,
+         * delay of the requests is fully handled here.
+         *
+         * If input focused, delay increases by half the time. Oftentimes users don't click the icon to initiate search,
+         * hence it might be better to simply prolong existing delay to allow for further search inputs.
+         *
+         */
+        debounce(debounceTime: number): void {
+            //do not add new request if the last one isn't finished yet
+            if (this.debounceHandler) {
+                clearTimeout(this.debounceHandler);
+            }
+
+            //toggle requestWaiting before&after request completion to avoid repeated requests
+            if (this.inputFieldWaiting) {
+                debounceTime += debounceTime / 2;
+            }
+
+            this.debounceHandler = setTimeout(async () => {
+                // console.log('delay. terms: ', this.terms); //TODO: remove once review approved
+                // console.log('delay. time: ', debounceTime); //TODO: remove once review approved
+
+                await this.refreshResults();
+
+                this.inputFieldWaiting = false;
+                // console.log('response returned. '); //TODO: remove once review approved
+            }, debounceTime);
+        },
+        /**
+         * Adds a keyword to the current search terms and triggers a result refresh + debouncing the request
          *
          * @param event The event containing the passed up keyword
          */
         async onAddKeyword(event: { value: string }): Promise<void> {
             this.$store.commit('ADD_SEARCH_TERM', event.value);
-            await this.refreshResults();
+            this.refreshKeywords();
+            this.debounce(2000);
         },
 
         /**
-         * Removes a keyword from the current search terms and triggers a result refresh
+         * Removes a keyword from the current search terms and triggers a result refresh + debouncing the request
          *
          * @param event
          */
         async onRemoveKeyword(event: { value: string; index: number }) {
             this.$store.commit('REMOVE_SEARCH_TERM', event);
-            await this.refreshResults();
+            this.refreshKeywords();
+            this.debounce(2000);
         },
 
         /**
-         * Refreshes suggested keywords and patent results
+         * Refreshes suggested keywords
          */
-        async refreshResults(): Promise<void> {
+        refreshKeywords(): void {
             // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
             this.keywordService.getSuggestions(this.terms).then((suggestions) => {
                 this.$store.commit('ADD_SUGGESTIONS', suggestions);
             });
+        },
 
+        /**
+         * Refreshes patent results
+         */
+        async refreshResults(): Promise<void> {
             await this.$router.push({ query: { terms: this.terms } });
 
             const patents = await this.patentService.get(this.terms);
