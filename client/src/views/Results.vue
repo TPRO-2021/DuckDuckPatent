@@ -52,34 +52,41 @@ export default defineComponent({
     },
     data() {
         return {
-            patents: [] as Patent[],
-            terms: [] as string[],
-            suggestedTerms: [] as string[],
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
         };
     },
+    /**
+     * Computed property that helps avoiding the continous reference the global store:searchTerms, suggestedTerms
+     * and patents from store/index.ts
+     */
+    computed: {
+        terms(): string[] {
+            return this.$store.state.searchTerms;
+        },
+        suggestedTerms(): string[] {
+            return this.$store.state.suggestedTerms;
+        },
+        patents(): Patent[] {
+            return this.$store.state.patents;
+        },
+    },
     async created() {
-        // If only one query parameter is sent it's treated as a string, not an array
-        let queryParams = this.$route.query.terms as string | string[];
-
-        if (typeof queryParams === 'string') {
-            queryParams = [queryParams];
-        }
-
-        this.terms = queryParams || [];
-
         // if no search-term is present change back to the search page!
         if (this.terms.length === 0) {
             await this.$router.push({ path: '/' });
         }
-
+        /**
+         * Update the keyword suggestion from store by retrieving from database API after a keyword was inserted
+         */
         // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
         this.keywordService.getSuggestions(this.terms).then((res) => {
-            this.suggestedTerms = res;
+            this.$store.commit('ADD_SUGGESTIONS', res);
         });
-        this.patents = await this.patentService.get(this.terms);
+
+        const patents = await this.patentService.get(this.terms);
+        this.$store.commit('ADD_PATENTS', patents);
     },
     methods: {
         /**
@@ -88,11 +95,7 @@ export default defineComponent({
          * @param event The event containing the passed up keyword
          */
         async onAddKeyword(event: { value: string }): Promise<void> {
-            // It can be important not to mutate state because it can cause unintended side-effects
-            // Adding to an array using the spread operator [...] or concat() makes the code easier to reason
-            // about because it can't change values outside of this code's scope.
-            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
-            this.terms = [...this.terms, event.value];
+            this.$store.commit('ADD_SEARCH_TERM', event.value);
             await this.refreshResults();
         },
 
@@ -102,11 +105,7 @@ export default defineComponent({
          * @param event
          */
         async onRemoveKeyword(event: { value: string; index: number }) {
-            // It can be important not to mutate state because it can cause unintended side-effects
-            // Removing from an array using filter() makes the code easier to reason
-            // because it can't change values outside of this code's scope.
-            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
-            this.terms = this.terms.filter((t, index) => event.index !== index);
+            this.$store.commit('REMOVE_SEARCH_TERM', event);
             await this.refreshResults();
         },
 
@@ -116,11 +115,13 @@ export default defineComponent({
         async refreshResults(): Promise<void> {
             // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
             this.keywordService.getSuggestions(this.terms).then((suggestions) => {
-                this.suggestedTerms = suggestions;
+                this.$store.commit('ADD_SUGGESTIONS', suggestions);
             });
 
             await this.$router.push({ query: { terms: this.terms } });
-            this.patents = await this.patentService.get(this.terms);
+
+            const patents = await this.patentService.get(this.terms);
+            this.$store.commit('ADD_PATENTS', patents);
         },
 
         /**
