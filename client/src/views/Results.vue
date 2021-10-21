@@ -4,16 +4,13 @@
         <div class="top-left-controls">
             <!-- This div contains the searchbar and keyword suggestions -->
             <div class="search-input card box-shadow">
-                <Searchbar
-                    :search-terms="terms"
-                    v-on:on-add-keyword="onAddKeyword"
-                    v-on:on-search="refreshResults"
-                    v-on:on-remove-keyword="onRemoveKeyword"
-                ></Searchbar>
-                <KeywordSuggestions
-                    :provided-keywords="suggestedTerms"
-                    v-on:on-add-keyword="onAddKeyword"
-                ></KeywordSuggestions>
+                <Searchbar :search-terms="terms"
+                           v-on:on-add-keyword="onAddKeyword"
+                           v-on:on-search="refreshResults"
+                           v-on:on-remove-keyword="onRemoveKeyword">
+                </Searchbar>
+                <KeywordSuggestions :provided-keywords="suggestedTerms"
+                                    v-on:on-add-keyword="onAddKeyword"></KeywordSuggestions>
             </div>
             <!-- This div contains the options menu for user to add more nodes/filters -->
             <div class="options-menu">
@@ -21,12 +18,18 @@
             </div>
         </div>
         <div class="result-wrapper">
-            <ResultsVisualization :patents="patents" />
+            <ResultsVisualization :patents="patents"
+                                  v-on:on-patent-selected="onPatentSelected" />
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
+        <div class="patent-preview">
+            <PatentPreview :patent="patents[selectedPatentIndex]" />
+        </div>
+
+
     </div>
 </template>
 
@@ -35,6 +38,7 @@ import { defineComponent } from 'vue';
 import PatentService from '@/services/patent.service';
 import { Patent } from '@/models/Patent';
 import Searchbar from '@/components/Searchbar.vue';
+import PatentPreview from '@/components/PatentPreview.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
@@ -45,10 +49,12 @@ export default defineComponent({
     name: 'Results',
     components: {
         Searchbar,
+        PatentPreview,
         KeywordSuggestions,
         RoundButton,
         OptionsMenu,
         ResultsVisualization,
+        
     },
     data() {
         return {
@@ -58,6 +64,7 @@ export default defineComponent({
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
+            selectedPatentIndex: 0,
         };
     },
     async created() {
@@ -80,6 +87,7 @@ export default defineComponent({
             this.suggestedTerms = res;
         });
         this.patents = await this.patentService.get(this.terms);
+        console.log("firstPatent",this.patents[0]);
     },
     methods: {
         /**
@@ -122,7 +130,9 @@ export default defineComponent({
             await this.$router.push({ query: { terms: this.terms } });
             this.patents = await this.patentService.get(this.terms);
         },
-
+        onPatentSelected(e: { patent: Patent, index: number }) {
+            this.selectedPatentIndex = e.index;
+        },
         /**
          * Toggles the visibility of the timeline
          * @param $event
@@ -199,5 +209,11 @@ export default defineComponent({
     position: absolute;
     bottom: 0;
     right: 0;
+}
+.patent-preview {
+        position: absolute;
+        z-index: 100;
+        bottom: 0;
+        left: 0;
 }
 </style>

@@ -22,7 +22,7 @@
                     stroke="black"
                     stroke-width="1"
                     @mousemove="currentNode = node"
-                    @mousedown="currentMove = { x: $event.screenX, y: $event.screenY, node: node }"
+                    @mousedown="nodeClicked({ x: $event.screenX, y: $event.screenY, node: node })"
                 />
             </g>
         </svg>
@@ -63,6 +63,9 @@ export default defineComponent({
             required: true,
             type: Array,
         },
+    },
+    emits: {
+        onPatentSelected: (e: {patent:Patent, index:number}) => e,
     },
     data() {
         return {
@@ -169,7 +172,10 @@ export default defineComponent({
             this.simulation?.alpha(1);
             this.simulation?.restart();
         },
-
+        nodeClicked(e: { x: number, y: number, node: PatentNode }) {
+            this.currentMove = e;
+            this.$emit('onPatentSelected', { patent:e.node.patent, index:e.node.index ?? -1 });
+        },
         /**
          * Processes the passed patents and returns them as nodes for D3 to display them.
          * A SimulationNodeDatum needs a unique identifier which we can provide by using the
@@ -291,4 +297,5 @@ export default defineComponent({
     top: 0;
     left: 0;
 }
+
 </style>

@@ -6,12 +6,10 @@
                 <RoundButton class="round-button" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
             <div class="settings-menu" v-if="settingsMenu">
-                <RoundButton
-                    v-for="(option, index) in optionButtons"
-                    :key="index"
-                    class="round-button"
-                    :icon-key="option.iconKey"
-                />
+                <RoundButton v-for="(option, index) in optionButtons"
+                             :key="index"
+                             class="round-button"
+                             :icon-key="option.iconKey" />
             </div>
         </div>
 
@@ -29,15 +27,13 @@
         <div class="patent-navigation">
             <!-- Navigation buttons -->
             <span class="material-icons search-icon" @click="displayPreviousPatent()">arrow_back</span>
-            <span
-                class="material-icons search-icon"
-                @click="
+            <span class="material-icons search-icon"
+                  @click="
                     next = true;
                     displayNextPatent();
-                "
-                >arrow_forward</span
-            >
+                ">arrow_forward</span>
         </div>
+
     </div>
 </template>
 
