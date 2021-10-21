@@ -6,11 +6,14 @@
         <Searchbar
             v-on:on-add-keyword="onAddKeyword($event)"
             v-on:on-remove-keyword="onRemoveKeyword($event)"
-            :search-terms="searchTerms"
+            :search-terms="$store.state.searchTerms"
             v-on:on-search="onSearch"
         />
 
-        <KeywordSuggestions :provided-keywords="suggestedTerms" v-on:on-add-keyword="onAddKeyword"></KeywordSuggestions>
+        <KeywordSuggestions
+            :provided-keywords="$store.state.suggestedTerms"
+            v-on:on-add-keyword="onAddKeyword"
+        ></KeywordSuggestions>
     </div>
 </template>
 
@@ -30,24 +33,26 @@ export default defineComponent({
     },
     data() {
         return {
-            searchTerms: [] as string[],
-            suggestedTerms: [] as string[],
             keywordService: new KeywordService(),
         };
     },
     methods: {
         async onAddKeyword(event: { value: string }) {
-            this.searchTerms = this.searchTerms.concat(event.value);
-            this.suggestedTerms = await this.keywordService.getSuggestions(this.searchTerms);
+            this.$store.commit('ADD_SEARCH_TERM', event.value);
+
+            const newSuggestions = await this.keywordService.getSuggestions(this.$store.state.searchTerms);
+            this.$store.commit('ADD_SUGGESTIONS', newSuggestions);
         },
 
         async onRemoveKeyword(event: { index: number; value: string }) {
-            this.searchTerms = this.searchTerms.filter((t, index) => index !== event.index);
-            this.suggestedTerms = await this.keywordService.getSuggestions(this.searchTerms);
+            this.$store.commit('REMOVE_SEARCH_TERM', event);
+
+            const newSuggestions = await this.keywordService.getSuggestions(this.$store.state.searchTerms);
+            this.$store.commit('ADD_SUGGESTIONS', newSuggestions);
         },
 
         onSearch() {
-            this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
+            this.$router.push({ path: 'search', query: { terms: this.$store.state.searchTerms } });
         },
     },
 });
