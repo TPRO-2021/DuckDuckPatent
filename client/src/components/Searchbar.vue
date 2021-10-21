@@ -51,6 +51,12 @@ export default defineComponent({
         onSearch: (event: { searchTerms: string[] }) => {
             return event;
         },
+        inputFocused: (event: unknown) => {
+            return event;
+        },
+        inputNotFocused: (event: unknown) => {
+            return event;
+        },
     },
     data() {
         return {

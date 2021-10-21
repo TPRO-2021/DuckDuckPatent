@@ -54,13 +54,13 @@ export default defineComponent({
     },
     data() {
         return {
+            debounceHandler: null as number | null,
             patents: [] as Patent[],
             terms: [] as string[],
             suggestedTerms: [] as string[],
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
-            requestWaiting: false,
             inputFieldWaiting: false,
         };
     },
@@ -95,29 +95,29 @@ export default defineComponent({
          * hence it might be better to simply prolong existing delay to allow for further search inputs.
          *
          */
-        async debounce(debounceTime: number): Promise<void> {
+        debounce(debounceTime: number): void {
             //do not add new request if the last one isn't finished yet
-            if (this.requestWaiting) {
-                return;
+            if (this.debounceHandler) {
+                clearTimeout(this.debounceHandler);
             }
+
             //toggle requestWaiting before&after request completion to avoid repeated requests
-            this.requestWaiting = true;
-            if (this.inputFieldWaiting) debounceTime += debounceTime / 2;
-            setTimeout(async () => {
+            if (this.inputFieldWaiting) {
+                debounceTime += debounceTime / 2;
+            }
+
+            this.debounceHandler = setTimeout(async () => {
                 // console.log('delay. terms: ', this.terms); //TODO: remove once review approved
                 // console.log('delay. time: ', debounceTime); //TODO: remove once review approved
-                try {
-                    await this.refreshResults();
-                } catch (e) {
-                    console.log('error: ', e); // has to be present until we have a better way of error-handling. otherwise, it doesn't reach the end.
-                }
-                this.requestWaiting = false;
+
+                await this.refreshResults();
+
                 this.inputFieldWaiting = false;
                 // console.log('response returned. '); //TODO: remove once review approved
             }, debounceTime);
         },
-        /*
-         * Adds a keyword to the current search terms and triggers a result refresh
+        /**
+         * Adds a keyword to the current search terms and triggers a result refresh + debouncing the request
          *
          * @param event The event containing the passed up keyword
          */
@@ -127,11 +127,12 @@ export default defineComponent({
             // about because it can't change values outside of this code's scope.
             // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
             this.terms = [...this.terms, event.value];
-            await this.debounce(2000);
+            this.refreshKeywords();
+            this.debounce(2000);
         },
 
         /**
-         * Removes a keyword from the current search terms and triggers a result refresh
+         * Removes a keyword from the current search terms and triggers a result refresh + debouncing the request
          *
          * @param event
          */
@@ -141,18 +142,24 @@ export default defineComponent({
             // because it can't change values outside of this code's scope.
             // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
             this.terms = this.terms.filter((t, index) => event.index !== index);
-            await this.debounce(2000);
+            this.refreshKeywords();
+            this.debounce(2000);
         },
 
         /**
-         * Refreshes suggested keywords and patent results
+         * Refreshes suggested keywords
          */
-        async refreshResults(): Promise<void> {
+        refreshKeywords(): void {
             // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
             this.keywordService.getSuggestions(this.terms).then((suggestions) => {
                 this.suggestedTerms = suggestions;
             });
+        },
 
+        /**
+         * Refreshes patent results
+         */
+        async refreshResults(): Promise<void> {
             await this.$router.push({ query: { terms: this.terms } });
             this.patents = await this.patentService.get(this.terms);
         },
