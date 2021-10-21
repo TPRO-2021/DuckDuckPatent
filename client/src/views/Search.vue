@@ -65,6 +65,7 @@ export default defineComponent({
         },
 
         onSearch() {
+            this.$store.commit('showLoadingScreen');
             this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
         },
     },

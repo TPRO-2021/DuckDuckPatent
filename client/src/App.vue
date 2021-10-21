@@ -1,4 +1,5 @@
 <template>
+    <LoadingScreen></LoadingScreen>
     <router-view />
 </template>
 
@@ -19,3 +20,12 @@ button {
     border: none;
 }
 </style>
+<script>
+import { defineComponent } from 'vue';
+import LoadingScreen from '@/components/LoadingScreen';
+
+export default defineComponent({
+    name: 'App',
+    components: { LoadingScreen },
+});
+</script>

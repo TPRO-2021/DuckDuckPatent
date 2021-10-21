@@ -77,6 +77,8 @@ export default defineComponent({
         },
     },
     async created() {
+        this.$store.commit('showLoadingScreen');
+
         // if no search-term is present change back to the search page!
         if (this.terms.length === 0) {
             await this.$router.push({ path: '/' });
@@ -89,6 +91,9 @@ export default defineComponent({
 
         const patents = await this.patentService.get(this.terms);
         this.$store.commit('ADD_PATENTS', patents);
+
+        // after loading the patents the loading screen should disappear
+        this.$store.commit('hideLoadingScreen');
     },
     methods: {
         /**
@@ -112,13 +117,8 @@ export default defineComponent({
             }
 
             this.debounceHandler = setTimeout(async () => {
-                // console.log('delay. terms: ', this.terms); //TODO: remove once review approved
-                // console.log('delay. time: ', debounceTime); //TODO: remove once review approved
-
                 await this.refreshResults();
-
                 this.inputFieldWaiting = false;
-                // console.log('response returned. '); //TODO: remove once review approved
             }, debounceTime);
         },
         /**
