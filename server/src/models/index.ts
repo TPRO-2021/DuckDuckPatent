@@ -14,3 +14,5 @@ export interface PatentAPIResponse {
     total_patent_count: number;
     patents: Patent[];
 }
+
+export type SuggestionAPIResponse = [string, number][];
