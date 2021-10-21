@@ -6,14 +6,11 @@
         <Searchbar
             v-on:on-add-keyword="onAddKeyword($event)"
             v-on:on-remove-keyword="onRemoveKeyword($event)"
-            :search-terms="$store.state.searchTerms"
+            :search-terms="searchTerms"
             v-on:on-search="onSearch"
         />
 
-        <KeywordSuggestions
-            :provided-keywords="$store.state.suggestedTerms"
-            v-on:on-add-keyword="onAddKeyword"
-        ></KeywordSuggestions>
+        <KeywordSuggestions :provided-keywords="suggestedTerms" v-on:on-add-keyword="onAddKeyword"></KeywordSuggestions>
     </div>
 </template>
 
@@ -36,6 +33,14 @@ export default defineComponent({
             keywordService: new KeywordService(),
         };
     },
+    computed: {
+        searchTerms(): string[] {
+            return this.$store.state.searchTerms;
+        },
+        suggestedTerms(): string[] {
+            return this.$store.state.suggestedTerms;
+        },
+    },
     methods: {
         /**
          * Update the array from store on inserting keyword and the suggestion terms
@@ -45,7 +50,7 @@ export default defineComponent({
         async onAddKeyword(event: { value: string }) {
             this.$store.commit('ADD_SEARCH_TERM', event.value);
 
-            const newSuggestions = await this.keywordService.getSuggestions(this.$store.state.searchTerms);
+            const newSuggestions = await this.keywordService.getSuggestions(this.searchTerms);
             this.$store.commit('ADD_SUGGESTIONS', newSuggestions);
         },
         /**
@@ -55,12 +60,12 @@ export default defineComponent({
         async onRemoveKeyword(event: { index: number; value: string }) {
             this.$store.commit('REMOVE_SEARCH_TERM', event);
 
-            const newSuggestions = await this.keywordService.getSuggestions(this.$store.state.searchTerms);
+            const newSuggestions = await this.keywordService.getSuggestions(this.searchTerms);
             this.$store.commit('ADD_SUGGESTIONS', newSuggestions);
         },
 
         onSearch() {
-            this.$router.push({ path: 'search', query: { terms: this.$store.state.searchTerms } });
+            this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
         },
     },
 });
