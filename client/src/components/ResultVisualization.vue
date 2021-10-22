@@ -26,7 +26,7 @@
                 />
             </g>
         </svg>
-        <div class="tooltip card box-shadow">{{ this.currentNode?.patent.patent_title }}</div>
+        <div class="tooltip card box-shadow">{{ this.currentNode?.patent['invention-title'] }}</div>
     </div>
 </template>
 
@@ -177,7 +177,7 @@ export default defineComponent({
          */
         getPatentNodes(): PatentNode[] {
             return (this.patents as Patent[]).map((patent) => ({
-                id: patent.patent_number,
+                id: patent['@doc-number'],
                 patent: patent,
             })) as PatentNode[];
         },
@@ -193,7 +193,7 @@ export default defineComponent({
                         (relations, patent) =>
                             relations.concat(
                                 patent.cited_patents.map((citedPatent: CitedPatent) => ({
-                                    source: patent.patent_number,
+                                    source: patent['@doc-number'],
                                     target: citedPatent.cited_patent_number,
                                 })),
                             ),
@@ -202,10 +202,10 @@ export default defineComponent({
                     .map((relation, index) => ({
                         index,
                         source: this.graph.nodes[
-                            (this.patents as Patent[]).findIndex((k) => k.patent_number === relation.source)
+                            (this.patents as Patent[]).findIndex((k) => k['@doc-number'] === relation.source)
                         ],
                         target: this.graph.nodes[
-                            (this.patents as Patent[]).findIndex((k) => k.patent_number === relation.target)
+                            (this.patents as Patent[]).findIndex((k) => k['@doc-number'] === relation.target)
                         ],
                     }))
                     .filter((t: SimulationLinkDatum<SimulationNodeDatum>) => t.source && t.target)
