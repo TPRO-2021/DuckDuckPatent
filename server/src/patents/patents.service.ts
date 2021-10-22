@@ -1,8 +1,8 @@
-import { AuthResponse, ExtendedPatent, PatentAPIResponse } from './models';
+import { AuthResponse, PatentAPIResponse } from './models';
 import { HttpService } from '@nestjs/axios';
-import { lastValueFrom, map, tap } from 'rxjs';
+import { lastValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class PatentsService {
@@ -11,34 +11,46 @@ export class PatentsService {
 
     constructor(private readonly httpService: HttpService) {}
 
-    public async getAccessToken(): Promise<any> {
+    /**
+     * Attempts to create a new access token for further usage. The credentials for the
+     * token are send via the Authorization header.
+     *
+     * For this to work consumer key and secret must be specified in the .env file!
+     */
+    private async getAccessToken(): Promise<AuthResponse | null> {
+        // creating the base64 encoded authentication string
         const authString = Buffer.from(`${process.env.OPS_CONSUMER_KEY}:${process.env.OPS_CONSUMER_SECRET}`).toString(
             'base64',
         );
+
+        // creating the headers for axios
         const headers = {
             Authorization: `Basic ${authString}`,
             'Content-Type': 'application/x-www-form-urlencoded',
         };
 
-        const response = await lastValueFrom(
-            this.httpService.post<AuthResponse>(
-                `${process.env.PATENT_API_URL}/3.2/auth/accesstoken`,
-                'grant_type=client_credentials',
-                {
-                    headers: headers,
-                },
-            ),
-        );
-        return response.data as AuthResponse;
+        try {
+            const response = await lastValueFrom(
+                this.httpService.post<AuthResponse>(
+                    `${process.env.PATENT_API_URL}/auth/accesstoken`,
+                    'grant_type=client_credentials',
+                    {
+                        headers: headers,
+                    },
+                ),
+            );
+            return response.data as AuthResponse;
+        } catch (error) {
+            console.error(`Error while authenticating with ${process.env.PATENT_API_URL}`);
+            throw new UnauthorizedException(error);
+        }
     }
 
     // to query for a single patent
     async get(patentNum: string): Promise<AxiosResponse<PatentAPIResponse>> {
-        const patentID = patentNum;
-
         const config = {
             params: {
-                q: JSON.stringify({ _eq: { patent_number: patentID } }),
+                q: JSON.stringify({ _eq: { patent_number: patentNum } }),
                 f: JSON.stringify([
                     'patent_number',
                     'patent_title',
@@ -72,15 +84,18 @@ export class PatentsService {
             ),
         );
     }
-    public async getPatentData(terms: string[] = []): Promise<AxiosResponse<PatentAPIResponse>> {
+
+    /**
+     * Queries the patent API with the provided search terms
+     * @param terms
+     * @param isSecondAttempt
+     */
+    public async query(terms: string[], isSecondAttempt = false): Promise<AxiosResponse<PatentAPIResponse>> {
+        // if no auth data is present we need to generate an access token
         if (!this.authData) {
             this.authData = await this.getAccessToken();
         }
-        const headers = {
-            Authorization: `Bearer ${this.authData.access_token}`,
-            Accept: 'application/json',
-        };
-        terms = ['cat'];
+
         const abstracts = [];
         const titles = [];
 
@@ -88,11 +103,31 @@ export class PatentsService {
             abstracts.push({ _text_any: { patent_abstract: term } });
             titles.push({ _text_any: { patent_title: term } });
         });
-        return await lastValueFrom(
-            this.httpService.get<PatentAPIResponse>(
-                `${process.env.PATENT_API_URL}/rest-services/published-data/search/biblio?q=ti%3D ${terms} or ab%3D ${terms}`,
-                { headers: headers },
-            ),
-        );
+
+        try {
+            return await lastValueFrom(
+                this.httpService.get<PatentAPIResponse>(
+                    `${process.env.PATENT_API_URL}/rest-services/published-data/search/biblio?q=ti%3D ${terms} or ab%3D ${terms}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${this.authData.access_token}`,
+                            Accept: 'application/json',
+                        },
+                    },
+                ),
+            );
+        } catch (error) {
+            // if access token is expired we will attempt to renew it and send the request again
+            if ((error?.response?.data as string).toLowerCase().includes('access token has expired')) {
+                // after a second attempt there should be no access expired error therefore we can stop here to prevent a stackoverflow
+                if (isSecondAttempt) {
+                    throw error;
+                }
+
+                this.authData = await this.getAccessToken();
+                return this.query(terms, true);
+            }
+            throw error;
+        }
     }
 }
