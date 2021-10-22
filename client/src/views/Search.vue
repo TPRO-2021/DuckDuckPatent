@@ -30,23 +30,48 @@ export default defineComponent({
     },
     data() {
         return {
-            searchTerms: [] as string[],
-            suggestedTerms: [] as string[],
             keywordService: new KeywordService(),
         };
     },
-    methods: {
-        async onAddKeyword(event: { value: string }) {
-            this.searchTerms = this.searchTerms.concat(event.value);
-            this.suggestedTerms = await this.keywordService.getSuggestions(this.searchTerms);
+    computed: {
+        searchTerms(): string[] {
+            return this.$store.state.searchTerms;
         },
+        suggestedTerms(): string[] {
+            return this.$store.state.suggestedTerms;
+        },
+    },
+    methods: {
+        /**
+         * Update the array from store on inserting keyword and the suggestion terms
+         * $store is the global variable that have access to the all containers
+         * @param event - represent the inserted keyword either from suggestion list or typed word
+         */
+        async onAddKeyword(event: { value: string }) {
+            this.$store.commit('ADD_SEARCH_TERM', event.value);
+            this.$store.commit('SHOW_LOADING_BAR');
 
+            const newSuggestions = await this.keywordService.getSuggestions(this.searchTerms);
+            this.$store.commit('ADD_SUGGESTIONS', newSuggestions);
+
+            this.$store.commit('HIDE_LOADING_BAR');
+        },
+        /**
+         * Update the search and the suggestion terms arrays  from store
+         * @param event the remove keyword from the search input
+         */
         async onRemoveKeyword(event: { index: number; value: string }) {
-            this.searchTerms = this.searchTerms.filter((t, index) => index !== event.index);
-            this.suggestedTerms = await this.keywordService.getSuggestions(this.searchTerms);
+            this.$store.commit('REMOVE_SEARCH_TERM', event);
+            this.$store.commit('SHOW_LOADING_BAR');
+
+            const newSuggestions = await this.keywordService.getSuggestions(this.searchTerms);
+            this.$store.commit('ADD_SUGGESTIONS', newSuggestions);
+
+            this.$store.commit('HIDE_LOADING_BAR');
         },
 
         onSearch() {
+            this.$store.commit('showLoadingScreen');
             this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
         },
     },

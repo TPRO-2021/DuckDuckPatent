@@ -45,6 +45,14 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Running the term-suggestion service (word2vec)
+After unziping the given project file (not included in this repo), follow the instructions included in the README.md 
+Set the `SUGGESTIONS_API_URL` env variable in `.env` to where the address the docker file is mapped to. (For example: `http://localhost:8100`)
+```
+$ docker build -t word2vec .
+$ docker run -p 8100:80 word2vec:latest
+```
+
 ## Test
 
 ```bash

@@ -6,6 +6,8 @@
             <div class="search-input card box-shadow">
                 <Searchbar
                     :search-terms="terms"
+                    @input-focused="inputFieldWaiting = true"
+                    @input-not-focused="inputFieldWaiting = false"
                     v-on:on-add-keyword="onAddKeyword"
                     v-on:on-search="refreshResults"
                     v-on:on-remove-keyword="onRemoveKeyword"
@@ -52,15 +54,31 @@ export default defineComponent({
     },
     data() {
         return {
-            patents: [] as Patent[],
-            terms: [] as string[],
-            suggestedTerms: [] as string[],
+            debounceHandler: null as number | null,
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
+            inputFieldWaiting: false,
         };
     },
+    /**
+     * Computed property that helps avoiding the continous reference the global store:searchTerms, suggestedTerms
+     * and patents from store/index.ts
+     */
+    computed: {
+        terms(): string[] {
+            return this.$store.state.searchTerms;
+        },
+        suggestedTerms(): string[] {
+            return this.$store.state.suggestedTerms;
+        },
+        patents(): Patent[] {
+            return this.$store.state.patents;
+        },
+    },
     async created() {
+        this.$store.commit('showLoadingScreen');
+
         // If only one query parameter is sent it's treated as a string, not an array
         let queryParams = this.$route.query.terms as string | string[];
 
@@ -77,50 +95,87 @@ export default defineComponent({
 
         // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
         this.keywordService.getSuggestions(this.terms).then((res) => {
-            this.suggestedTerms = res;
+            this.$store.commit('ADD_SUGGESTIONS', res);
         });
-        this.patents = await this.patentService.get(this.terms);
+
+        const patents = await this.patentService.get(this.terms);
+        this.$store.commit('ADD_PATENTS', patents);
+
+        // after loading the patents the loading screen should disappear
+        this.$store.commit('hideLoadingScreen');
     },
     methods: {
         /**
-         * Adds a keyword to the current search terms and triggers a result refresh
+         * Function which delays refreshing the screen for provided time, i.e. debounces client requests.
+         * Since the Searchbar.vue is only responsible for converting terms to chips and sending them over,
+         * delay of the requests is fully handled here.
+         *
+         * If input focused, delay increases by half the time. Oftentimes users don't click the icon to initiate search,
+         * hence it might be better to simply prolong existing delay to allow for further search inputs.
+         *
+         */
+        debounce(debounceTime: number): void {
+            //do not add new request if the last one isn't finished yet
+            if (this.debounceHandler) {
+                clearTimeout(this.debounceHandler);
+            }
+
+            //toggle requestWaiting before&after request completion to avoid repeated requests
+            if (this.inputFieldWaiting) {
+                debounceTime += debounceTime / 2;
+            }
+
+            this.debounceHandler = setTimeout(async () => {
+                await this.refreshResults();
+                this.inputFieldWaiting = false;
+            }, debounceTime);
+        },
+        /**
+         * Adds a keyword to the current search terms and triggers a result refresh + debouncing the request
          *
          * @param event The event containing the passed up keyword
          */
         async onAddKeyword(event: { value: string }): Promise<void> {
-            // It can be important not to mutate state because it can cause unintended side-effects
-            // Adding to an array using the spread operator [...] or concat() makes the code easier to reason
-            // about because it can't change values outside of this code's scope.
-            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
-            this.terms = [...this.terms, event.value];
-            await this.refreshResults();
+            this.$store.commit('ADD_SEARCH_TERM', event.value);
+            this.refreshKeywords();
+            this.debounce(2000);
         },
 
         /**
-         * Removes a keyword from the current search terms and triggers a result refresh
+         * Removes a keyword from the current search terms and triggers a result refresh + debouncing the request
          *
          * @param event
          */
         async onRemoveKeyword(event: { value: string; index: number }) {
-            // It can be important not to mutate state because it can cause unintended side-effects
-            // Removing from an array using filter() makes the code easier to reason
-            // because it can't change values outside of this code's scope.
-            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
-            this.terms = this.terms.filter((t, index) => event.index !== index);
-            await this.refreshResults();
+            this.$store.commit('REMOVE_SEARCH_TERM', event);
+            this.refreshKeywords();
+            this.debounce(2000);
         },
 
         /**
-         * Refreshes suggested keywords and patent results
+         * Refreshes suggested keywords
          */
-        async refreshResults(): Promise<void> {
+        refreshKeywords(): void {
             // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
             this.keywordService.getSuggestions(this.terms).then((suggestions) => {
-                this.suggestedTerms = suggestions;
+                this.$store.commit('ADD_SUGGESTIONS', suggestions);
             });
+        },
+
+        /**
+         * Refreshes patent results
+         */
+        async refreshResults(): Promise<void> {
+            // start showing the smaller loading indicator
+            this.$store.commit('SHOW_LOADING_BAR');
 
             await this.$router.push({ query: { terms: this.terms } });
-            this.patents = await this.patentService.get(this.terms);
+
+            const patents = await this.patentService.get(this.terms);
+            this.$store.commit('ADD_PATENTS', patents);
+
+            // finally hide loading indicator
+            this.$store.commit('HIDE_LOADING_BAR');
         },
 
         /**

@@ -29,6 +29,7 @@ export class AppState {
     public suggestedTerms = [] as string[];
 
     /**
+
      * Holds the the patents as a result of research
      */
     public patents = [] as Patent[];
@@ -37,6 +38,11 @@ export class AppState {
      * Container that store the saved patents mark as favorites
      */
     public savedPatents = [] as Patent[];
+
+     * Hols the the patents as a result of research
+     */
+    public patents = [] as Patent[];
+
 }
 
 export default createStore({
@@ -122,6 +128,7 @@ export default createStore({
             state.showLoadingBar = false;
         },
 
+
         /**
          * Add the favorite patent to the container
          * @param state
@@ -135,6 +142,7 @@ export default createStore({
         REMOVE_SAVED_PATENT(state, event: { index: number; value: Patent }) {
             state.savedPatents = state.savedPatents.filter((_t, index) => index !== event.index);
         },
+
     },
 
     /**
