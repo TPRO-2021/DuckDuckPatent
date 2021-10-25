@@ -15,12 +15,11 @@
                 <circle
                     class=".node"
                     v-for="node in graph.nodes"
-                    :key="node.index"
+                    :key="node.id"
                     :cx="node.x"
                     :cy="node.y"
-                    :r="26"
-                    stroke="black"
-                    stroke-width="1"
+                    :r="node.size"
+                    :fill="node.color"
                     @mousemove="currentNode = node"
                     @mousedown="currentMove = { x: $event.screenX, y: $event.screenY, node: node }"
                 />
@@ -49,11 +48,12 @@ import {
     Selection,
     BaseType,
 } from 'd3';
-import { PatentNode } from '@/models/PatentNode';
+
+import { VisualPatentNode } from '@/models/VisualPatentNode';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
-type d3ForceSim = Simulation<PatentNode, SimulationLinkDatum<PatentNode>>;
-type d3Graph = { nodes: PatentNode[]; links: SimulationLinkDatum<SimulationNodeDatum>[] };
+type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
+type d3Graph = { nodes: VisualPatentNode[]; links: SimulationLinkDatum<SimulationNodeDatum>[] };
 
 export default defineComponent({
     name: 'ResultVisualization',
@@ -62,11 +62,15 @@ export default defineComponent({
             required: true,
             type: Array,
         },
+        visualizationOptions: {
+            required: true,
+            type: Array,
+        },
     },
     data() {
         return {
             currentMove: null as d3Event | null,
-            currentNode: null as PatentNode | null,
+            currentNode: null as VisualPatentNode | null,
             container: null as Selection<BaseType, unknown, HTMLElement, unknown> | null,
             documentWidth: document.documentElement.clientWidth,
             documentHeight: document.documentElement.clientHeight,
@@ -100,6 +104,9 @@ export default defineComponent({
         patents(): void {
             this.updateGraph();
         },
+        visualizationOptions() {
+            this.updateGraph();
+        },
     },
     methods: {
         setupGraph() {
@@ -114,14 +121,16 @@ export default defineComponent({
          * Updates the graph simulation
          */
         updateGraph() {
-            this.graph.nodes = this.getPatentNodes();
-            this.graph.links = this.getPatentLinks();
+            const patents = this.patents as Patent[];
+            const citationMap = this.getCitationMap(patents);
+            this.graph.nodes = this.getNodes(patents, citationMap);
+            this.graph.links = this.getLinks(this.graph.nodes, citationMap);
 
-            this.simulation = forceSimulation<PatentNode>(this.graph.nodes as PatentNode[])
+            this.simulation = forceSimulation<VisualPatentNode>(this.graph.nodes as VisualPatentNode[])
                 // center the results
                 .force('center', forceCenter(this.documentWidth / 2, this.documentHeight / 2))
                 // adds the links
-                .force('link', forceLink(this.graph.links).strength(0.01))
+                .force('link', forceLink(this.graph.links).strength(0.1))
                 // the x and y alignment of the nodes
                 .force('x', forceX(this.documentWidth / 2).strength(0.1))
                 .force('y', forceY(this.documentHeight / 2).strength(0.13))
@@ -174,37 +183,173 @@ export default defineComponent({
          * A SimulationNodeDatum needs a unique identifier which we can provide by using the
          * unique patent_number
          */
-        getPatentNodes(): PatentNode[] {
-            return (this.patents as Patent[]).map((patent) => ({
+        getNodes(patents: Patent[], citationMap: { [id: string]: string[] }): VisualPatentNode[] {
+            let nodes = patents.map((patent) => ({
                 id: patent.id,
-                patent: patent,
-            })) as PatentNode[];
+                patent,
+                type: 'patent',
+                color: 'rgb(168, 133, 41)',
+                size: 26,
+            })) as VisualPatentNode[];
+
+            // If the user has selected to view authors
+            if (this.visualizationOptions.includes('authors')) {
+                const brown = 'rgb(168, 41, 41)';
+                // TODO: When we have real authors we can add them here
+                // For the moment we just add one extra node to each
+                const authorNodes = patents.map(
+                    (patent) =>
+                        ({
+                            id: `${patent.patent_number}:author`, // Set the id to be the "parent" patent id + 'author'
+                            patent, // Set the patent for tooltip viewing (this should change later)
+                            type: 'author', // Set the type of the node to 'author'
+                            color: brown, // Set the color to brown
+                            size: 10, // We use a static size that is smaller than the patent size
+                        } as VisualPatentNode),
+                );
+                nodes = [...nodes, ...authorNodes]; // Extend the nodes array with author nodes
+            }
+
+            // If the user has selected to view companies
+            if (this.visualizationOptions.includes('companies')) {
+                // TODO: When we have real companies we can add them here
+                const blue = 'rgb(41, 115, 168)';
+                const companyNodes = patents.map(
+                    (patent) =>
+                        ({
+                            id: `${patent.id}:company`,
+                            patent: patent, // Set the patent for tooltip viewing (this should change later)
+                            type: 'company', // Set the type of the node to 'company'
+                            color: blue, // Set the color to blue
+                            size: 10, // Set the size to 10
+                        } as VisualPatentNode),
+                );
+                nodes = [...nodes, ...companyNodes]; // Extend the nodes array with the company nodes
+            }
+
+            // If the user has selected to view citations
+            if (this.visualizationOptions.includes('citations')) {
+                const green = 'rgb(72, 121, 9)';
+                const patentMap = this.buildMap(patents, 'id'); // Build a map of all patents, this should make finding them by ID faster.
+                const citationNodes = Object.keys(citationMap) // Get the keys (citation ids) from the citationMap.
+                    .filter((citationId) => !patentMap[citationId]) // Remove patent-node to patent-node citations (these nodes are already shown)
+                    .filter((citationId) => citationMap[citationId].length > 1) // Only show citations that are cited by multiple patents (for clarity)
+                    .map((citationId) => {
+                        const citingPatents = citationMap[citationId]; // With the citations of the this patent
+                        const patentId = citingPatents[0]; // Select the first patentId arbitrarily (this should change later)
+                        return {
+                            id: citationId, // Set the Id to the citation Id (this is important so we can look up it's other links later)
+                            patent: patentMap[patentId], // Set the "patent" to the "first" patent (this should change later)
+                            type: 'citation', // Set the type to citation
+                            color: green, // Set to color to green
+                            size: citingPatents.length * 3 + 5, // Use dynamic sizing to show relative importance
+                        } as VisualPatentNode;
+                    });
+
+                nodes = [...nodes, ...citationNodes]; // Extend the nodes array with the company nodes
+            }
+
+            return nodes;
+        },
+
+        /*
+         * Create a key -> value map that allows for easy look up of something for given Id
+         */
+        buildMap<T>(items: T[], idKey: keyof T): { [id: string]: T } {
+            return items.reduce((map, b) => {
+                // Reduce the array to an object
+                // eslint-disable-next-line
+                const key = b[idKey] as any as string; // unclear if there is clean way to do this in typescript
+                return { ...map, [key]: b }; // extend the object with a specific key
+            }, {});
+        },
+
+        /*
+         * Create a key -> value map that allows for easy look up of all patents that have cited a specific citation
+         */
+        getCitationMap(patents: Patent[]): { [id: string]: string[] } {
+            return patents
+                .reduce(
+                    (citations, patent) => [
+                        // Iterate through the patents, adding citations to a large list
+                        ...citations, // Extend current citations collected...
+                        ...patent.cited_patents.map(
+                            (citedPatent: Patent) =>
+                                ({
+                                    // ...with the citations of the current patent
+                                    source: citedPatent.id, // first map to source/target ids
+                                    target: patent.id,
+                                } as { source: string; target: string }),
+                        ),
+                    ],
+                    [] as { source: string; target: string }[],
+                )
+                .reduce(
+                    (citations, link) => ({
+                        // Finally reduce the array to a map
+                        ...citations, // extend the current citationMap...
+                        [link.source]: [...(citations[link.source] ?? []), link.target], // with an extended version of the sourceId (citedPatentId) 's array
+                    }),
+                    {} as { [id: string]: string[] },
+                );
         },
 
         /**
          * Processes the passed patents and finds relations between them.
          */
-        getPatentLinks(): SimulationLinkDatum<SimulationNodeDatum>[] {
-            return (
-                (this.patents as Patent[])
-                    // first we need to create an array, containing the relations
-                    .reduce(
-                        (relations, patent) =>
-                            relations.concat(
-                                (patent.citations || []).map((citedPatent: Patent) => ({
-                                    source: patent.id,
-                                    target: citedPatent.id,
-                                })),
-                            ),
-                        [] as { source: string; target: string }[],
-                    )
-                    .map((relation, index) => ({
-                        index,
-                        source: this.graph.nodes[(this.patents as Patent[]).findIndex((k) => k.id === relation.source)],
-                        target: this.graph.nodes[(this.patents as Patent[]).findIndex((k) => k.id === relation.target)],
-                    }))
-                    .filter((t: SimulationLinkDatum<SimulationNodeDatum>) => t.source && t.target)
+        getLinks(
+            nodes: VisualPatentNode[],
+            citationMap: { [id: string]: string[] },
+        ): SimulationLinkDatum<SimulationNodeDatum>[] {
+            const patentNodes = nodes.filter((t) => t.type === 'patent' && t.patent); // Start with just the 'initial' patent nodes
+            const nodeMap = this.buildMap(patentNodes, 'id'); // Create a map for faster lookups
+
+            // Add links between nodes that have cited one another
+            const interNodeCitations = patentNodes.reduce(
+                // first we need to create an array, containing the relations
+                (relations, node) => [
+                    ...relations, // extend the relations...
+                    ...node.patent.cited_patents.map(
+                        (citedPatent: Patent) =>
+                            ({
+                                // ... with a map of nodes to source & target
+                                source: node, // Source is citing patent node
+                                target: nodeMap[citedPatent.cited_patent_number], // target is the patent node being cited
+                            } as { source: VisualPatentNode; target: VisualPatentNode }),
+                    ),
+                ],
+                [] as { source: VisualPatentNode; target: VisualPatentNode }[],
             );
+
+            // Add citations for patents that aren't displayed (but are cited by more than one patent)
+            const citationLinks = nodes
+                .filter((t) => t.type === 'citation') // Only build links for citations
+                .reduce(
+                    (links, node) => [
+                        // Create a large list
+                        ...links, // Extend the current list...
+                        ...citationMap[node.id].map((t) => ({
+                            // ...with the citations (maped to source/target)
+                            source: node, // Set the source to the current node (the citation)
+                            target: nodeMap[t], // Set the target to the citing patent patent
+                        })),
+                    ],
+                    [] as { source: VisualPatentNode; target: VisualPatentNode }[],
+                );
+
+            // Add other links between the patents and companies/authors
+            const otherLinks = nodes
+                .filter((t) => t.type !== 'patent' && t.type !== 'citation') // Patents & citations are handled separately
+                .map((t) => ({
+                    // Map the nodes to source and target (one link per node)
+                    source: t, // The source is the author or company
+                    target: nodeMap[t.patent.patent_number], // The target is the patent
+                })) as { source: VisualPatentNode; target: VisualPatentNode }[];
+
+            // Combine all links together
+            return [...interNodeCitations, ...citationLinks, ...otherLinks]
+                .filter((t) => t.source && t.target) // Filter out any that have sources/targets that are either: null, 0, '', undefined, or false
+                .map((t, index) => ({ ...t, index })); // Extend citations with an index that VueJS can use when enumerating them
         },
 
         /**

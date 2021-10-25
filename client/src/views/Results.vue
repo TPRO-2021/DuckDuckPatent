@@ -19,15 +19,22 @@
             </div>
             <!-- This div contains the options menu for user to add more nodes/filters -->
             <div class="options-menu">
-                <OptionsMenu />
+                <OptionsMenu
+                    v-on:add-node="$store.commit('addVisualizationOption', $event)"
+                    v-on:remove-node="$store.commit('removeVisualizationOption', $event)"
+                />
             </div>
         </div>
         <div class="result-wrapper">
-            <ResultsVisualization :patents="patents" />
+            <ResultsVisualization :visualization-options="visualizationOptions" :patents="patents" />
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
+        </div>
+
+        <div class="top-controls">
+            <Button btnText="Saved" iconKey="turned_in" badge-value="21" />
         </div>
     </div>
 </template>
@@ -42,6 +49,7 @@ import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
 import ResultsVisualization from '@/components/ResultVisualization.vue';
+import Button from '@/components/Button.vue';
 
 export default defineComponent({
     name: 'Results',
@@ -51,6 +59,7 @@ export default defineComponent({
         RoundButton,
         OptionsMenu,
         ResultsVisualization,
+        Button,
     },
     data() {
         return {
@@ -62,10 +71,13 @@ export default defineComponent({
         };
     },
     /**
-     * Computed property that helps avoiding the continous reference the global store:searchTerms, suggestedTerms
+     * Computed property that helps avoiding the continuous reference the global store:searchTerms, suggestedTerms
      * and patents from store/index.ts
      */
     computed: {
+        visualizationOptions(): string[] {
+            return this.$store.state.visualizationOptions;
+        },
         terms(): string[] {
             return this.$store.state.searchTerms;
         },
@@ -109,12 +121,10 @@ export default defineComponent({
          *
          */
         debounce(debounceTime: number): void {
-            //do not add new request if the last one isn't finished yet
             if (this.debounceHandler) {
                 clearTimeout(this.debounceHandler);
             }
 
-            //toggle requestWaiting before&after request completion to avoid repeated requests
             if (this.inputFieldWaiting) {
                 debounceTime += debounceTime / 2;
             }
@@ -264,9 +274,16 @@ export default defineComponent({
 }
 
 .bottom-controls {
-    padding: 10px;
+    padding: 20px;
     position: absolute;
     bottom: 0;
+    right: 0;
+}
+
+.top-controls {
+    margin: 20px;
+    position: absolute;
+    top: 0;
     right: 0;
 }
 </style>

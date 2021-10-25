@@ -29,9 +29,19 @@ export class AppState {
     public suggestedTerms = [] as string[];
 
     /**
-     * Hols the the patents as a result of research
+     * Holds the the patents as a result of research
      */
     public patents = [] as Patent[];
+
+    /**
+     * Container that store the saved patents mark as favorites
+     */
+    public savedPatents = [] as Patent[];
+
+    /**
+     * Node visualization options
+     */
+    public visualizationOptions = ['patents'] as string[];
 }
 
 export default createStore({
@@ -55,6 +65,20 @@ export default createStore({
          */
         hideLoadingScreen(state) {
             state.showLoadingScreen = false;
+        },
+
+        /**
+         * Add visualization option
+         */
+        addVisualizationOption(state, option: string) {
+            state.visualizationOptions = [...state.visualizationOptions, option];
+        },
+
+        /**
+         * Remove visualization option
+         */
+        removeVisualizationOption(state, option: string) {
+            state.visualizationOptions = state.visualizationOptions.filter((t) => t !== option);
         },
 
         /**
@@ -117,6 +141,7 @@ export default createStore({
             state.showLoadingBar = false;
         },
 
+
         /**
          * Sets search terms to given value
          * @param state
@@ -125,6 +150,20 @@ export default createStore({
          */
         SET_SEARCH_TERMS(state, terms: string[]): void {
             state.searchTerms = terms;
+        }
+
+        /**
+         * Add the favorite patent to the container
+         * @param state
+         * @param savedPatent
+         * @constructor
+         */
+        ADD_SAVED_PATENT(state, savedPatent: Patent): void {
+            state.savedPatents.push(savedPatent);
+        },
+
+        REMOVE_SAVED_PATENT(state, event: { index: number; value: Patent }) {
+            state.savedPatents = state.savedPatents.filter((_t, index) => index !== event.index);
         },
     },
 
