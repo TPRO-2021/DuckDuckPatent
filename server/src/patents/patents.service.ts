@@ -1,4 +1,4 @@
-import { AuthResponse, PatentAPIResponse } from './models';
+import { AuthResponse, OpsExchangeDocument, Patent, PatentAPIResponse, QueryResult } from './models';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
@@ -90,7 +90,7 @@ export class PatentsService {
      * @param terms
      * @param isSecondAttempt
      */
-    public async query(terms: string[], isSecondAttempt = false): Promise<AxiosResponse<PatentAPIResponse>> {
+    public async query(terms: string[], isSecondAttempt = false): Promise<QueryResult> {
         // if no auth data is present we need to generate an access token
         if (!this.authData) {
             this.authData = await this.getAccessToken();
@@ -105,9 +105,9 @@ export class PatentsService {
         });
 
         try {
-            return await lastValueFrom(
+            const response = await lastValueFrom(
                 this.httpService.get<PatentAPIResponse>(
-                    `${process.env.PATENT_API_URL}/rest-services/published-data/search/biblio?q=ti%3D ${terms} or ab%3D ${terms}`,
+                    `${process.env.PATENT_API_URL}/rest-services/published-data/search/biblio?q=ti%3D ${terms} or ab%3D ${terms}&Range=1-100`,
                     {
                         headers: {
                             Authorization: `Bearer ${this.authData.access_token}`,
@@ -116,9 +116,11 @@ export class PatentsService {
                     },
                 ),
             );
+
+            return this.processQuery(response.data);
         } catch (error) {
             // if access token is expired we will attempt to renew it and send the request again
-            if ((error?.response?.data as string).toLowerCase().includes('access token has expired')) {
+            if ((error?.response?.data as string)?.toLowerCase().includes('access token has expired')) {
                 // after a second attempt there should be no access expired error therefore we can stop here to prevent a stackoverflow
                 if (isSecondAttempt) {
                     throw error;
@@ -129,5 +131,117 @@ export class PatentsService {
             }
             throw error;
         }
+    }
+
+    /**
+     * Processes an OPS query and returns a much cleaner structure with the needed data
+     * @param data
+     */
+    private processQuery(data: PatentAPIResponse): QueryResult {
+        const searchResult = data['ops:world-patent-data']['ops:biblio-search'];
+
+        const totalResults = Number(searchResult['@total-result-count']);
+        const queryData = searchResult['ops:search-result']['exchange-documents'];
+
+        const processed = queryData
+            .map((item) => ({
+                ...item['exchange-document'],
+            }))
+            .map((item) => ({
+                id: `${item['@country']}${item['@doc-number']}.${item['@kind']}`,
+                title: PatentsService.getTitle(item),
+                citations: PatentsService.getCitations(item),
+                abstract: PatentsService.getAbstract(item),
+            }));
+
+        return {
+            patents: processed,
+            total: totalResults,
+        };
+    }
+
+    /**
+     * Attempts to get the title of a patent from the provided data
+     * @param doc
+     * @private
+     */
+    private static getTitle(doc: OpsExchangeDocument): string {
+        let titles = doc['bibliographic-data']['invention-title'];
+
+        // In some edge cases it can happen that the title is an object
+        if (!(titles instanceof Array)) {
+            titles = [titles];
+        }
+
+        // filtering for the english title
+        const titleEn = titles.filter((title) => title['@lang'] === 'en');
+
+        // if an english title is available we should use that
+        if (titleEn.length === 1) {
+            titles = titleEn;
+        }
+
+        return titles[0].$;
+    }
+
+    /**
+     * Gets citations from a provided OpsExchangeDocument
+     * @param doc
+     * @private
+     */
+    private static getCitations(doc: OpsExchangeDocument): Patent[] {
+        let citations = doc['bibliographic-data']['references-cited']?.citation;
+
+        if (!citations || citations.length === 0) {
+            return [] as Patent[];
+        }
+
+        if (!(citations instanceof Array)) {
+            citations = [citations];
+        }
+
+        return (
+            citations
+                // some patents have citations to non-patent sources. we have to filter those out
+                .filter((citation) => citation.patcit)
+                .map((citation) => {
+                    const docDbId = citation.patcit['document-id'].filter(
+                        (docId) => docId['@document-id-type'] === 'docdb',
+                    )[0];
+
+                    return {
+                        id: `${docDbId.country.$}${docDbId['doc-number'].$}.${docDbId.kind.$}`,
+                    };
+                }) as Patent[]
+        );
+    }
+
+    /**
+     * Gets the abstract from a provided OpsExchangeDocument
+     * @param doc
+     * @private
+     */
+    private static getAbstract(doc: OpsExchangeDocument): string {
+        let abstracts = doc.abstract;
+
+        // if no abstract exists we can return an empty string
+        if (!abstracts) {
+            return '';
+        }
+
+        // In some edge cases it can happen that the abstract is an object
+        if (!(abstracts instanceof Array)) {
+            abstracts = [abstracts];
+        }
+
+        // filtering for the english abstract
+        const abstractEn = abstracts.filter((abstract) => abstract['@lang'] === 'en');
+
+        // if an english abstract is available we should use that
+        if (abstractEn.length === 1) {
+            abstracts = abstractEn;
+        }
+
+        return abstracts[0].p.$;
     }
 }
