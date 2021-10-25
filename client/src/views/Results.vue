@@ -34,7 +34,7 @@
         </div>
 
         <div class="top-controls">
-            <Button btnText="Saved" iconKey="turned_in" />
+            <Button btnText="Saved" iconKey="turned_in" badge-value="21" />
         </div>
     </div>
 </template>
@@ -260,14 +260,14 @@ export default defineComponent({
 }
 
 .bottom-controls {
-    padding: 10px;
+    padding: 20px;
     position: absolute;
     bottom: 0;
     right: 0;
 }
 
 .top-controls {
-    margin: 10px;
+    margin: 20px;
     position: absolute;
     top: 0;
     right: 0;
