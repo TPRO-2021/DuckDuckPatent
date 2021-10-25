@@ -141,7 +141,11 @@ export class PatentsService {
         const searchResult = data['ops:world-patent-data']['ops:biblio-search'];
 
         const totalResults = Number(searchResult['@total-result-count']);
-        const queryData = searchResult['ops:search-result']['exchange-documents'];
+        let queryData = searchResult['ops:search-result']['exchange-documents'];
+
+        if (!(queryData instanceof Array)) {
+            queryData = [queryData];
+        }
 
         const processed = queryData
             .map((item) => ({
@@ -167,6 +171,10 @@ export class PatentsService {
      */
     private static getTitle(doc: OpsExchangeDocument): string {
         let titles = doc['bibliographic-data']['invention-title'];
+
+        if (!titles) {
+            return '';
+        }
 
         // In some edge cases it can happen that the title is an object
         if (!(titles instanceof Array)) {
