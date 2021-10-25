@@ -16,7 +16,6 @@
                     :provided-keywords="suggestedTerms"
                     v-on:on-add-keyword="onAddKeyword"
                 ></KeywordSuggestions>
-                <Button btnText="Test" :badgeValue="121" iconKey="save" />
             </div>
             <!-- This div contains the options menu for user to add more nodes/filters -->
             <div class="options-menu">
@@ -32,6 +31,10 @@
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
+        </div>
+
+        <div class="top-controls">
+            <Button btnText="Saved" iconKey="turned_in" />
         </div>
     </div>
 </template>
@@ -260,6 +263,13 @@ export default defineComponent({
     padding: 10px;
     position: absolute;
     bottom: 0;
+    right: 0;
+}
+
+.top-controls {
+    margin: 10px;
+    position: absolute;
+    top: 0;
     right: 0;
 }
 </style>
