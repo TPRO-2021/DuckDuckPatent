@@ -11,6 +11,7 @@
                     :key="index"
                     class="round-button"
                     :icon-key="option.iconKey"
+                    @click="option.action"
                 />
             </div>
         </div>
@@ -44,6 +45,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
+import { Patent } from '@/models/Patent';
 
 /**
  * This component previews the content of a patent
@@ -72,13 +74,18 @@ export default defineComponent({
              * Holds the info about available buttons
              */
             optionButtons: [
-                { iconKey: 'push_pin', action: 'pin' },
+                { iconKey: 'push_pin', action: 'pin()' },
                 { iconKey: 'visibility_off', action: 'hide' },
                 { iconKey: 'done', action: 'suggestMore' },
                 { iconKey: 'read_more', action: 'readMore' },
             ],
         };
     },
+    // computed: {
+    //     savedPatents(): Patent[] {
+    //         return this.$store.state.savedPatents;
+    //     },
+    // },
     methods: {
         /**
          * Method to check if next button is clicked then emit an event to ask the parent to send next patent
@@ -100,6 +107,9 @@ export default defineComponent({
 
             this.$emit('onClickBack', { index: this.index });
         },
+        // Pin(): void {
+        //     this.$store.commit('ADD_SAVED_PATENT', this.patent);
+        // },
     },
 });
 </script>
