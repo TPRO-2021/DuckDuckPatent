@@ -1,10 +1,23 @@
 import { Patent } from '@/models/Patent';
 
 export default class PatentService {
-    public async get(searchTerms: string[]): Promise<Patent[]> {
-        const queryString = searchTerms.map((term) => `keywords=${term}`).join('&');
-        const response = await fetch(`http://localhost:3000/patents?${queryString}`);
+    requestPending = false;
+    controller?: AbortController;
 
+    public async get(searchTerms: string[]): Promise<Patent[]> {
+        console.log('get Patents entered');
+        const queryString = searchTerms.map((term) => `keywords=${term}`).join('&');
+
+        // if request pending, abort it.
+        if (this.requestPending && this.controller) {
+            this.abortRequest(this.controller);
+        }
+        //generate signal for new request
+        this.controller = new AbortController();
+        this.requestPending = true;
+        const response = await fetch(`http://localhost:3000/patents?${queryString}`, {
+            signal: this.controller.signal,
+        });
         let json;
 
         try {
@@ -14,9 +27,13 @@ export default class PatentService {
             console.error(e);
             json = [];
         }
+        this.requestPending = false;
         return json;
     }
 
+    private abortRequest(reqController: AbortController): void {
+        reqController.abort();
+    }
     // TODO: check with Samu if it does what's expected
     public async getSinglePatent(searchedID: string[]): Promise<Patent> {
         const queryString = searchedID.map((term) => `id=${term}`).join('&');
