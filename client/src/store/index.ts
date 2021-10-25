@@ -32,6 +32,11 @@ export class AppState {
      * Hols the the patents as a result of research
      */
     public patents = [] as Patent[];
+
+    /**
+     * Node visualization options
+     */
+    public visualizationOptions = ['patents'] as string[];
 }
 
 export default createStore({
@@ -55,6 +60,20 @@ export default createStore({
          */
         hideLoadingScreen(state) {
             state.showLoadingScreen = false;
+        },
+
+        /*
+         * Add visualization option
+         */
+        addVisualizationOption(state, option: string) {
+            state.visualizationOptions = [...state.visualizationOptions, option];
+        },
+
+        /*
+         * Add visualization option
+         */
+        removeVisualizationOption(state, option: string) {
+            state.visualizationOptions = state.visualizationOptions.filter((t) => t !== option);
         },
 
         /**

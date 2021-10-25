@@ -19,11 +19,14 @@
             </div>
             <!-- This div contains the options menu for user to add more nodes/filters -->
             <div class="options-menu">
-                <OptionsMenu />
+                <OptionsMenu
+                    v-on:add-node="$store.commit('addVisualizationOption', $event)"
+                    v-on:remove-node="$store.commit('removeVisualizationOption', $event)"
+                />
             </div>
         </div>
         <div class="result-wrapper">
-            <ResultsVisualization :patents="patents" />
+            <ResultsVisualization :visualization-options="visualizationOptions" :patents="patents" />
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
@@ -66,6 +69,9 @@ export default defineComponent({
      * and patents from store/index.ts
      */
     computed: {
+        visualizationOptions(): string[] {
+            return this.$store.state.visualizationOptions;
+        },
         terms(): string[] {
             return this.$store.state.searchTerms;
         },
