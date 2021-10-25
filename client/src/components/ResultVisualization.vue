@@ -26,7 +26,7 @@
                 />
             </g>
         </svg>
-        <div class="tooltip card box-shadow">{{ this.currentNode?.patent['invention-title'] }}</div>
+        <div class="tooltip card box-shadow">{{ this.currentNode?.patent.title }}</div>
     </div>
 </template>
 
@@ -49,7 +49,6 @@ import {
     Selection,
     BaseType,
 } from 'd3';
-import { CitedPatent } from '@/models/CitedPatent';
 import { PatentNode } from '@/models/PatentNode';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
@@ -82,10 +81,10 @@ export default defineComponent({
     created() {
         // adding the event listener for the resize event here
         window.addEventListener('resize', this.onResize);
-        this.updateGraph();
     },
     mounted() {
         this.$nextTick(() => {
+            this.updateGraph();
             this.addZoomHandler();
             this.setupGraph();
         });
@@ -177,7 +176,7 @@ export default defineComponent({
          */
         getPatentNodes(): PatentNode[] {
             return (this.patents as Patent[]).map((patent) => ({
-                id: patent['@doc-number'],
+                id: patent.id,
                 patent: patent,
             })) as PatentNode[];
         },
@@ -192,21 +191,17 @@ export default defineComponent({
                     .reduce(
                         (relations, patent) =>
                             relations.concat(
-                                patent.cited_patents.map((citedPatent: CitedPatent) => ({
-                                    source: patent['@doc-number'],
-                                    target: citedPatent.cited_patent_number,
+                                (patent.citations || []).map((citedPatent: Patent) => ({
+                                    source: patent.id,
+                                    target: citedPatent.id,
                                 })),
                             ),
                         [] as { source: string; target: string }[],
                     )
                     .map((relation, index) => ({
                         index,
-                        source: this.graph.nodes[
-                            (this.patents as Patent[]).findIndex((k) => k['@doc-number'] === relation.source)
-                        ],
-                        target: this.graph.nodes[
-                            (this.patents as Patent[]).findIndex((k) => k['@doc-number'] === relation.target)
-                        ],
+                        source: this.graph.nodes[(this.patents as Patent[]).findIndex((k) => k.id === relation.source)],
+                        target: this.graph.nodes[(this.patents as Patent[]).findIndex((k) => k.id === relation.target)],
                     }))
                     .filter((t: SimulationLinkDatum<SimulationNodeDatum>) => t.source && t.target)
             );

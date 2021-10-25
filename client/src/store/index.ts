@@ -116,6 +116,16 @@ export default createStore({
         HIDE_LOADING_BAR(state) {
             state.showLoadingBar = false;
         },
+
+        /**
+         * Sets search terms to given value
+         * @param state
+         * @param terms
+         * @constructor
+         */
+        SET_SEARCH_TERMS(state, terms: string[]): void {
+            state.searchTerms = terms;
+        },
     },
 
     /**
