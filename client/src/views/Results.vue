@@ -62,7 +62,7 @@ export default defineComponent({
         };
     },
     /**
-     * Computed property that helps avoiding the continous reference the global store:searchTerms, suggestedTerms
+     * Computed property that helps avoiding the continuous reference the global store:searchTerms, suggestedTerms
      * and patents from store/index.ts
      */
     computed: {
@@ -115,12 +115,10 @@ export default defineComponent({
          *
          */
         debounce(debounceTime: number): void {
-            //do not add new request if the last one isn't finished yet
             if (this.debounceHandler) {
                 clearTimeout(this.debounceHandler);
             }
 
-            //toggle requestWaiting before&after request completion to avoid repeated requests
             if (this.inputFieldWaiting) {
                 debounceTime += debounceTime / 2;
             }
