@@ -142,6 +142,16 @@ export default createStore({
         },
 
         /**
+         * Sets search terms to given value
+         * @param state
+         * @param terms
+         * @constructor
+         */
+        SET_SEARCH_TERMS(state, terms: string[]): void {
+            state.searchTerms = terms;
+        },
+
+        /**
          * Add the favorite patent to the container
          * @param state
          * @param savedPatent

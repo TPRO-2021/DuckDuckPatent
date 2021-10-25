@@ -33,6 +33,9 @@ export default defineComponent({
             keywordService: new KeywordService(),
         };
     },
+    created(): void {
+        this.$store.commit('HIDE_LOADING_BAR');
+    },
     computed: {
         searchTerms(): string[] {
             return this.$store.state.searchTerms;

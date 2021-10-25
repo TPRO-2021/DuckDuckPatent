@@ -91,14 +91,8 @@ export default defineComponent({
     async created() {
         this.$store.commit('showLoadingScreen');
 
-        // If only one query parameter is sent it's treated as a string, not an array
-        let queryParams = this.$route.query.terms as string | string[];
-
-        if (typeof queryParams === 'string') {
-            queryParams = [queryParams];
-        }
-
-        this.terms = queryParams || [];
+        // since the store is not preserved in a refresh we need to check the current URL for keywords
+        this.checkUrl();
 
         // if no search-term is present change back to the search page!
         if (this.terms.length === 0) {
@@ -179,6 +173,11 @@ export default defineComponent({
             // start showing the smaller loading indicator
             this.$store.commit('SHOW_LOADING_BAR');
 
+            if (this.terms.length === 0) {
+                await this.$router.push({ path: '/' });
+                return;
+            }
+
             await this.$router.push({ query: { terms: this.terms } });
 
             const patents = await this.patentService.get(this.terms);
@@ -194,6 +193,21 @@ export default defineComponent({
          */
         toggleTimeline($event: boolean): void {
             this.showTimeline = $event;
+        },
+
+        /**
+         * Checks the current URL for query parameters and commits them to the store
+         * in order to reflect the changes throughout the app
+         */
+        checkUrl(): void {
+            // If only one query parameter is sent it's treated as a string, not an array
+            let queryParams = this.$route.query.terms as string | string[];
+
+            if (typeof queryParams === 'string') {
+                queryParams = [queryParams];
+            }
+
+            this.$store.commit('SET_SEARCH_TERMS', queryParams);
         },
     },
 });

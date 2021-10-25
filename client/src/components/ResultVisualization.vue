@@ -13,7 +13,7 @@
                     stroke-width="2"
                 />
                 <circle
-                    class="node"
+                    class=".node"
                     v-for="node in graph.nodes"
                     :key="node.id"
                     :cx="node.x"
@@ -25,7 +25,7 @@
                 />
             </g>
         </svg>
-        <div class="tooltip card box-shadow">{{ this.currentNode?.patent.patent_title }}</div>
+        <div class="tooltip card box-shadow">{{ this.currentNode?.patent.title }}</div>
     </div>
 </template>
 
@@ -48,7 +48,7 @@ import {
     Selection,
     BaseType,
 } from 'd3';
-import { CitedPatent } from '@/models/CitedPatent';
+
 import { VisualPatentNode } from '@/models/VisualPatentNode';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
@@ -85,10 +85,10 @@ export default defineComponent({
     created() {
         // adding the event listener for the resize event here
         window.addEventListener('resize', this.onResize);
-        this.updateGraph();
     },
     mounted() {
         this.$nextTick(() => {
+            this.updateGraph();
             this.addZoomHandler();
             this.setupGraph();
         });
@@ -181,11 +181,11 @@ export default defineComponent({
         /**
          * Processes the passed patents and returns them as nodes for D3 to display them.
          * A SimulationNodeDatum needs a unique identifier which we can provide by using the
-         * unique patent_number
+         * unique patent id
          */
         getNodes(patents: Patent[], citationMap: { [id: string]: string[] }): VisualPatentNode[] {
             let nodes = patents.map((patent) => ({
-                id: patent.patent_number,
+                id: patent.id,
                 patent,
                 type: 'patent',
                 color: 'rgb(168, 133, 41)',
@@ -200,7 +200,7 @@ export default defineComponent({
                 const authorNodes = patents.map(
                     (patent) =>
                         ({
-                            id: `${patent.patent_number}:author`, // Set the id to be the "parent" patent id + 'author'
+                            id: `${patent.id}:author`, // Set the id to be the "parent" patent id + 'author'
                             patent, // Set the patent for tooltip viewing (this should change later)
                             type: 'author', // Set the type of the node to 'author'
                             color: brown, // Set the color to brown
@@ -217,7 +217,7 @@ export default defineComponent({
                 const companyNodes = patents.map(
                     (patent) =>
                         ({
-                            id: `${patent.patent_number}:company`,
+                            id: `${patent.id}:company`,
                             patent: patent, // Set the patent for tooltip viewing (this should change later)
                             type: 'company', // Set the type of the node to 'company'
                             color: blue, // Set the color to blue
@@ -230,7 +230,7 @@ export default defineComponent({
             // If the user has selected to view citations
             if (this.visualizationOptions.includes('citations')) {
                 const green = 'rgb(72, 121, 9)';
-                const patentMap = this.buildMap(patents, 'patent_number'); // Build a map of all patents, this should make finding them by ID faster.
+                const patentMap = this.buildMap(patents, 'id'); // Build a map of all patents, this should make finding them by ID faster.
                 const citationNodes = Object.keys(citationMap) // Get the keys (citation ids) from the citationMap.
                     .filter((citationId) => !patentMap[citationId]) // Remove patent-node to patent-node citations (these nodes are already shown)
                     .filter((citationId) => citationMap[citationId].length > 1) // Only show citations that are cited by multiple patents (for clarity)
@@ -273,12 +273,12 @@ export default defineComponent({
                     (citations, patent) => [
                         // Iterate through the patents, adding citations to a large list
                         ...citations, // Extend current citations collected...
-                        ...patent.cited_patents.map(
-                            (citedPatent: CitedPatent) =>
+                        ...(patent.citations || []).map(
+                            (citedPatent: Patent) =>
                                 ({
                                     // ...with the citations of the current patent
-                                    source: citedPatent.cited_patent_number, // first map to source/target ids
-                                    target: patent.patent_number,
+                                    source: citedPatent.id, // first map to source/target ids
+                                    target: patent.id,
                                 } as { source: string; target: string }),
                         ),
                     ],
@@ -309,12 +309,12 @@ export default defineComponent({
                 // first we need to create an array, containing the relations
                 (relations, node) => [
                     ...relations, // extend the relations...
-                    ...node.patent.cited_patents.map(
-                        (citedPatent: CitedPatent) =>
+                    ...(node.patent.citations || []).map(
+                        (citedPatent: Patent) =>
                             ({
                                 // ... with a map of nodes to source & target
                                 source: node, // Source is citing patent node
-                                target: nodeMap[citedPatent.cited_patent_number], // target is the patent node being cited
+                                target: nodeMap[citedPatent.id], // target is the patent node being cited
                             } as { source: VisualPatentNode; target: VisualPatentNode }),
                     ),
                 ],
@@ -343,7 +343,7 @@ export default defineComponent({
                 .map((t) => ({
                     // Map the nodes to source and target (one link per node)
                     source: t, // The source is the author or company
-                    target: nodeMap[t.patent.patent_number], // The target is the patent
+                    target: nodeMap[t.patent.id], // The target is the patent
                 })) as { source: VisualPatentNode; target: VisualPatentNode }[];
 
             // Combine all links together
