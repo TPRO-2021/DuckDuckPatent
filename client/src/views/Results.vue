@@ -16,6 +16,7 @@
                     :provided-keywords="suggestedTerms"
                     v-on:on-add-keyword="onAddKeyword"
                 ></KeywordSuggestions>
+                <Button btnText="Test" :badgeValue="121" iconKey="save" />
             </div>
             <!-- This div contains the options menu for user to add more nodes/filters -->
             <div class="options-menu">
