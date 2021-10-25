@@ -39,10 +39,6 @@ export class AppState {
      */
     public savedPatents = [] as Patent[];
 
-     * Hols the the patents as a result of research
-     */
-    public patents = [] as Patent[];
-
 }
 
 export default createStore({

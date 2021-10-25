@@ -16,6 +16,7 @@
                     :provided-keywords="suggestedTerms"
                     v-on:on-add-keyword="onAddKeyword"
                 ></KeywordSuggestions>
+                <Button btnText="Test" :badgeValue="121" iconKey="save" />
             </div>
             <!-- This div contains the options menu for user to add more nodes/filters -->
             <div class="options-menu">
@@ -42,6 +43,7 @@ import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
 import ResultsVisualization from '@/components/ResultVisualization.vue';
+import Button from '@/components/Button.vue';
 
 export default defineComponent({
     name: 'Results',
@@ -51,6 +53,7 @@ export default defineComponent({
         RoundButton,
         OptionsMenu,
         ResultsVisualization,
+        Button,
     },
     data() {
         return {
