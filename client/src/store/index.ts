@@ -141,7 +141,6 @@ export default createStore({
             state.showLoadingBar = false;
         },
 
-
         /**
          * Sets search terms to given value
          * @param state
@@ -150,7 +149,7 @@ export default createStore({
          */
         SET_SEARCH_TERMS(state, terms: string[]): void {
             state.searchTerms = terms;
-        }
+        },
 
         /**
          * Add the favorite patent to the container
