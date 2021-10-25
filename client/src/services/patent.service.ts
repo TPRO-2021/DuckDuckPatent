@@ -14,7 +14,6 @@ export default class PatentService {
         }
         //generate signal for new request
         this.controller = new AbortController();
-        console.log('current signal status', this.controller.signal); //TODO: remove after review
         this.requestPending = true;
         const response = await fetch(`http://localhost:3000/patents?${queryString}`, {
             signal: this.controller.signal,
@@ -34,7 +33,6 @@ export default class PatentService {
 
     private abortRequest(reqController: AbortController): void {
         reqController.abort();
-        console.log('abort status:', reqController.signal); //TODO: remove after review
     }
     // TODO: check with Samu if it does what's expected
     public async getSinglePatent(searchedID: string[]): Promise<Patent> {
