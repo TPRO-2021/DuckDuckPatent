@@ -32,6 +32,10 @@
         <div class="bottom-controls">
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
+
+        <div class="top-controls">
+            <Button btnText="Saved" iconKey="turned_in" badge-value="21" />
+        </div>
     </div>
 </template>
 
@@ -45,6 +49,7 @@ import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
 import ResultsVisualization from '@/components/ResultVisualization.vue';
+import Button from '@/components/Button.vue';
 
 export default defineComponent({
     name: 'Results',
@@ -54,6 +59,7 @@ export default defineComponent({
         RoundButton,
         OptionsMenu,
         ResultsVisualization,
+        Button,
     },
     data() {
         return {
@@ -254,9 +260,16 @@ export default defineComponent({
 }
 
 .bottom-controls {
-    padding: 10px;
+    padding: 20px;
     position: absolute;
     bottom: 0;
+    right: 0;
+}
+
+.top-controls {
+    margin: 20px;
+    position: absolute;
+    top: 0;
     right: 0;
 }
 </style>

@@ -7,6 +7,6 @@ describe('Button.vue', () => {
         const wrapper = shallowMount(Button, {
             props: { btnText: msg },
         });
-        expect(wrapper.html()).toContain(`<span class="btn-text">${msg}</span>`);
+        expect(wrapper.html()).toContain(`${msg}`);
     });
 });
