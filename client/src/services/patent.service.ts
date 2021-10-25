@@ -5,12 +5,11 @@ export default class PatentService {
     controller?: AbortController;
 
     public async get(searchTerms: string[]): Promise<Patent[]> {
-        console.log('get Patents entered');
         const queryString = searchTerms.map((term) => `keywords=${term}`).join('&');
 
         // if request pending, abort it.
         if (this.requestPending && this.controller) {
-            this.abortRequest(this.controller);
+            PatentService.abortRequest(this.controller);
         }
         //generate signal for new request
         this.controller = new AbortController();
@@ -31,9 +30,10 @@ export default class PatentService {
         return json;
     }
 
-    private abortRequest(reqController: AbortController): void {
+    private static abortRequest(reqController: AbortController): void {
         reqController.abort();
     }
+
     // TODO: check with Samu if it does what's expected
     public async getSinglePatent(searchedID: string[]): Promise<Patent> {
         const queryString = searchedID.map((term) => `id=${term}`).join('&');
