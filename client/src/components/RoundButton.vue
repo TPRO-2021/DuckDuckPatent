@@ -1,7 +1,7 @@
 <template>
     <button
         type="button"
-        class="roundButton box-shadow"
+        class="roundButton box-shadow no-select"
         @click="onClick"
         :class="{ 'button-active': isToggle && isClicked, 'button-light': !isToggle && type === 'light' }"
     >

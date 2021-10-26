@@ -4,8 +4,11 @@ export default class PatentService {
     requestPending = false;
     controller?: AbortController;
 
-    public async get(searchTerms: string[]): Promise<Patent[]> {
-        const queryString = searchTerms.map((term) => `keywords=${term}`).join('&');
+    public async get(searchTerms: string[], page = 0): Promise<{ patents: Patent[]; totalCount: number }> {
+        const queryString = searchTerms
+            .map((term) => `keywords=${term}`)
+            .join('&')
+            .concat(`&page=${page}`);
 
         // if request pending, abort it.
         if (this.requestPending && this.controller) {
@@ -17,17 +20,21 @@ export default class PatentService {
         const response = await fetch(`http://localhost:3000/patents?${queryString}`, {
             signal: this.controller.signal,
         });
-        let json;
+
+        // accessing x-total-count header which indicates how many results are available
+        const totalCount = parseInt(response.headers.get('x-total-count') || '99');
+
+        let json: Patent[];
 
         try {
-            json = (await response.json()) as Promise<Patent[]>;
+            json = (await response.json()) as Patent[];
         } catch (e) {
             // TODO: Throw a meaningful error and display the message in the corresponding view
             console.error(e);
             json = [];
         }
         this.requestPending = false;
-        return json;
+        return { patents: json, totalCount };
     }
 
     private static abortRequest(reqController: AbortController): void {

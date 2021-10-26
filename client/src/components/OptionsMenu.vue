@@ -10,7 +10,7 @@
 
     <!--  This div the menu container with nodes, togglers, and filters  -->
     <div
-        class="main-container box-shadow card"
+        class="main-container box-shadow card no-select"
         v-show="openMenu === true"
         @mouseleave="timeOut()"
         @mouseenter="resetTimer()"
