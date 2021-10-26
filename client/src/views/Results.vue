@@ -213,7 +213,7 @@ export default defineComponent({
         onChangePatent(e: { direction: string }): void {
             switch (e.direction) {
                 case 'next':
-                    if (this.selectedPatentIndex > this.patents.length - 1) {
+                    if (this.selectedPatentIndex >= this.patents.length - 1) {
                         this.selectedPatentIndex = 0;
                         break;
                     }
