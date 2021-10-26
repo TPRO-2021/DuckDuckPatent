@@ -26,13 +26,26 @@
             </div>
         </div>
         <div class="result-wrapper">
-            <ResultsVisualization :visualization-options="visualizationOptions" :patents="patents" />
+            <ResultsVisualization
+                :visualization-options="visualizationOptions"
+                :patents="patents"
+                v-on:on-patent-selected="onPatentSelected"
+            />
         </div>
         <div class="top-right-controls">
-            <Button btnText="Saved" iconKey="turned_in" badge-value="21" />
+            <Button btnText="Saved" iconKey="turned_in" badge-value="21" v-on:on-clicked="openSavePage" />
+            <div class="patent-preview" v-if="selectedPatentIndex > -1">
+                <PatentPreview :patent="patents[selectedPatentIndex]" v-on:on-change-patent="onChangePatent($event)" />
+            </div>
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
+            <Button
+                v-if="moreDataAvailable"
+                v-on:on-clicked="extendSearch"
+                icon-key="check"
+                btn-text="Load more"
+            ></Button>
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
     </div>
@@ -43,6 +56,7 @@ import { defineComponent } from 'vue';
 import PatentService from '@/services/patent.service';
 import { Patent } from '@/models/Patent';
 import Searchbar from '@/components/Searchbar.vue';
+import PatentPreview from '@/components/PatentPreview.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
@@ -54,6 +68,7 @@ export default defineComponent({
     name: 'Results',
     components: {
         Searchbar,
+        PatentPreview,
         KeywordSuggestions,
         RoundButton,
         OptionsMenu,
@@ -68,7 +83,9 @@ export default defineComponent({
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
+            selectedPatentIndex: -1,
             inputFieldWaiting: false,
+            moreDataAvailable: false,
         };
     },
     /**
@@ -88,6 +105,15 @@ export default defineComponent({
         patents(): Patent[] {
             return this.$store.state.patents;
         },
+        totalCount(): number {
+            return this.$store.state.totalCount;
+        },
+        availablePages(): number {
+            return this.totalCount / 99;
+        },
+        currentPage(): number {
+            return this.$store.state.pageCount;
+        },
     },
     async created() {
         this.$store.commit('showLoadingScreen');
@@ -105,11 +131,14 @@ export default defineComponent({
             this.$store.commit('ADD_SUGGESTIONS', res);
         });
 
-        const patents = await this.patentService.get(this.terms);
-        this.$store.commit('ADD_PATENTS', patents);
+        const { patents, totalCount } = await this.patentService.get(this.terms);
+        this.$store.dispatch('addPatents', { patents, totalCount });
 
         // after loading the patents the loading screen should disappear
         this.$store.commit('hideLoadingScreen');
+
+        // now we can check the result
+        this.checkResult();
     },
     methods: {
         /**
@@ -183,9 +212,9 @@ export default defineComponent({
 
             await this.$router.push({ query: { terms: this.terms } });
 
-            let patents: Patent[];
             try {
-                patents = await this.patentService.get(this.terms);
+                const { patents, totalCount } = await this.patentService.get(this.terms); //TODO:check with samu
+                this.$store.dispatch('addPatents', { patents, totalCount });
                 // eslint-disable-next-line
             } catch (e: any) {
                 //  console.log('error message ', e.message); // TODO: Remove this after review approved
@@ -196,8 +225,57 @@ export default defineComponent({
                 return;
             }
 
-            this.$store.commit('ADD_PATENTS', patents);
             this.$store.commit('HIDE_LOADING_BAR');
+
+            // now we can check the result
+            this.checkResult();
+        },
+
+        /**
+         * Extend the search with a new page (99 more results)
+         */
+        async extendSearch() {
+            const newPage = this.currentPage + 1;
+
+            this.$store.commit('SHOW_LOADING_BAR');
+            const { patents, totalCount } = await this.patentService.get(this.terms, newPage);
+            this.$store.dispatch('addPatents', { patents: this.patents.concat(patents), totalCount, page: newPage });
+
+            this.checkResult();
+            this.$store.commit('HIDE_LOADING_BAR');
+        },
+
+        /**
+         * Event handler which sets the current index to the passed
+         * @param e
+         */
+        onPatentSelected(e: { patent: Patent; index: number }) {
+            this.selectedPatentIndex = e.index;
+        },
+
+        /**
+         * Event handler which processes a change of patent
+         * @param e
+         */
+        onChangePatent(e: { direction: string }): void {
+            switch (e.direction) {
+                case 'next':
+                    if (this.selectedPatentIndex >= this.patents.length - 1) {
+                        this.selectedPatentIndex = 0;
+                        break;
+                    }
+
+                    this.selectedPatentIndex++;
+                    break;
+                case 'previous':
+                    if (this.selectedPatentIndex === 0) {
+                        this.selectedPatentIndex = this.patents.length - 1;
+                        break;
+                    }
+
+                    this.selectedPatentIndex--;
+                    break;
+            }
         },
         /**
          * Resets to landing page after some time, if no results returned. All input is cleared.
@@ -248,6 +326,17 @@ export default defineComponent({
 
             this.$store.commit('SET_SEARCH_TERMS', queryParams);
         },
+
+        /**
+         * Checks if there need to be any additional actions done for the result
+         */
+        checkResult(): void {
+            this.moreDataAvailable = this.totalCount > 99 && this.currentPage < this.availablePages;
+        },
+
+        openSavePage(): void {
+            this.$router.push({ path: '/saved' });
+        },
     },
 });
 </script>
@@ -259,7 +348,11 @@ export default defineComponent({
     align-items: flex-start;
     position: absolute;
     top: 0;
-    width: 800px;
+    pointer-events: none;
+
+    div {
+        pointer-events: all !important;
+    }
 }
 .search-input {
     width: 600px;
@@ -317,6 +410,8 @@ export default defineComponent({
     position: absolute;
     bottom: 0;
     right: 0;
+    gap: 20px;
+    display: flex;
 }
 
 .top-right-controls {
@@ -324,5 +419,12 @@ export default defineComponent({
     position: absolute;
     top: 0;
     right: 0;
+}
+
+.patent-preview {
+    position: absolute;
+    z-index: 100;
+    bottom: 0;
+    left: 0;
 }
 </style>

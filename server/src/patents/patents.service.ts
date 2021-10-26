@@ -9,6 +9,8 @@ export class PatentsService {
     private authData: AuthResponse;
     private data: PatentAPIResponse;
 
+    private static queryEndpoint = '/rest-services/published-data/search/biblio';
+
     constructor(private readonly httpService: HttpService) {}
 
     /**
@@ -87,34 +89,26 @@ export class PatentsService {
 
     /**
      * Queries the patent API with the provided search terms
-     * @param terms
-     * @param isSecondAttempt
+     * @param terms The terms which will be used for querying
+     * @param page The page that should be queried
+     * @param isSecondAttempt Specifies if this is the second attempt (auth)
      */
-    public async query(terms: string[], isSecondAttempt = false): Promise<QueryResult> {
+    public async query(terms: string[], page: number, isSecondAttempt = false): Promise<QueryResult> {
         // if no auth data is present we need to generate an access token
         if (!this.authData) {
             this.authData = await this.getAccessToken();
         }
 
-        const abstracts = [];
-        const titles = [];
-
-        terms.forEach((term) => {
-            abstracts.push({ _text_any: { patent_abstract: term } });
-            titles.push({ _text_any: { patent_title: term } });
-        });
+        const queryString = PatentsService.getQueryString(terms, PatentsService.queryEndpoint, page);
 
         try {
             const response = await lastValueFrom(
-                this.httpService.get<PatentAPIResponse>(
-                    `${process.env.PATENT_API_URL}/rest-services/published-data/search/biblio?q=ti%3D ${terms} or ab%3D ${terms}&Range=1-100`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${this.authData.access_token}`,
-                            Accept: 'application/json',
-                        },
+                this.httpService.get<PatentAPIResponse>(queryString, {
+                    headers: {
+                        Authorization: `Bearer ${this.authData.access_token}`,
+                        Accept: 'application/json',
                     },
-                ),
+                }),
             );
 
             return this.processQuery(response.data);
@@ -127,7 +121,7 @@ export class PatentsService {
                 }
 
                 this.authData = await this.getAccessToken();
-                return this.query(terms, true);
+                return this.query(terms, page, true);
             }
             throw error;
         }
@@ -251,5 +245,19 @@ export class PatentsService {
         }
 
         return abstracts[0].p.$;
+    }
+
+    /**
+     * Compiles an OPS query string based on the provided data
+     * @param searchTerms   The search terms which need to be added to the URL
+     * @param endpoint      The target endpoint
+     * @param page          The page which should be retrieved
+     * @private
+     */
+    private static getQueryString(searchTerms: string[], endpoint: string, page = 0): string {
+        return `${process.env.PATENT_API_URL}`
+            .concat(endpoint)
+            .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`)
+            .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
     }
 }

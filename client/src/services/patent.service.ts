@@ -4,8 +4,11 @@ export default class PatentService {
     requestPending = false;
     controller?: AbortController;
 
-    public async get(searchTerms: string[]): Promise<Patent[]> {
-        const queryString = searchTerms.map((term) => `keywords=${term}`).join('&');
+    public async get(searchTerms: string[], page = 0): Promise<{ patents: Patent[]; totalCount: number }> {
+        const queryString = searchTerms
+            .map((term) => `keywords=${term}`)
+            .join('&')
+            .concat(`&page=${page}`);
 
         // if request pending, abort it.
         if (this.requestPending && this.controller) {
@@ -14,20 +17,23 @@ export default class PatentService {
         //generate signal for new request
         this.controller = new AbortController();
         this.requestPending = true;
-        let json;
 
         const response = await fetch(`http://localhost:3000/patents?${queryString}`, {
             signal: this.controller.signal,
         });
+
+        let json: Patent[];
         if (!response.ok) {
             json = [];
             //   console.log('My error occurred. status: ', response.status); // TODO: Remove this after review approved
             // console.log('My error occurred. message: ', response.statusText);
             PatentService.throwError(response.status);
         }
-        json = (await response.json()) as Promise<Patent[]>;
+        // accessing x-total-count header which indicates how many results are available
+        const totalCount = parseInt(response.headers.get('x-total-count') || '99');
+        json = (await response.json()) as Patent[];
         this.requestPending = false;
-        return json;
+        return { patents: json, totalCount };
     }
 
     // distinguishes between general and patent not found error

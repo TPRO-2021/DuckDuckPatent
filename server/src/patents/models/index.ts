@@ -1,5 +1,18 @@
 /**
- * This interface describes the structure of the response which is
+ ********************************************************
+ * OPS related models
+ ********************************************************
+ */
+
+/**
+ * Interface which describes a string as it is provided by OPS
+ */
+export interface OpsStringData {
+    $: string;
+}
+
+/**
+ * This interface describes the structure of the OPS response
  */
 export interface PatentAPIResponse {
     'ops:world-patent-data': {
@@ -21,10 +34,24 @@ export interface PatentAPIResponse {
 }
 
 /**
- * Interface which describes a string as it is provided by OPS
+ * This interface represents the structure of the auth response from
+ * OPS
  */
-export interface OpsStringData {
-    $: string;
+export interface AuthResponse {
+    refresh_token_expires_in: string;
+    api_product_list: string;
+    api_product_list_json: string[];
+    organization_name: string;
+    'developer.email': string;
+    token_type: string;
+    issued_at: string;
+    client_id: string;
+    access_token: string;
+    application_name: string;
+    scope: string;
+    expires_in: string;
+    refresh_count: string;
+    status: string;
 }
 
 /**
@@ -132,6 +159,10 @@ export interface OpsApplicant {
 }
 
 /**
+ * DuckDuckPatent related models
+ */
+
+/**
  * Interface which represents the patent which is returned to the client
  */
 export interface Patent {
@@ -150,22 +181,9 @@ export interface QueryResult {
 }
 
 /**
- * This interface represents the structure of the auth response from
- * OPS
+ * This interface represents the possible content of a clients query
  */
-export interface AuthResponse {
-    refresh_token_expires_in: string;
-    api_product_list: string;
-    api_product_list_json: string[];
-    organization_name: string;
-    'developer.email': string;
-    token_type: string;
-    issued_at: string;
-    client_id: string;
-    access_token: string;
-    application_name: string;
-    scope: string;
-    expires_in: string;
-    refresh_count: string;
-    status: string;
+export interface PatentSearchQuery {
+    keywords: string[] | string;
+    page?: string;
 }
