@@ -1,6 +1,6 @@
 <template>
     <div class="saved-page">
-        <div>
+        <div class="saved-controls">
             <RoundButton class="back-btn" icon-key="reply" @click="backPage"></RoundButton>
             <Button class="saved-btn" iconKey="bookmark" btnText="saved item">Saved</Button>
         </div>
@@ -47,28 +47,34 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .saved-page {
-    position: relative;
+    height: 100vh;
+    width: 100%;
+    //overflow: hidden;
 }
+
+.saved-controls {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 500px;
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    //position: absolute;
+}
+
 .saved-btn {
-    position: absolute;
-    left: 128px;
-    top: 32px;
 }
 .back-btn {
-    position: absolute;
-    left: 78px;
-    top: 35px;
     height: 40px;
     width: 40px;
-    //margin-left: 5px;
 }
 .saved-list {
-    position: absolute;
-    top: 133px;
-    left: 78px;
+    padding-left: 0 !important;
     gap: 65px;
     flex-grow: 5;
     display: flex;
+    justify-content: center;
     flex-direction: row;
     flex-wrap: wrap;
     padding-bottom: 65px;

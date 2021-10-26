@@ -31,20 +31,21 @@ export default defineComponent({
 <style lang="scss" scoped>
 .main-container {
     display: flex;
-    justify-content: start;
-    width: 216px;
+    justify-content: flex-start;
+    width: 500px;
 }
 .patent-info {
-    justify-content: start;
     transition: 0.5s;
     margin: 8px;
 }
 .patent-title {
+    text-align: left;
     font-style: normal;
     font-size: 12px;
     margin-bottom: 20px;
 }
 .patent-abstract {
+    text-align: left;
     font-style: normal;
     font-weight: normal;
     font-size: 16px;

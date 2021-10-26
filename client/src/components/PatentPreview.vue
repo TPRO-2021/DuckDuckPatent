@@ -45,7 +45,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
-import { Patent } from '@/models/Patent';
 
 /**
  * This component previews the content of a patent
@@ -117,7 +116,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 .main-container {
     display: flex;
-    justify-content: start;
+    justify-content: flex-start;
     flex-direction: column;
     width: 600px;
 }
