@@ -1,6 +1,25 @@
 <template>
+    <div class="progress-bar">
+        <ProgressBar mode="indeterminate" v-if="showLoadingBar"></ProgressBar>
+    </div>
+    <LoadingScreen></LoadingScreen>
     <router-view />
 </template>
+
+<script lang="ts">
+import { defineComponent } from 'vue';
+import LoadingScreen from '@/components/LoadingScreen.vue';
+
+export default defineComponent({
+    name: 'App',
+    components: { LoadingScreen },
+    computed: {
+        showLoadingBar(): boolean {
+            return this.$store.state.showLoadingBar;
+        },
+    },
+});
+</script>
 
 <style lang="scss">
 @import '~@/styles/global.scss';
@@ -17,5 +36,12 @@
 // removes default border from button
 button {
     border: none;
+}
+
+.progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
 }
 </style>

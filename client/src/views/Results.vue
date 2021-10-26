@@ -4,32 +4,42 @@
         <div class="top-left-controls">
             <!-- This div contains the searchbar and keyword suggestions -->
             <div class="search-input card box-shadow">
-                <Searchbar :search-terms="terms"
-                           v-on:on-add-keyword="onAddKeyword"
-                           v-on:on-search="refreshResults"
-                           v-on:on-remove-keyword="onRemoveKeyword">
-                </Searchbar>
-                <KeywordSuggestions :provided-keywords="suggestedTerms"
-                                    v-on:on-add-keyword="onAddKeyword"></KeywordSuggestions>
+                <Searchbar
+                    :search-terms="terms"
+                    @input-focused="inputFieldWaiting = true"
+                    @input-not-focused="inputFieldWaiting = false"
+                    v-on:on-add-keyword="onAddKeyword"
+                    v-on:on-search="refreshResults"
+                    v-on:on-remove-keyword="onRemoveKeyword"
+                ></Searchbar>
+                <KeywordSuggestions
+                    :provided-keywords="suggestedTerms"
+                    v-on:on-add-keyword="onAddKeyword"
+                ></KeywordSuggestions>
             </div>
             <!-- This div contains the options menu for user to add more nodes/filters -->
             <div class="options-menu">
-                <OptionsMenu />
+                <OptionsMenu
+                    v-on:add-node="$store.commit('addVisualizationOption', $event)"
+                    v-on:remove-node="$store.commit('removeVisualizationOption', $event)"
+                />
             </div>
         </div>
         <div class="result-wrapper">
-            <ResultsVisualization :patents="patents"
-                                  v-on:on-patent-selected="onPatentSelected" />
+            <ResultsVisualization :visualization-options="visualizationOptions" :patents="patents" v-on:on-patent-selected="onPatentSelected" />
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
+
         <div class="patent-preview">
             <PatentPreview :patent="patents[selectedPatentIndex]" />
         </div>
 
-
+        <div class="top-controls">
+            <Button btnText="Saved" iconKey="turned_in" badge-value="21" />
+        </div>
     </div>
 </template>
 
@@ -44,6 +54,7 @@ import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
 import ResultsVisualization from '@/components/ResultVisualization.vue';
+import Button from '@/components/Button.vue';
 
 export default defineComponent({
     name: 'Results',
@@ -54,28 +65,41 @@ export default defineComponent({
         RoundButton,
         OptionsMenu,
         ResultsVisualization,
-        
+        Button,
     },
     data() {
         return {
-            patents: [] as Patent[],
-            terms: [] as string[],
-            suggestedTerms: [] as string[],
+            debounceHandler: null as number | null,
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
             selectedPatentIndex: 0,
+            inputFieldWaiting: false,
         };
     },
+    /**
+     * Computed property that helps avoiding the continuous reference the global store:searchTerms, suggestedTerms
+     * and patents from store/index.ts
+     */
+    computed: {
+        visualizationOptions(): string[] {
+            return this.$store.state.visualizationOptions;
+        },
+        terms(): string[] {
+            return this.$store.state.searchTerms;
+        },
+        suggestedTerms(): string[] {
+            return this.$store.state.suggestedTerms;
+        },
+        patents(): Patent[] {
+            return this.$store.state.patents;
+        },
+    },
     async created() {
-        // If only one query parameter is sent it's treated as a string, not an array
-        let queryParams = this.$route.query.terms as string | string[];
+        this.$store.commit('showLoadingScreen');
 
-        if (typeof queryParams === 'string') {
-            queryParams = [queryParams];
-        }
-
-        this.terms = queryParams || [];
+        // since the store is not preserved in a refresh we need to check the current URL for keywords
+        this.checkUrl();
 
         // if no search-term is present change back to the search page!
         if (this.terms.length === 0) {
@@ -84,51 +108,90 @@ export default defineComponent({
 
         // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
         this.keywordService.getSuggestions(this.terms).then((res) => {
-            this.suggestedTerms = res;
+            this.$store.commit('ADD_SUGGESTIONS', res);
         });
-        this.patents = await this.patentService.get(this.terms);
-        console.log("firstPatent",this.patents[0]);
+
+        const patents = await this.patentService.get(this.terms);
+        this.$store.commit('ADD_PATENTS', patents);
+
+        // after loading the patents the loading screen should disappear
+        this.$store.commit('hideLoadingScreen');
     },
     methods: {
         /**
-         * Adds a keyword to the current search terms and triggers a result refresh
+         * Function which delays refreshing the screen for provided time, i.e. debounces client requests.
+         * Since the Searchbar.vue is only responsible for converting terms to chips and sending them over,
+         * delay of the requests is fully handled here.
+         *
+         * If input focused, delay increases by half the time. Oftentimes users don't click the icon to initiate search,
+         * hence it might be better to simply prolong existing delay to allow for further search inputs.
+         *
+         */
+        debounce(debounceTime: number): void {
+            if (this.debounceHandler) {
+                clearTimeout(this.debounceHandler);
+            }
+
+            if (this.inputFieldWaiting) {
+                debounceTime += debounceTime / 2;
+            }
+
+            this.debounceHandler = setTimeout(async () => {
+                await this.refreshResults();
+                this.inputFieldWaiting = false;
+            }, debounceTime);
+        },
+        /**
+         * Adds a keyword to the current search terms and triggers a result refresh + debouncing the request
          *
          * @param event The event containing the passed up keyword
          */
         async onAddKeyword(event: { value: string }): Promise<void> {
-            // It can be important not to mutate state because it can cause unintended side-effects
-            // Adding to an array using the spread operator [...] or concat() makes the code easier to reason
-            // about because it can't change values outside of this code's scope.
-            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
-            this.terms = [...this.terms, event.value];
-            await this.refreshResults();
+            this.$store.commit('ADD_SEARCH_TERM', event.value);
+            this.refreshKeywords();
+            this.debounce(2000);
         },
 
         /**
-         * Removes a keyword from the current search terms and triggers a result refresh
+         * Removes a keyword from the current search terms and triggers a result refresh + debouncing the request
          *
          * @param event
          */
         async onRemoveKeyword(event: { value: string; index: number }) {
-            // It can be important not to mutate state because it can cause unintended side-effects
-            // Removing from an array using filter() makes the code easier to reason
-            // because it can't change values outside of this code's scope.
-            // More information on this general concept: https://www.geeksforgeeks.org/why-is-immutability-so-important-in-javascript/
-            this.terms = this.terms.filter((t, index) => event.index !== index);
-            await this.refreshResults();
+            this.$store.commit('REMOVE_SEARCH_TERM', event);
+            this.refreshKeywords();
+            this.debounce(2000);
         },
 
         /**
-         * Refreshes suggested keywords and patent results
+         * Refreshes suggested keywords
          */
-        async refreshResults(): Promise<void> {
+        refreshKeywords(): void {
             // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
             this.keywordService.getSuggestions(this.terms).then((suggestions) => {
-                this.suggestedTerms = suggestions;
+                this.$store.commit('ADD_SUGGESTIONS', suggestions);
             });
+        },
+
+        /**
+         * Refreshes patent results
+         */
+        async refreshResults(): Promise<void> {
+            // start showing the smaller loading indicator
+            this.$store.commit('SHOW_LOADING_BAR');
+
+            if (this.terms.length === 0) {
+                await this.$router.push({ path: '/' });
+                return;
+            }
 
             await this.$router.push({ query: { terms: this.terms } });
-            this.patents = await this.patentService.get(this.terms);
+
+            const patents = await this.patentService.get(this.terms);
+            this.$store.commit('ADD_PATENTS', patents);
+
+            // finally hide loading indicator
+            this.$store.commit('HIDE_LOADING_BAR');
         },
         onPatentSelected(e: { patent: Patent, index: number }) {
             this.selectedPatentIndex = e.index;
@@ -139,6 +202,21 @@ export default defineComponent({
          */
         toggleTimeline($event: boolean): void {
             this.showTimeline = $event;
+        },
+
+        /**
+         * Checks the current URL for query parameters and commits them to the store
+         * in order to reflect the changes throughout the app
+         */
+        checkUrl(): void {
+            // If only one query parameter is sent it's treated as a string, not an array
+            let queryParams = this.$route.query.terms as string | string[];
+
+            if (typeof queryParams === 'string') {
+                queryParams = [queryParams];
+            }
+
+            this.$store.commit('SET_SEARCH_TERMS', queryParams);
         },
     },
 });
@@ -205,15 +283,23 @@ export default defineComponent({
 }
 
 .bottom-controls {
-    padding: 10px;
+    padding: 20px;
     position: absolute;
     bottom: 0;
     right: 0;
 }
+
+.top-controls {
+    margin: 20px;
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
 .patent-preview {
-        position: absolute;
-        z-index: 100;
-        bottom: 0;
-        left: 0;
+    position: absolute;
+    z-index: 100;
+    bottom: 0;
+    left: 0;
 }
 </style>

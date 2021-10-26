@@ -1,16 +1,9 @@
-import { CitedPatent } from '@/models/CitedPatent';
-
 /**
  * This interface represents the patent data structure
  */
 export interface Patent {
-    patent_number: string;
-    patent_title: string;
-    patent_date: string;
-    patent_firstnamed_assignee_country?: string;
-    patent_abstract?: string;
-    patent_kind?: string;
-    patent_num_foreign_citations?: string;
-    patent_type?: string;
-    cited_patents: CitedPatent[];
+    id: string;
+    abstract?: string;
+    title?: string;
+    citations?: Patent[];
 }
