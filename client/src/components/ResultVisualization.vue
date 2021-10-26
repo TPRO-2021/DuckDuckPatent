@@ -25,7 +25,7 @@
                 />
             </g>
         </svg>
-        <div class="tooltip card box-shadow">{{ this.currentNode?.patent.title }}</div>
+        <div class="tooltip card box-shadow no-select">{{ this.currentNode?.patent.title }}</div>
     </div>
 </template>
 
@@ -141,7 +141,7 @@ export default defineComponent({
                 // set the attraction level between the nodes (default -30)
                 .force('charge', forceManyBody().strength(-400))
                 // avoid collision
-                .force('collide', forceCollide().radius(40));
+                .force('collide', forceCollide().radius(26));
 
             // because the nodes are not available now we have to do the setup in the next tick
             this.$nextTick(() => {
@@ -204,7 +204,7 @@ export default defineComponent({
                 patent,
                 type: 'patent',
                 color: 'rgb(168, 133, 41)',
-                size: 26,
+                size: 18,
             })) as VisualPatentNode[];
 
             // If the user has selected to view authors

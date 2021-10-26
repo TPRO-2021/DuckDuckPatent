@@ -34,6 +34,12 @@
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
+            <Button
+                v-if="moreDataAvailable"
+                v-on:on-clicked="extendSearch"
+                icon-key="check"
+                btn-text="Load more"
+            ></Button>
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
 
@@ -79,6 +85,7 @@ export default defineComponent({
             showTimeline: false,
             selectedPatentIndex: -1,
             inputFieldWaiting: false,
+            moreDataAvailable: false,
         };
     },
     /**
@@ -98,6 +105,15 @@ export default defineComponent({
         patents(): Patent[] {
             return this.$store.state.patents;
         },
+        totalCount(): number {
+            return this.$store.state.totalCount;
+        },
+        availablePages(): number {
+            return this.totalCount / 99;
+        },
+        currentPage(): number {
+            return this.$store.state.pageCount;
+        },
     },
     async created() {
         this.$store.commit('showLoadingScreen');
@@ -115,11 +131,14 @@ export default defineComponent({
             this.$store.commit('ADD_SUGGESTIONS', res);
         });
 
-        const patents = await this.patentService.get(this.terms);
-        this.$store.commit('ADD_PATENTS', patents);
+        const { patents, totalCount } = await this.patentService.get(this.terms);
+        this.$store.dispatch('addPatents', { patents, totalCount });
 
         // after loading the patents the loading screen should disappear
         this.$store.commit('hideLoadingScreen');
+
+        // now we can check the result
+        this.checkResult();
     },
     methods: {
         /**
@@ -191,10 +210,27 @@ export default defineComponent({
 
             await this.$router.push({ query: { terms: this.terms } });
 
-            const patents = await this.patentService.get(this.terms);
-            this.$store.commit('ADD_PATENTS', patents);
+            const { patents, totalCount } = await this.patentService.get(this.terms);
+            this.$store.dispatch('addPatents', { patents, totalCount });
 
             // finally hide loading indicator
+            this.$store.commit('HIDE_LOADING_BAR');
+
+            // now we can check the result
+            this.checkResult();
+        },
+
+        /**
+         * Extend the search with a new page (99 more results)
+         */
+        async extendSearch() {
+            const newPage = this.currentPage + 1;
+
+            this.$store.commit('SHOW_LOADING_BAR');
+            const { patents, totalCount } = await this.patentService.get(this.terms, newPage);
+            this.$store.dispatch('addPatents', { patents: this.patents.concat(patents), totalCount, page: newPage });
+
+            this.checkResult();
             this.$store.commit('HIDE_LOADING_BAR');
         },
 
@@ -253,6 +289,14 @@ export default defineComponent({
 
             this.$store.commit('SET_SEARCH_TERMS', queryParams);
         },
+
+        /**
+         * Checks if there need to be any additional actions done for the result
+         */
+        checkResult(): void {
+            this.moreDataAvailable = this.totalCount > 99 && this.currentPage < this.availablePages;
+        },
+
         openSavePage(): void {
             this.$router.push({ path: '/saved' });
         },
@@ -329,6 +373,8 @@ export default defineComponent({
     position: absolute;
     bottom: 0;
     right: 0;
+    gap: 20px;
+    display: flex;
 }
 
 .top-controls {
