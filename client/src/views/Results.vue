@@ -32,12 +32,6 @@
                 v-on:on-patent-selected="onPatentSelected"
             />
         </div>
-        <div class="top-right-controls">
-            <Button btnText="Saved" iconKey="turned_in" badge-value="21" v-on:on-clicked="openSavePage" />
-            <div class="patent-preview" v-if="selectedPatentIndex > -1">
-                <PatentPreview :patent="patents[selectedPatentIndex]" v-on:on-change-patent="onChangePatent($event)" />
-            </div>
-        </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
             <Button
@@ -47,6 +41,14 @@
                 btn-text="Load more"
             ></Button>
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
+        </div>
+
+        <div class="top-controls">
+            <Button btnText="Saved" iconKey="turned_in" badge-value="21" v-on:on-clicked="openSavePage" />
+        </div>
+
+        <div class="patent-preview" v-if="selectedPatentIndex > -1">
+            <PatentPreview :patent="patents[selectedPatentIndex]" v-on:on-change-patent="onChangePatent($event)" />
         </div>
     </div>
 </template>
@@ -211,7 +213,6 @@ export default defineComponent({
             }
 
             await this.$router.push({ query: { terms: this.terms } });
-
             try {
                 const { patents, totalCount } = await this.patentService.get(this.terms); //TODO:check with samu
                 this.$store.dispatch('addPatents', { patents, totalCount });
@@ -414,7 +415,7 @@ export default defineComponent({
     display: flex;
 }
 
-.top-right-controls {
+.top-controls {
     margin: 20px;
     position: absolute;
     top: 0;
