@@ -28,13 +28,12 @@
         <div class="result-wrapper">
             <ResultsVisualization :visualization-options="visualizationOptions" :patents="patents" />
         </div>
+        <div class="top-right-controls">
+            <Button btnText="Saved" iconKey="turned_in" badge-value="21" />
+        </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
-        </div>
-
-        <div class="top-controls">
-            <Button btnText="Saved" iconKey="turned_in" badge-value="21" />
         </div>
     </div>
 </template>
@@ -64,6 +63,8 @@ export default defineComponent({
     data() {
         return {
             debounceHandler: null as number | null,
+            resetHandler: null as number | null,
+            resetWaiting: false,
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
@@ -140,6 +141,7 @@ export default defineComponent({
          * @param event The event containing the passed up keyword
          */
         async onAddKeyword(event: { value: string }): Promise<void> {
+            this.resetWaiting ? this.cancelReset() : '';
             this.$store.commit('ADD_SEARCH_TERM', event.value);
             this.refreshKeywords();
             this.debounce(2000);
@@ -151,6 +153,7 @@ export default defineComponent({
          * @param event
          */
         async onRemoveKeyword(event: { value: string; index: number }) {
+            this.resetWaiting ? this.cancelReset() : '';
             this.$store.commit('REMOVE_SEARCH_TERM', event);
             this.refreshKeywords();
             this.debounce(2000);
@@ -180,13 +183,49 @@ export default defineComponent({
 
             await this.$router.push({ query: { terms: this.terms } });
 
-            const patents = await this.patentService.get(this.terms);
-            this.$store.commit('ADD_PATENTS', patents);
+            let patents: Patent[];
+            try {
+                patents = await this.patentService.get(this.terms);
+                // eslint-disable-next-line
+            } catch (e: any) {
+                //  console.log('error message ', e.message); // TODO: Remove this after review approved
+                e.message === 'Not Found.'
+                    ? this.$store.commit('SHOW_NORESULTS_TOAST')
+                    : this.$store.commit('SHOW_ERROR_TOAST');
+                this.reset();
+                return;
+            }
 
-            // finally hide loading indicator
+            this.$store.commit('ADD_PATENTS', patents);
             this.$store.commit('HIDE_LOADING_BAR');
         },
-
+        /**
+         * Resets to landing page after some time, if no results returned. All input is cleared.
+         * If user adds/removes keywords, it should cancel going back to the landing page
+         *
+         */
+        reset(): void {
+            this.$store.commit('HIDE_LOADING_BAR');
+            this.resetWaiting = true;
+            this.resetHandler = setTimeout(async () => {
+                await this.$router.push({ path: '/' });
+                this.$store.commit('CLEAR_INPUT');
+                this.$store.commit('HIDE_NORESULTS_TOAST');
+                this.resetWaiting = false;
+            }, 6000);
+        },
+        /**
+         * Cancels going back to the landing page.
+         *
+         */
+        cancelReset(): void {
+            if (this.resetHandler == null) {
+                return;
+            }
+            clearTimeout(this.resetHandler);
+            this.resetWaiting = false;
+            this.$store.commit('HIDE_NORESULTS_TOAST');
+        },
         /**
          * Toggles the visibility of the timeline
          * @param $event
@@ -280,7 +319,7 @@ export default defineComponent({
     right: 0;
 }
 
-.top-controls {
+.top-right-controls {
     margin: 20px;
     position: absolute;
     top: 0;

@@ -3,16 +3,18 @@
         <ProgressBar mode="indeterminate" v-if="showLoadingBar"></ProgressBar>
     </div>
     <LoadingScreen></LoadingScreen>
+    <Toasts />
     <router-view />
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
 import LoadingScreen from '@/components/LoadingScreen.vue';
+import Toasts from '@/components/Toasts.vue';
 
 export default defineComponent({
     name: 'App',
-    components: { LoadingScreen },
+    components: { LoadingScreen, Toasts },
     computed: {
         showLoadingBar(): boolean {
             return this.$store.state.showLoadingBar;
