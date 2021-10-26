@@ -34,7 +34,7 @@
         </div>
 
         <div class="top-controls">
-            <Button btnText="Saved" iconKey="turned_in" badge-value="21" />
+            <Button btnText="Saved" iconKey="turned_in" badge-value="21" v-on:on-clicked="openSavePage" />
         </div>
     </div>
 </template>
@@ -208,6 +208,9 @@ export default defineComponent({
             }
 
             this.$store.commit('SET_SEARCH_TERMS', queryParams);
+        },
+        openSavePage(): void {
+            this.$router.push({ path: '/saved' });
         },
     },
 });
