@@ -26,7 +26,11 @@
             </div>
         </div>
         <div class="result-wrapper">
-            <ResultsVisualization :visualization-options="visualizationOptions" :patents="patents" />
+            <ResultsVisualization
+                :visualization-options="visualizationOptions"
+                :patents="patents"
+                v-on:on-patent-selected="onPatentSelected"
+            />
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
@@ -36,6 +40,10 @@
         <div class="top-controls">
             <Button btnText="Saved" iconKey="turned_in" badge-value="21" v-on:on-clicked="openSavePage" />
         </div>
+
+        <div class="patent-preview" v-if="selectedPatentIndex > -1">
+            <PatentPreview :patent="patents[selectedPatentIndex]" v-on:on-change-patent="onChangePatent($event)" />
+        </div>
     </div>
 </template>
 
@@ -44,6 +52,7 @@ import { defineComponent } from 'vue';
 import PatentService from '@/services/patent.service';
 import { Patent } from '@/models/Patent';
 import Searchbar from '@/components/Searchbar.vue';
+import PatentPreview from '@/components/PatentPreview.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import RoundButton from '@/components/RoundButton.vue';
@@ -55,6 +64,7 @@ export default defineComponent({
     name: 'Results',
     components: {
         Searchbar,
+        PatentPreview,
         KeywordSuggestions,
         RoundButton,
         OptionsMenu,
@@ -67,6 +77,7 @@ export default defineComponent({
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
+            selectedPatentIndex: -1,
             inputFieldWaiting: false,
         };
     },
@@ -188,6 +199,39 @@ export default defineComponent({
         },
 
         /**
+         * Event handler which sets the current index to the passed
+         * @param e
+         */
+        onPatentSelected(e: { patent: Patent; index: number }) {
+            this.selectedPatentIndex = e.index;
+        },
+
+        /**
+         * Event handler which processes a change of patent
+         * @param e
+         */
+        onChangePatent(e: { direction: string }): void {
+            switch (e.direction) {
+                case 'next':
+                    if (this.selectedPatentIndex >= this.patents.length - 1) {
+                        this.selectedPatentIndex = 0;
+                        break;
+                    }
+
+                    this.selectedPatentIndex++;
+                    break;
+                case 'previous':
+                    if (this.selectedPatentIndex === 0) {
+                        this.selectedPatentIndex = this.patents.length - 1;
+                        break;
+                    }
+
+                    this.selectedPatentIndex--;
+                    break;
+            }
+        },
+
+        /**
          * Toggles the visibility of the timeline
          * @param $event
          */
@@ -223,7 +267,11 @@ export default defineComponent({
     align-items: flex-start;
     position: absolute;
     top: 0;
-    width: 800px;
+    pointer-events: none;
+
+    div {
+        pointer-events: all !important;
+    }
 }
 .search-input {
     width: 600px;
@@ -288,5 +336,12 @@ export default defineComponent({
     position: absolute;
     top: 0;
     right: 0;
+}
+
+.patent-preview {
+    position: absolute;
+    z-index: 100;
+    bottom: 0;
+    left: 0;
 }
 </style>

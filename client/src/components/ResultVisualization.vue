@@ -1,6 +1,6 @@
 <template>
     <div class="d3-container">
-        <svg xmlns="http://www.w3.org/2000/svg" @mousemove="drag($event)" @mouseup="drop()">
+        <svg xmlns="http://www.w3.org/2000/svg" @mousemove="drag($event)" @mouseup="drop()" @click="canvasClicked">
             <g class="nodes-container">
                 <line
                     v-for="link in graph.links"
@@ -21,7 +21,7 @@
                     :r="node.size"
                     :fill="node.color"
                     @mousemove="currentNode = node"
-                    @mousedown="currentMove = { x: $event.screenX, y: $event.screenY, node: node }"
+                    @mousedown="nodeClicked({ x: $event.screenX, y: $event.screenY, node: node })"
                 />
             </g>
         </svg>
@@ -67,11 +67,15 @@ export default defineComponent({
             type: Array,
         },
     },
+    emits: {
+        onPatentSelected: (e: { patent?: Patent; index: number }) => e,
+    },
     data() {
         return {
             currentMove: null as d3Event | null,
             currentNode: null as VisualPatentNode | null,
             container: null as Selection<BaseType, unknown, HTMLElement, unknown> | null,
+            nodeSelected: false,
             documentWidth: document.documentElement.clientWidth,
             documentHeight: document.documentElement.clientHeight,
             graph: {
@@ -179,6 +183,17 @@ export default defineComponent({
         },
 
         /**
+         * Emits the event onPatentSelected to the parent component
+         * @param e
+         */
+        nodeClicked(e: { x: number; y: number; node: VisualPatentNode }) {
+            this.currentMove = e;
+            this.$emit('onPatentSelected', { patent: e.node.patent, index: e.node.index ?? -1 });
+
+            // in order to prevent a canvas event to be triggered specify that a node is selected
+            this.nodeSelected = true;
+        },
+        /**
          * Processes the passed patents and returns them as nodes for D3 to display them.
          * A SimulationNodeDatum needs a unique identifier which we can provide by using the
          * unique patent id
@@ -252,7 +267,7 @@ export default defineComponent({
             return nodes;
         },
 
-        /*
+        /**
          * Create a key -> value map that allows for easy look up of something for given Id
          */
         buildMap<T>(items: T[], idKey: keyof T): { [id: string]: T } {
@@ -329,7 +344,7 @@ export default defineComponent({
                         // Create a large list
                         ...links, // Extend the current list...
                         ...citationMap[node.id].map((t) => ({
-                            // ...with the citations (maped to source/target)
+                            // ...with the citations (mapped to source/target)
                             source: node, // Set the source to the current node (the citation)
                             target: nodeMap[t], // Set the target to the citing patent patent
                         })),
@@ -407,6 +422,18 @@ export default defineComponent({
             this.documentHeight = document.documentElement.clientHeight;
             this.documentWidth = document.documentElement.clientWidth;
             this.resizeEvent = setTimeout(this.updateGraph, 300);
+        },
+
+        /**
+         * Emits an empty selection when the canvas only is selected
+         */
+        canvasClicked(): void {
+            if (this.nodeSelected) {
+                this.nodeSelected = false;
+                return;
+            }
+
+            this.$emit('onPatentSelected', { index: -1 });
         },
     },
 });

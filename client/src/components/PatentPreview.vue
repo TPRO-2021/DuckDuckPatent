@@ -1,7 +1,7 @@
 <template>
     <div class="main-container box-shadow card">
         <!-- Menu Buttons for interacting with the patent -->
-        <div class="settings-container">
+        <div class="settings-container no-select">
             <div class="settings-btn">
                 <RoundButton class="round-button" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
@@ -17,27 +17,20 @@
         </div>
 
         <div class="patent-info">
-            <div class="patent-title">{{ patent?.patent_title }}</div>
+            <div class="patent-title">{{ patent?.title }}</div>
 
             <!-- TODO: Add applicant/owner of the patent -->
             <div class="patent-owner">Company/Author</div>
 
             <div class="patent-abstract">
-                <p>{{ patent?.patent_abstract?.slice(0, 400) }}...</p>
+                <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
             </div>
         </div>
 
-        <div class="patent-navigation">
+        <div class="patent-navigation no-select">
             <!-- Navigation buttons -->
             <span class="material-icons search-icon" @click="displayPreviousPatent()">arrow_back</span>
-            <span
-                class="material-icons search-icon"
-                @click="
-                    next = true;
-                    displayNextPatent();
-                "
-                >arrow_forward</span
-            >
+            <span class="material-icons search-icon" @click="displayNextPatent()">arrow_forward</span>
         </div>
     </div>
 </template>
@@ -56,19 +49,12 @@ export default defineComponent({
         patent: { type: Object },
     },
     emits: {
-        onClickNext: (event: { index: number }) => {
-            return event;
-        },
-        onClickBack: (event: { index: number }) => {
-            return event;
-        },
+        onChangePatent: (event: { direction: string }) => event,
     },
     data() {
         return {
             isCollapsed: true,
             settingsMenu: false,
-            next: false,
-            index: 0,
             /**
              * Holds the info about available buttons
              */
@@ -90,21 +76,13 @@ export default defineComponent({
          * Method to check if next button is clicked then emit an event to ask the parent to send next patent
          */
         displayNextPatent(): void {
-            if (this.next) {
-                this.index++;
-            }
-
-            this.$emit('onClickNext', { index: this.index });
+            this.$emit('onChangePatent', { direction: 'next' });
         },
         /**
          * Method to check if back button is clicked then emit an event to ask the parent to send previous patent
          */
         displayPreviousPatent(): void {
-            if (this.next) {
-                this.index--;
-            }
-
-            this.$emit('onClickBack', { index: this.index });
+            this.$emit('onChangePatent', { direction: 'previous' });
         },
         // Pin(): void {
         //     this.$store.commit('ADD_SAVED_PATENT', this.patent);
@@ -118,7 +96,8 @@ export default defineComponent({
     display: flex;
     justify-content: flex-start;
     flex-direction: column;
-    width: 600px;
+    width: 650px;
+    min-height: 300px;
 }
 
 .menu {
@@ -161,7 +140,7 @@ export default defineComponent({
     font-style: normal;
     font-weight: normal;
     font-size: 16px;
-    margin-bottom: 66px;
+    margin-bottom: 32px;
 }
 
 .patent-navigation {
