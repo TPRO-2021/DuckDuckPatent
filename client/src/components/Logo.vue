@@ -1,5 +1,5 @@
 <template>
-    <div><img src="../assets/duckduckpatent.png" class="logo" /></div>
+    <div><img src="../assets/logo.svg" class="logo" alt="Logo of DuckDuckPatent" /></div>
 </template>
 
 <script lang="ts">
