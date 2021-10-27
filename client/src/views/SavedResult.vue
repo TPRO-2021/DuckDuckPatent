@@ -6,7 +6,7 @@
         </div>
         <div class="saved-list">
             <savedPatent
-                v-for="(patent, index) in patents"
+                v-for="(patent, index) in savedPatents"
                 :key="index"
                 :savedPatentTitle="patent.title"
                 :savedpatentAbstract="patent.abstract"
@@ -25,21 +25,25 @@ import { Patent } from '@/models/Patent';
 export default defineComponent({
     name: 'SavedResult',
     components: { RoundButton, savedPatent, Button },
+    data() {
+        return {
+            saved: [] as Patent[],
+        };
+    },
     computed: {
         patents(): Patent[] {
             return this.$store.state.patents;
         },
-        // savedPatents():Patent[]
-        // {
-        //     return this.$store.state.savedPatents;
-        // },
+        savedPatents(): Patent[] {
+            return this.$store.state.savedPatents;
+        },
         searchTerms(): string[] {
             return this.$store.state.searchTerms;
         },
     },
     methods: {
         backPage(): void {
-            this.$router.push({ path: '/search', query: { terms: this.searchTerms } });
+            this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
         },
     },
 });

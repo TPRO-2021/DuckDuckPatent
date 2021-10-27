@@ -58,19 +58,15 @@ export default defineComponent({
             /**
              * Holds the info about available buttons
              */
+
             optionButtons: [
-                { iconKey: 'push_pin', action: 'pin()' },
+                { iconKey: 'push_pin', action: this.Pin },
                 { iconKey: 'visibility_off', action: 'hide' },
                 { iconKey: 'done', action: 'suggestMore' },
                 { iconKey: 'read_more', action: 'readMore' },
             ],
         };
     },
-    // computed: {
-    //     savedPatents(): Patent[] {
-    //         return this.$store.state.savedPatents;
-    //     },
-    // },
     methods: {
         /**
          * Method to check if next button is clicked then emit an event to ask the parent to send next patent
@@ -84,9 +80,9 @@ export default defineComponent({
         displayPreviousPatent(): void {
             this.$emit('onChangePatent', { direction: 'previous' });
         },
-        // Pin(): void {
-        //     this.$store.commit('ADD_SAVED_PATENT', this.patent);
-        // },
+        Pin(): void {
+            this.$store.commit('ADD_SAVED_PATENT', this.patent);
+        },
     },
 });
 </script>

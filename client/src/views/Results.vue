@@ -44,7 +44,12 @@
         </div>
 
         <div class="top-controls">
-            <Button btnText="Saved" iconKey="turned_in" badge-value="21" v-on:on-clicked="openSavePage" />
+            <Button
+                btnText="Saved"
+                iconKey="turned_in"
+                :badge-value="savedPatentsCount"
+                v-on:on-clicked="openSavePage"
+            />
         </div>
 
         <div class="patent-preview" v-if="selectedPatentIndex > -1">
@@ -113,6 +118,12 @@ export default defineComponent({
         },
         currentPage(): number {
             return this.$store.state.pageCount;
+        },
+        savedPatentsCount(): string {
+            if (this.$store.state.savedPatents.length === 0) {
+                return '';
+            }
+            return this.$store.state.savedPatents.length.toString();
         },
     },
     async created() {

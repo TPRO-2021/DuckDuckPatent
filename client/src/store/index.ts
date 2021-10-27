@@ -52,6 +52,7 @@ export class AppState {
      * Node visualization options
      */
     public visualizationOptions = ['patents'];
+    public savedMap = new Map<string, Patent>();
 }
 
 export default createStore({
@@ -185,6 +186,10 @@ export default createStore({
          * @constructor
          */
         ADD_SAVED_PATENT(state, savedPatent: Patent): void {
+            if (state.savedMap.has(savedPatent.id)) {
+                return;
+            }
+            state.savedMap.set(savedPatent.id, savedPatent);
             state.savedPatents.push(savedPatent);
         },
 
