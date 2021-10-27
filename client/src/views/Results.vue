@@ -80,6 +80,8 @@ export default defineComponent({
     data() {
         return {
             debounceHandler: null as number | null,
+            resetHandler: null as number | null,
+            resetWaiting: false,
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
@@ -126,16 +128,9 @@ export default defineComponent({
             await this.$router.push({ path: '/' });
         }
 
-        // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
-        this.keywordService.getSuggestions(this.terms).then((res) => {
-            this.$store.commit('ADD_SUGGESTIONS', res);
-        });
-
-        const { patents, totalCount } = await this.patentService.get(this.terms);
-        this.$store.dispatch('addPatents', { patents, totalCount });
-
-        // after loading the patents the loading screen should disappear
-        this.$store.commit('hideLoadingScreen');
+        // refresh results
+        this.refreshKeywords();
+        await this.refreshResults();
 
         // now we can check the result
         this.checkResult();
@@ -162,6 +157,7 @@ export default defineComponent({
             this.debounceHandler = setTimeout(async () => {
                 await this.refreshResults();
                 this.inputFieldWaiting = false;
+                this.selectedPatentIndex = -1; //to reset the patent preview if it was active before
             }, debounceTime);
         },
         /**
@@ -170,6 +166,7 @@ export default defineComponent({
          * @param event The event containing the passed up keyword
          */
         async onAddKeyword(event: { value: string }): Promise<void> {
+            this.resetWaiting ? this.cancelReset() : '';
             this.$store.commit('ADD_SEARCH_TERM', event.value);
             this.refreshKeywords();
             this.debounce(2000);
@@ -181,6 +178,7 @@ export default defineComponent({
          * @param event
          */
         async onRemoveKeyword(event: { value: string; index: number }) {
+            this.resetWaiting ? this.cancelReset() : '';
             this.$store.commit('REMOVE_SEARCH_TERM', event);
             this.refreshKeywords();
             this.debounce(2000);
@@ -209,11 +207,19 @@ export default defineComponent({
             }
 
             await this.$router.push({ query: { terms: this.terms } });
+            try {
+                const { patents, totalCount } = await this.patentService.get(this.terms);
+                this.$store.dispatch('addPatents', { patents, totalCount });
+                // eslint-disable-next-line
+            } catch (e: any) {
+                e.message === 'Not Found.'
+                    ? this.$store.commit('SHOW_NORESULT_TOAST')
+                    : this.$store.commit('SHOW_ERROR_TOAST');
+                this.reset();
+            }
 
-            const { patents, totalCount } = await this.patentService.get(this.terms);
-            this.$store.dispatch('addPatents', { patents, totalCount });
-
-            // finally hide loading indicator
+            //hideScreen
+            this.$store.commit('hideLoadingScreen');
             this.$store.commit('HIDE_LOADING_BAR');
 
             // now we can check the result
@@ -266,7 +272,34 @@ export default defineComponent({
                     break;
             }
         },
-
+        /**
+         * Resets to landing page after some time, if no results returned. All input is cleared.
+         * If user adds/removes keywords, it should cancel going back to the landing page
+         *
+         */
+        reset(): void {
+            this.$store.dispatch('addPatents', { patents: [] as Patent[], totalCount: 0 });
+            this.selectedPatentIndex = -1;
+            this.resetWaiting = true;
+            this.resetHandler = setTimeout(async () => {
+                await this.$router.push({ path: '/' });
+                this.$store.commit('CLEAR_INPUT');
+                this.$store.commit('HIDE_NORESULT_TOAST');
+                this.resetWaiting = false;
+            }, 6000);
+        },
+        /**
+         * Cancels going back to the landing page.
+         *
+         */
+        cancelReset(): void {
+            if (this.resetHandler == null) {
+                return;
+            }
+            clearTimeout(this.resetHandler);
+            this.resetWaiting = false;
+            this.$store.commit('HIDE_NORESULT_TOAST');
+        },
         /**
          * Toggles the visibility of the timeline
          * @param $event
