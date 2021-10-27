@@ -1,5 +1,5 @@
 <template>
-    <div class="card">
+    <Dialog v-model:visible="patentAvailable" :close-on-escape="true">
         <!-- Menu Buttons for interacting with the patent -->
         <div class="settings-container">
             <div class="settings-btn">
@@ -16,43 +16,46 @@
                 />
             </div>
         </div>
-
-        <div class="patent-info">
-            <div class="patent-title">here is the title of patent</div>
-
-            <!-- TODO: Add applicant/owner of the patent -->
-            <div class="patent-owner">Company/Author</div>
-
-            <div class="patent-abstract">
-                The description of patentue recommends using templates to build your HTML in the vast majority of cases.
-                There are situations however, where you really need the full programmatic power of JavaScript. That’s
-                where you can use the render function, a closer-to-the-compiler alternative to templates. ue recommends
+        <template #header>
+            <div>
+                <div class="patent-title">{{ this.patent.title }}</div>
+                <!-- TODO: Add applicant/owner of the patent -->
+                <div class="patent-owner">Company/Author</div>
             </div>
-        </div>
-        <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
-        <div class="row">
-            <div class="column">
-                <div class="label-attachment">Attachments</div>
+        </template>
 
-                <div class="attachments">
-                    <iframe class="pdf-doc" src="" title="info.pdf" />
+        <div class="patent-abstract">{{ this.patent.abstract }}</div>
 
-                    <div class="name-doc">
-                        info.pdf
-                        <div>
-                            <span class="material-icons"> open_in_new </span>
-                            <span class="material-icons"> file_download</span>
+        <template #footer>
+            <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
+            <div class="footer-container">
+                <div class="patent-additional-info">
+                    <div class="attachments">
+                        <div class="label-attachment">Attachments</div>
+                        <div class="attachment">
+                            <iframe class="pdf-doc" src="" title="info.pdf" />
+
+                            <div class="name-doc">
+                                info.pdf
+                                <div>
+                                    <span class="material-icons"> open_in_new </span>
+                                    <span class="material-icons"> file_download</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    <div class="keywords">
+                        <!--TODO: Add searched keywords-->
+                        <span class="keywords label-keywords">Searched keywords:</span>
+                        <span class="keywords">Soil, Energy </span>
+                    </div>
+                </div>
+                <div class="column btn-exploration">
+                    <Button icon-key="travel_explore" btn-text="Start exploration" />
                 </div>
             </div>
-            <div class="column">
-                <span class="keywords label-keywords">Searched keywords:</span>
-                <span class="keywords">Soil, Energy </span>
-            </div>
-            <div class="column btn-exploration"><Button icon-key="travel_explore" btn-text="Start exploration" /></div>
-        </div>
-    </div>
+        </template>
+    </Dialog>
 </template>
 
 <script lang="ts">
@@ -66,7 +69,10 @@ import { Patent } from '@/models/Patent';
  */
 export default defineComponent({
     name: 'DetailedPatentView',
-    components: { RoundButton, Button },
+    components: {
+        RoundButton,
+        Button,
+    },
     props: {
         patent: { type: Object },
     },
@@ -85,7 +91,13 @@ export default defineComponent({
                 { iconKey: 'visibility_off', action: 'dontLike' },
                 { iconKey: 'done', action: 'like' },
             ],
+            patentAvailable: false,
         };
+    },
+    watch: {
+        patent(newVal: Patent): void {
+            this.patentAvailable = !!newVal;
+        },
     },
     computed: {
         savedPatents(): Patent[] {
@@ -114,18 +126,7 @@ export default defineComponent({
 });
 </script>
 
-<style scoped>
-.card {
-    display: flex;
-    flex-direction: column;
-    height: 70vh;
-    width: 70vw;
-    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
-    transform: translateX(20%) translateY(10%) !important;
-    backdrop-filter: blur(4px);
-    padding: 30px 30px;
-}
-
+<style lang="scss" scoped>
 .settings-container {
     position: absolute;
     right: 28px;
@@ -135,14 +136,8 @@ export default defineComponent({
 }
 
 .round-button {
-    width: 28px;
-    height: 28px;
-}
-
-.patent-info {
-    justify-content: start;
-    transition: 0.5s;
-    margin: 8px;
+    width: 32px;
+    height: 32px;
 }
 
 .patent-title {
@@ -152,16 +147,15 @@ export default defineComponent({
     font-weight: normal;
     font-size: 20px;
 }
+
 .patent-abstract {
     flex-grow: 1;
     text-align: justify;
     padding-right: 60px;
     font-style: normal;
-    font-weight: normal;
+    font-weight: bold;
     font-size: 16px;
-    margin-bottom: 14px;
-    max-height: 250px;
-    width: 98%;
+    padding-bottom: 24px;
     overflow-y: auto;
 }
 
@@ -187,8 +181,13 @@ export default defineComponent({
     text-align: left;
     margin: 15px 0;
 }
+
 .attachments {
-    position: absolute;
+    display: flex;
+    flex-direction: column;
+}
+
+.attachment {
     border: 1px solid #cccccc;
     box-sizing: border-box;
     border-radius: 10px;
@@ -217,10 +216,6 @@ export default defineComponent({
 .material-icons {
     cursor: pointer;
 }
-.column {
-    float: left;
-    width: 33.33%;
-}
 
 .keywords {
     display: block;
@@ -230,9 +225,22 @@ export default defineComponent({
 .label-keywords {
     padding-top: 15px;
 }
+
 .btn-exploration {
     width: 230px;
-    margin-top: 150px;
-    margin-left: 120px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.footer-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+}
+
+.patent-additional-info {
+    display: flex;
+    flex-grow: 1;
 }
 </style>

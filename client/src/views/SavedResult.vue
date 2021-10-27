@@ -10,9 +10,12 @@
                 :key="index"
                 :savedPatentTitle="patent.title"
                 :savedpatentAbstract="patent.abstract"
+                @click="onSelectPatent(patent)"
             >
             </savedPatent>
         </div>
+
+        <DetailedPatentView :patent="selectedPatent"></DetailedPatentView>
     </div>
 </template>
 
@@ -22,9 +25,21 @@ import savedPatent from '@/components/SavedPatent.vue';
 import Button from '@/components/Button.vue';
 import RoundButton from '@/components/RoundButton.vue';
 import { Patent } from '@/models/Patent';
+import DetailedPatentView from '@/components/DetailedPatentView.vue';
+
 export default defineComponent({
     name: 'SavedResult',
-    components: { RoundButton, savedPatent, Button },
+    components: {
+        RoundButton,
+        savedPatent,
+        Button,
+        DetailedPatentView,
+    },
+    data() {
+        return {
+            selectedPatent: null as Patent | null,
+        };
+    },
     computed: {
         patents(): Patent[] {
             return this.$store.state.patents;
@@ -41,6 +56,9 @@ export default defineComponent({
         backPage(): void {
             this.$router.push({ path: '/search', query: { terms: this.searchTerms } });
         },
+        onSelectPatent(patent: Patent): void {
+            this.selectedPatent = patent;
+        },
     },
 });
 </script>
@@ -49,7 +67,6 @@ export default defineComponent({
 .saved-page {
     height: 100vh;
     width: 100%;
-    //overflow: hidden;
 }
 
 .saved-controls {
@@ -60,7 +77,6 @@ export default defineComponent({
     display: flex;
     gap: 20px;
     padding: 20px;
-    //position: absolute;
 }
 
 .saved-btn {
