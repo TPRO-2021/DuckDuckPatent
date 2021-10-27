@@ -7,6 +7,16 @@ import { Patent } from '@/models/Patent';
  */
 export class AppState {
     /**
+     * Holds the the patents as a result of research
+     */
+    public patents = [] as Patent[];
+
+    /**
+     * Holds the current result page count
+     */
+    public pageCount = 0;
+
+    /**
      * Holds the loadingScreen state
      * True if the loading screen should be visible
      */
@@ -17,6 +27,16 @@ export class AppState {
      * True if the loadingBar should be visible
      */
     public showLoadingBar = false;
+    /**
+     * Holds the showNoResultsToast state
+     * True if the toast should be visible
+     */
+    public showNoResultsToast = false;
+    /**
+     * Holds the showErrorToast state
+     * True if the toast should be visible
+     */
+    public showErrorToast = false;
 
     /**
      * Holds the current search terms of the user
@@ -29,19 +49,19 @@ export class AppState {
     public suggestedTerms = [] as string[];
 
     /**
-     * Holds the the patents as a result of research
-     */
-    public patents = [] as Patent[];
-
-    /**
      * Container that store the saved patents mark as favorites
      */
     public savedPatents = [] as Patent[];
 
     /**
+     * Holds the current total count value
+     */
+    public totalCount = 0;
+
+    /**
      * Node visualization options
      */
-    public visualizationOptions = ['patents'] as string[];
+    public visualizationOptions = ['patents'];
 }
 
 export default createStore({
@@ -66,7 +86,36 @@ export default createStore({
         hideLoadingScreen(state) {
             state.showLoadingScreen = false;
         },
+        /**
+         * Sets the NoResultsToast to visible
+         * @param state
+         */
+        SHOW_NORESULT_TOAST(state) {
+            state.showNoResultsToast = true;
+        },
 
+        /**
+         * Hides the NoResultsToast
+         * @param state
+         */
+        HIDE_NORESULT_TOAST(state) {
+            state.showNoResultsToast = false;
+        },
+        /**
+         * Sets the showErrorToast to visible
+         * @param state
+         */
+        SHOW_ERROR_TOAST(state) {
+            state.showErrorToast = true;
+        },
+
+        /**
+         * Hides the ErrorToast
+         * @param state
+         */
+        HIDE_ERROR_TOAST(state) {
+            state.showErrorToast = false;
+        },
         /**
          * Add visualization option
          */
@@ -115,6 +164,16 @@ export default createStore({
         },
 
         /**
+         * Update the total count variable
+         * @param state
+         * @param totalCount
+         * @constructor
+         */
+        ADD_TOTAL_COUNT(state, totalCount: number): void {
+            state.totalCount = totalCount;
+        },
+
+        /**
          * Update the searchTerms array after an element was removed
          * @param state the global point where all the data is stored
          * @param event the event that points to the removed search keyword from search input
@@ -123,6 +182,15 @@ export default createStore({
             state.searchTerms = state.searchTerms.filter((_t, index) => index !== event.index);
         },
 
+        /**
+         * Clears the keywords and suggestions in input field
+         * @param state
+         * @constructor
+         */
+        CLEAR_INPUT(state) {
+            state.searchTerms = [];
+            state.suggestedTerms = [];
+        },
         /**
          * Shows loading bar
          * @param state
@@ -152,6 +220,13 @@ export default createStore({
         },
 
         /**
+         * Sets the current page value
+         */
+        SET_PAGE_COUNT(state, page: number): void {
+            state.pageCount = page;
+        },
+
+        /**
          * Add the favorite patent to the container
          * @param state
          * @param event
@@ -171,7 +246,19 @@ export default createStore({
      * Instead of mutating the state, actions commit mutations.
      * Actions can contain arbitrary asynchronous operations(getting data from database).
      */
-    actions: {},
+    actions: {
+        /**
+         * Action to add new patents to the state. Additionally the total count is
+         * committed
+         * @param state
+         * @param payload
+         */
+        addPatents(state, payload: { patents: Patent[]; totalCount: number; page: number | null }): void {
+            state.commit('ADD_PATENTS', payload.patents);
+            state.commit('ADD_TOTAL_COUNT', payload.totalCount);
+            state.commit('SET_PAGE_COUNT', payload.page || 0);
+        },
+    },
 
     /**
      * Getters are used to derive computed information from store state(one searchTerm from searchTerms array)

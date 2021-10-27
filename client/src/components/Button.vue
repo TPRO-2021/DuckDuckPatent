@@ -1,5 +1,5 @@
 <template>
-    <div class="button" @click="$emit('onClicked')" :class="{ 'button-large': $props.size === 'large' }">
+    <div class="button no-select" @click="$emit('onClicked')" :class="{ 'button-large': $props.size === 'large' }">
         <div class="button-container">
             <!-- The icon-->
             <div class="material-icons" v-if="iconKey">
@@ -55,13 +55,17 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .button {
+    transition: all 0.5s ease;
     background: #000000;
     border-radius: 90px;
     border: none;
     padding: 6px 16px;
+    display: flex;
+    justify-content: center;
 }
 
 .button-container {
+    color: white;
     display: flex;
     align-items: center;
     gap: 18px;
@@ -72,13 +76,11 @@ export default defineComponent({
 }
 
 .material-icons {
-    color: white;
     display: table-row;
     vertical-align: middle;
 }
 
 .btn-text {
-    color: white;
     font-style: normal;
     font-weight: normal;
     font-size: 20px;
@@ -101,6 +103,11 @@ export default defineComponent({
     box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
     color: white;
     font-size: 16px;
+}
+
+.button:hover {
+    transition: all 0.5s ease;
+    background: #282828;
 }
 
 @keyframes zoom {
