@@ -1,14 +1,20 @@
 import { Patent } from '@/models/Patent';
+import { Filter } from '@/models/Filter';
 
 export default class PatentService {
     requestPending = false;
     controller?: AbortController;
 
-    public async get(searchTerms: string[], page = 0): Promise<{ patents: Patent[]; totalCount: number }> {
+    public async get(searchTerms: string[], filters: Filter[], page = 0): Promise<{ patents: Patent[]; totalCount: number }> {
+        // Prep the filter get parameters
+        const filterParams = filters
+            .filter((filter) => filter.type !== 'empty' && filter.value) // Remove unfinished or mal-formed filters
+            .map((filter) => `${filter.type}=${filter.value}`); // Convert to key=value strings
+
         const queryString = searchTerms
             .map((term) => `keywords=${term}`)
-            .join('&')
-            .concat(`&page=${page}`);
+            .concat(filterParams)
+            .join('&');
 
         // if request pending, abort it.
         if (this.requestPending && this.controller) {
