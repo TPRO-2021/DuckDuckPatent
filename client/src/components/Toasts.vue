@@ -18,10 +18,10 @@ export default defineComponent({
     setup() {
         const toast = useToast();
         const showNoPatentsToast = () => {
-            toast.add({ severity: 'error', summary: 'Error Message', detail: 'No results found', life: 3000 });
+            toast.add({ severity: 'error', summary: 'Error', detail: 'No results found', life: 3000 });
         };
         const showErrorToast = () => {
-            toast.add({ severity: 'error', summary: 'Error Message', detail: 'Error occurred', life: 3000 });
+            toast.add({ severity: 'error', summary: 'Error', detail: 'Error occurred', life: 3000 });
         };
         return { showNoPatentsToast, showErrorToast };
     },

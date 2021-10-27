@@ -90,7 +90,7 @@ export default createStore({
          * Sets the NoResultsToast to visible
          * @param state
          */
-        SHOW_NORESULTS_TOAST(state) {
+        SHOW_NORESULT_TOAST(state) {
             state.showNoResultsToast = true;
         },
 
@@ -98,7 +98,7 @@ export default createStore({
          * Hides the NoResultsToast
          * @param state
          */
-        HIDE_NORESULTS_TOAST(state) {
+        HIDE_NORESULT_TOAST(state) {
             state.showNoResultsToast = false;
         },
         /**

@@ -25,8 +25,6 @@ export default class PatentService {
         let json: Patent[];
         if (!response.ok) {
             json = [];
-            //   console.log('My error occurred. status: ', response.status); // TODO: Remove this after review approved
-            // console.log('My error occurred. message: ', response.statusText);
             PatentService.throwError(response.status);
         }
         // accessing x-total-count header which indicates how many results are available

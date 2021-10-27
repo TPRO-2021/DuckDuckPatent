@@ -128,16 +128,9 @@ export default defineComponent({
             await this.$router.push({ path: '/' });
         }
 
-        // We don't need to wait for the keywords to load. This way the patent search can be triggered sooner
-        this.keywordService.getSuggestions(this.terms).then((res) => {
-            this.$store.commit('ADD_SUGGESTIONS', res);
-        });
-
-        const { patents, totalCount } = await this.patentService.get(this.terms);
-        this.$store.dispatch('addPatents', { patents, totalCount });
-
-        // after loading the patents the loading screen should disappear
-        this.$store.commit('hideLoadingScreen');
+        // refresh results
+        this.refreshKeywords();
+        await this.refreshResults();
 
         // now we can check the result
         this.checkResult();
@@ -164,6 +157,7 @@ export default defineComponent({
             this.debounceHandler = setTimeout(async () => {
                 await this.refreshResults();
                 this.inputFieldWaiting = false;
+                this.selectedPatentIndex = -1; //to reset the patent preview if it was active before
             }, debounceTime);
         },
         /**
@@ -214,18 +208,18 @@ export default defineComponent({
 
             await this.$router.push({ query: { terms: this.terms } });
             try {
-                const { patents, totalCount } = await this.patentService.get(this.terms); //TODO:check with samu
+                const { patents, totalCount } = await this.patentService.get(this.terms);
                 this.$store.dispatch('addPatents', { patents, totalCount });
                 // eslint-disable-next-line
             } catch (e: any) {
-                //  console.log('error message ', e.message); // TODO: Remove this after review approved
                 e.message === 'Not Found.'
-                    ? this.$store.commit('SHOW_NORESULTS_TOAST')
+                    ? this.$store.commit('SHOW_NORESULT_TOAST')
                     : this.$store.commit('SHOW_ERROR_TOAST');
                 this.reset();
-                return;
             }
 
+            //hideScreen
+            this.$store.commit('hideLoadingScreen');
             this.$store.commit('HIDE_LOADING_BAR');
 
             // now we can check the result
@@ -284,12 +278,13 @@ export default defineComponent({
          *
          */
         reset(): void {
-            this.$store.commit('HIDE_LOADING_BAR');
+            this.$store.dispatch('addPatents', { patents: [] as Patent[], totalCount: 0 });
+            this.selectedPatentIndex = -1;
             this.resetWaiting = true;
             this.resetHandler = setTimeout(async () => {
                 await this.$router.push({ path: '/' });
                 this.$store.commit('CLEAR_INPUT');
-                this.$store.commit('HIDE_NORESULTS_TOAST');
+                this.$store.commit('HIDE_NORESULT_TOAST');
                 this.resetWaiting = false;
             }, 6000);
         },
@@ -303,7 +298,7 @@ export default defineComponent({
             }
             clearTimeout(this.resetHandler);
             this.resetWaiting = false;
-            this.$store.commit('HIDE_NORESULTS_TOAST');
+            this.$store.commit('HIDE_NORESULT_TOAST');
         },
         /**
          * Toggles the visibility of the timeline
