@@ -13,4 +13,4 @@ jobs:
           host: ${{ secrets.API_URL }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.API_DDP }}
-          script: deploy-duckduckpatent.bash
+          script: source /home/admin/.nvm/nvm.sh && ~/bin/deploy-duckduckpatent.bash
