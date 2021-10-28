@@ -1,6 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Saira:wght@100;300;400&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
+/**
+ * prime vue related stylesheets
+ */
+@import '~primeicons/primeicons.css';
+@import '~primevue/resources/themes/saga-blue/theme.css';
+@import '~primevue/resources/primevue.min.css';
+
+:root {
+    --primary-color: #00000;
+}
+
 .no-select {
     -webkit-user-select: none;
     user-select: none;
@@ -69,4 +80,22 @@ button,
 .p-dialog-content {
     flex-grow: 1;
     margin-bottom: 32px;
+}
+
+
+/**
+ * Speed dial component
+ */
+.p-button {
+    background: black;
+    border: 1px solid #3a3a3a;
+}
+
+.p-button:enabled:hover {
+    background: #3a3a3a;
+    border-color: #3a3a3a;
+}
+
+.p-button:focus {
+    box-shadow: 0 0 0 0.2rem #b7b7b7;
 }

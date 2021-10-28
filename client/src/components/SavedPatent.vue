@@ -5,7 +5,7 @@
                 <h2>{{ savedPatentTitle }}</h2>
             </div>
             <div class="patent-abstract">
-                <p>{{ savedpatentAbstract?.slice(0, 150) }}</p>
+                <p>{{ savedpatentAbstract?.slice(0, 350) }} ...</p>
             </div>
         </div>
     </div>
@@ -20,6 +20,7 @@ export default defineComponent({
         savedPatentTitle: String,
         savedpatentAbstract: String,
     },
+    emits: ['onRemove'],
     computed: {
         patents(): Patent[] {
             return this.$store.state.patents;
@@ -34,6 +35,11 @@ export default defineComponent({
     justify-content: flex-start;
     width: 500px;
 }
+
+.main-container:hover {
+    cursor: pointer;
+}
+
 .patent-info {
     transition: 0.5s;
     margin: 8px;

@@ -8,8 +8,8 @@ import Dialog from 'primevue/dialog';
 import ProgressBar from 'primevue/progressbar';
 import Toast from 'primevue/toast';
 import ToastService from 'primevue/toastservice';
-import 'primevue/resources/themes/saga-blue/theme.css';
-import 'primevue/resources/primevue.min.css';
+import SpeedDial from 'primevue/speeddial';
+import Tooltip from 'primevue/tooltip';
 
 // creating app
 const app = createApp(App).use(store).use(router);
@@ -19,6 +19,8 @@ app.use(PrimeVue);
 app.use(ToastService, Toast);
 app.component('ProgressBar', ProgressBar);
 app.component('Dialog', Dialog);
+app.component('SpeedDial', SpeedDial);
+app.directive('tooltip', Tooltip);
 
 // mount the app
 app.mount('#app');

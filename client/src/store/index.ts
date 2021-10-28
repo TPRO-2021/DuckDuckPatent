@@ -1,5 +1,7 @@
 import { createStore } from 'vuex';
 import { Patent } from '@/models/Patent';
+import { PatentMap } from '@/models/PatentMap';
+import { SavedPatent } from '@/models/SavedPatent';
 
 /**
  * The entire application views will have global containers to share data between components which is the state
@@ -49,11 +51,6 @@ export class AppState {
     public suggestedTerms = [] as string[];
 
     /**
-     * Container that store the saved patents mark as favorites
-     */
-    public savedPatents = [] as Patent[];
-
-    /**
      * Holds the current total count value
      */
     public totalCount = 0;
@@ -62,6 +59,11 @@ export class AppState {
      * Node visualization options
      */
     public visualizationOptions = ['patents'];
+
+    /**
+     * Contains the saved patents
+     */
+    public savedPatents = {} as PatentMap;
 }
 
 export default createStore({
@@ -229,15 +231,27 @@ export default createStore({
         /**
          * Add the favorite patent to the container
          * @param state
+         * @param savedPatent
+         * @constructor
+         */
+        ADD_SAVED_PATENT(state, savedPatent: SavedPatent): void {
+            const { patent } = savedPatent;
+
+            if (state.savedPatents[patent.id]) {
+                return;
+            }
+
+            state.savedPatents[patent.id] = savedPatent;
+        },
+
+        /**
+         * Delete a patent from the saved results map
+         * @param state
          * @param event
          * @constructor
          */
-        ADD_SAVED_PATENT(state, event: { index: number; value: Patent }): void {
-            state.savedPatents.push(event.value);
-        },
-
-        REMOVE_SAVED_PATENT(state, event: { index: number; value: Patent }) {
-            state.savedPatents = state.savedPatents.filter((_t, index) => index !== event.index);
+        REMOVE_SAVED_PATENT(state, event: { patent: Patent }) {
+            delete state.savedPatents[event.patent.id];
         },
     },
 

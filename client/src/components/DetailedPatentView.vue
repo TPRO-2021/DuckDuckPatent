@@ -1,5 +1,11 @@
 <template>
-    <Dialog v-model:visible="patentAvailable" :close-on-escape="true">
+    <Dialog
+        v-model:visible="patentAvailable"
+        :close-on-escape="true"
+        :modal="true"
+        v-on:hide="handleClose"
+        :dismissable-mask="true"
+    >
         <!-- Menu Buttons for interacting with the patent -->
         <div class="settings-container">
             <div class="settings-btn">
@@ -7,24 +13,28 @@
             </div>
 
             <div class="settings-menu" v-if="isSubMenuOpen">
+                <!--TODO: Add actions! Once all actions are added this can be moved to a computed property-->
                 <RoundButton
-                    v-for="(option, index) in optionButtons"
-                    :key="index"
+                    v-if="isSavedPage"
                     class="round-button"
-                    :icon-key="option.iconKey"
-                    @click="option.action"
+                    icon-key="delete_forever"
+                    v-on:on-clicked="onRemove"
                 />
+                <RoundButton v-if="!isSavedPage" class="round-button" icon-key="push_pin"></RoundButton>
+                <RoundButton class="round-button" icon-key="open_in_new" />
+                <RoundButton v-if="!isSavedPage" class="round-button" icon-key="visibility_off" />
+                <RoundButton v-if="!isSavedPage" class="round-button" icon-key="done" />
             </div>
         </div>
         <template #header>
             <div>
-                <div class="patent-title">{{ this.patent.title }}</div>
+                <div class="patent-title">{{ this.patent.patent.title }}</div>
                 <!-- TODO: Add applicant/owner of the patent -->
                 <div class="patent-owner">Company/Author</div>
             </div>
         </template>
 
-        <div class="patent-abstract">{{ this.patent.abstract }}</div>
+        <div class="patent-abstract">{{ this.patent.patent.abstract }}</div>
 
         <template #footer>
             <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
@@ -45,9 +55,14 @@
                         </div>
                     </div>
                     <div class="keywords">
-                        <!--TODO: Add searched keywords-->
                         <span class="keywords label-keywords">Searched keywords:</span>
-                        <span class="keywords">Soil, Energy </span>
+                        <span class="keywords">
+                            <span v-for="(keyword, index) in patent.searchTerms" :key="index">
+                                <span>{{ keyword }}</span>
+                                <span v-if="index !== patent.searchTerms.length - 1">, </span>
+                                <span v-if="index <= patent.searchTerms.length - 1"> </span>
+                            </span>
+                        </span>
                     </div>
                 </div>
                 <div class="column btn-exploration">
@@ -75,8 +90,12 @@ export default defineComponent({
     },
     props: {
         patent: { type: Object },
+        isSavedPage: {
+            type: Boolean,
+            default: false,
+        },
     },
-    emits: {},
+    emits: ['onClose', 'removeFromSaved'],
     data() {
         return {
             pageDisplay: '',
@@ -99,28 +118,17 @@ export default defineComponent({
             this.patentAvailable = !!newVal;
         },
     },
-    computed: {
-        savedPatents(): Patent[] {
-            return this.$store.state.savedPatents;
-        },
-        searchPage(): boolean {
-            return this.$route.path == '/search';
-        },
-    },
     methods: {
-        save(event: { index: number; value: Patent }): void {
-            if (this.saved) {
-                this.$store.commit('ADD_SAVED_PATENT', event);
-                this.saved = !this.saved;
-            } else {
-                this.$store.commit('REMOVE_SAVED_PATENT', event);
-                this.saved = !this.saved;
-            }
+        handleClose(): void {
+            this.patentAvailable = false;
+            this.$emit('onClose');
         },
-        optionButton(): void {
-            if (!this.searchPage) {
-                this.optionButtons = this.optionButtons.filter((iconKey, action) => action !== 1);
-            }
+        /**
+         * Closes the modal and emits the removeFromSave event
+         */
+        onRemove(): void {
+            this.patentAvailable = false;
+            this.$emit('removeFromSaved');
         },
     },
 });
@@ -129,8 +137,8 @@ export default defineComponent({
 <style lang="scss" scoped>
 .settings-container {
     position: absolute;
-    right: 28px;
-    top: 28px;
+    right: 24px;
+    top: 36px;
     display: flex;
     flex-direction: column;
 }
