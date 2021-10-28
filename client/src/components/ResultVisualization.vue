@@ -106,6 +106,15 @@ export default defineComponent({
         onClickSave(): boolean {
             return this.$store.state.onClickSave;
         },
+        /**
+         * Expose the state variables for zoom in/out
+         */
+        zoomIn(): boolean {
+            return this.$store.state.zoomingIn;
+        },
+        zoomOut(): boolean {
+            return this.$store.state.zoomingOut;
+        },
     },
     created() {
         // adding the event listener for the resize event here
@@ -121,17 +130,6 @@ export default defineComponent({
     unmounted() {
         // unregistering the event listener for the resize event
         window.removeEventListener('resize', this.onResize);
-    },
-    computed: {
-        /**
-         * Expose the state variables for zoom in/out
-         */
-        zoomIn(): boolean {
-            return this.$store.state.zoomingIn;
-        },
-        zoomOut(): boolean {
-            return this.$store.state.zoomingOut;
-        },
     },
     watch: {
         /**
