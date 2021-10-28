@@ -229,11 +229,11 @@ export default createStore({
         /**
          * Add the favorite patent to the container
          * @param state
-         * @param savedPatent
+         * @param event
          * @constructor
          */
-        ADD_SAVED_PATENT(state, savedPatent: Patent): void {
-            state.savedPatents.push(savedPatent);
+        ADD_SAVED_PATENT(state, event: { index: number; value: Patent }): void {
+            state.savedPatents.push(event.value);
         },
 
         REMOVE_SAVED_PATENT(state, event: { index: number; value: Patent }) {
