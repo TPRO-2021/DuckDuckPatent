@@ -2,6 +2,7 @@
     <div class="d3-container">
         <svg xmlns="http://www.w3.org/2000/svg" @mousemove="drag($event)" @mouseup="drop()" @click="canvasClicked">
             <g class="nodes-container">
+                <!-- Create the line that connect the notes-->
                 <line
                     v-for="link in graph.links"
                     :key="link.index"
@@ -9,9 +10,11 @@
                     :y1="link.source.y"
                     :x2="link.target.x"
                     :y2="link.target.y"
-                    stroke="grey"
+                    stroke="black"
                     stroke-width="2"
+                    marker-end="url(#endarrow)"
                 />
+                <!-- Create the nodes that represent the patent -->
                 <circle
                     class=".node"
                     v-for="node in graph.nodes"
@@ -24,6 +27,23 @@
                     @mousedown="nodeClicked({ x: $event.screenX, y: $event.screenY, node: node })"
                 />
             </g>
+            <!-- define the arrow marker to position the arrow refx and refy was used -->
+            <defs>
+                <marker
+                    id="endarrow"
+                    refX="14"
+                    refY="2"
+                    orient="auto"
+                    markerWidth="8"
+                    markerHeight="0"
+                    overflow="visible"
+                >
+                    <!-- This design the type of arrow
+                    d - define the design of arrow
+                    -->
+                    <path d="M0,0V 4L6,2Z" style="fill: black"></path>
+                </marker>
+            </defs>
         </svg>
         <div class="tooltip card box-shadow no-select">{{ this.currentNode?.patent.title }}</div>
     </div>
