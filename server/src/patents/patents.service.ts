@@ -185,7 +185,7 @@ export class PatentsService {
         let titles = doc['bibliographic-data']['invention-title'];
 
         if (!titles) {
-            return '';
+            return 'Unknown Title';
         }
 
         // In some edge cases it can happen that the title is an object
@@ -194,10 +194,9 @@ export class PatentsService {
         }
         // filtering for the provided languages
         const titleSupported = titles.find((title) => languages.includes(title['@lang']));
-
-        // if an english title is available we should use that
+        //if the Title is not existing by default in english or one of the filtered languages return this message
         if (titleSupported == null) {
-            return '';
+            return 'Title available in a different languages';
         }
 
         return titleSupported.$;
@@ -243,9 +242,9 @@ export class PatentsService {
     private static getAbstract(doc: OpsExchangeDocument, languages: string): string {
         let abstracts = doc.abstract;
 
-        // if no abstract exists we can return an empty string
+        // if no abstract exists we can return unknown abstract
         if (!abstracts) {
-            return '';
+            return 'Unknown Abstract';
         }
 
         // In some edge cases it can happen that the abstract is an object
@@ -253,12 +252,11 @@ export class PatentsService {
             abstracts = [abstracts];
         }
 
-        // filtering for the english abstract
+        // filtering for the provided languages
         const abstractSupported = abstracts.find((abstract) => languages.includes(abstract['@lang']));
-
-        // if an english title is available we should use that
+        //if the abstract is not existing by default in english or one of the filtered languages return this message
         if (abstractSupported == null) {
-            return '';
+            return 'Abstract available in a different languages';
         }
 
         return abstractSupported.p.$;
