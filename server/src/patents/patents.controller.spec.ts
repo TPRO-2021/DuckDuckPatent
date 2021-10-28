@@ -39,7 +39,10 @@ describe('PatentsController', () => {
 
     describe('/search', () => {
         it('Should return "[]" for empty search', async () => {
-            const patents = await patentsController.query({ keywords: [] }, mockResponse);
+            const patents = await patentsController.query(
+                { keywords: [], language: '', country: '', date: '' },
+                mockResponse,
+            );
             expect(patents).toEqual([]);
         });
     });

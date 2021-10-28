@@ -47,7 +47,14 @@
 
         <!--  TODO: This is where filters for narrowing down the results will be placed  -->
         <h4 class="labels">Filters</h4>
-        <div class="filters-container"></div>
+        <div class="filters-container">
+            <Filters
+                :filters="$props.filters"
+                v-on:add-filter="$emit('addFilter', $event)"
+                v-on:remove-filter="$emit('removeFilter', $event)"
+                v-on:update-filter="$emit('updateFilter', $event)"
+            />
+        </div>
     </div>
 </template>
 
@@ -55,10 +62,11 @@
 import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import ToggleSwitch from '../components/ToggleSwitch.vue';
+import Filters from '../components/Filters.vue';
 
 export default defineComponent({
-    name: 'Search',
-    components: { RoundButton, ToggleSwitch },
+    name: 'OptionsMenu',
+    components: { RoundButton, ToggleSwitch, Filters },
     data() {
         return {
             openMenu: false,
@@ -66,7 +74,13 @@ export default defineComponent({
             nodes: [{ type: 'patents' }, { type: 'authors' }, { type: 'companies' }, { type: 'citations' }],
         };
     },
-    emits: ['addNode', 'removeNode'],
+    props: {
+        filters: {
+            type: Array,
+            required: true,
+        },
+    },
+    emits: ['addNode', 'removeNode', 'updateFilter', 'removeFilter', 'addFilter'],
     methods: {
         /**
          *  @function to hide the options menu once the mouse left the panel for 5 seconds
@@ -108,7 +122,7 @@ export default defineComponent({
     font-size: 30px;
 }
 .main-container {
-    width: 240px;
+    width: 430px;
     display: flex;
     justify-content: flex-start;
     flex-direction: column;
