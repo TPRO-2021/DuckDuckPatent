@@ -31,22 +31,6 @@
                 />
             </g>
         </svg>
-        <div class="zoom">
-            <RoundButton
-                icon-key="add"
-                @click="
-                    calcZoom(true);
-                    zoomWithButton();
-                "
-            />
-            <RoundButton
-                icon-key="remove"
-                @click="
-                    calcZoom(false);
-                    zoomWithButton();
-                "
-            />
-        </div>
         <div class="tooltip card box-shadow no-select">{{ this.currentNode?.patent.title }}</div>
     </div>
 </template>
@@ -73,7 +57,6 @@ import {
 
 import { VisualPatentNode } from '@/models/VisualPatentNode';
 import Panzoom from '@panzoom/panzoom';
-import RoundButton from '@/components/RoundButton.vue';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
@@ -81,9 +64,6 @@ type d3Graph = { nodes: VisualPatentNode[]; links: SimulationLinkDatum<Simulatio
 
 export default defineComponent({
     name: 'ResultVisualization',
-    components: {
-        RoundButton,
-    },
     props: {
         patents: {
             required: true,
@@ -129,13 +109,24 @@ export default defineComponent({
     mounted() {
         this.$nextTick(() => {
             this.updateGraph();
-            //  this.addZoomHandler();
+            //  this.addZoomHandler(); //TODO: remove after review
             this.setupGraph();
         });
     },
     unmounted() {
         // unregistering the event listener for the resize event
         window.removeEventListener('resize', this.onResize);
+    },
+    computed: {
+        /**
+         * Expose the state variables for zoom in/out
+         */
+        zoomIn(): boolean {
+            return this.$store.state.zoomingIn;
+        },
+        zoomOut(): boolean {
+            return this.$store.state.zoomingOut;
+        },
     },
     watch: {
         /**
@@ -146,6 +137,20 @@ export default defineComponent({
         },
         visualizationOptions() {
             this.updateGraph();
+        },
+        zoomIn(newVal): void {
+            if (!newVal) {
+                return;
+            }
+            this.zoomWithButton(newVal); //true => zoom-in
+            this.$store.commit('BUTTON_ZOOM_IN_OFF');
+        },
+        zoomOut(newVal): void {
+            if (!newVal) {
+                return;
+            }
+            this.zoomWithButton(!newVal); // false => zoom-out
+            this.$store.commit('BUTTON_ZOOM_OUT_OFF');
         },
     },
     methods: {
@@ -160,19 +165,21 @@ export default defineComponent({
             this.zoomLevel < 0.4 ? (this.zoomLevel = 0) : (this.zoomLevel -= 0.5);
         },
         /**
-         * Zooms in/out once buttons are clicked
+         * Zooms in/out at button click. SVG centered.
          */
-        zoomWithButton(): void {
+        zoomWithButton(zoomingIn: boolean): void {
             const elem = document.getElementById('testID') as HTMLElement;
             const panzoom = Panzoom(elem, this.panzoomDefault);
             panzoom.setOptions({ disablePan: true });
 
+            this.calcZoom(zoomingIn); //checks whether we zoom in or out
+
             panzoom.zoom(this.zoomLevel, this.panzoomZoomOptions);
-            console.log('level is ', this.zoomLevel);
-            console.log('options: ', panzoom.getOptions());
+            //  console.log('level is ', this.zoomLevel); //TODO: remove after review
+            //  console.log('options: ', panzoom.getOptions()); //TODO: remove after review
         },
         /**
-         * Zooms in/out on mousewheel
+         * Zooms in/out on mousewheel. Currently centers the svg instead of focusing on the location of the cursor
          */
         zoomWithWheel(event: WheelEvent): void {
             this.calcZoom(event.deltaY < 0);
@@ -185,8 +192,8 @@ export default defineComponent({
                 ? panzoom.zoomToPoint(6, event, this.panzoomZoomOptions)
                 : panzoom.zoomToPoint(this.zoomLevel, event, this.panzoomZoomOptions);
 
-            console.log('scale: ', panzoom.getScale());
-            console.log('options: ', panzoom.getOptions());
+            // console.log('scale: ', panzoom.getScale()); //TODO: remove after review
+            // console.log('options: ', panzoom.getOptions()); //TODO: remove after review
         },
         setupGraph() {
             this.container = select('.d3-container');
@@ -463,7 +470,7 @@ export default defineComponent({
         },
 
         /**
-         * Adds a zoom handler for the
+         * Adds a zoom handler for the TODO: remove after review
          */
         // addZoomHandler(): void {
         //     console.log('in addZoomHandler');
@@ -526,15 +533,6 @@ export default defineComponent({
         height: 100%;
         width: 100%;
     }
-}
-.zoom {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    gap: 10px;
 }
 
 .tooltip {

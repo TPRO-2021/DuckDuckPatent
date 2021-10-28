@@ -50,6 +50,10 @@
         <div class="patent-preview" v-if="selectedPatentIndex > -1">
             <PatentPreview :patent="patents[selectedPatentIndex]" v-on:on-change-patent="onChangePatent($event)" />
         </div>
+        <div class="zoom">
+            <RoundButton icon-key="add" @click="this.$store.commit('BUTTON_ZOOM_IN_ON')" />
+            <RoundButton icon-key="remove" @click="this.$store.commit('BUTTON_ZOOM_OUT_ON')" />
+        </div>
     </div>
 </template>
 
@@ -422,5 +426,14 @@ export default defineComponent({
     z-index: 100;
     bottom: 0;
     left: 0;
+}
+.zoom {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    gap: 10px;
 }
 </style>

@@ -62,6 +62,14 @@ export class AppState {
      * Node visualization options
      */
     public visualizationOptions = ['patents'];
+    /**
+     * Zoom in action
+     */
+    public zoomingIn = false;
+    /**
+     * Zoom out action
+     */
+    public zoomingOut = false;
 }
 
 export default createStore({
@@ -238,6 +246,25 @@ export default createStore({
 
         REMOVE_SAVED_PATENT(state, event: { index: number; value: Patent }) {
             state.savedPatents = state.savedPatents.filter((_t, index) => index !== event.index);
+        },
+
+        /**
+         * Control zoom in on the resultVisualization
+         */
+        BUTTON_ZOOM_IN_ON(state) {
+            state.zoomingIn = true;
+        },
+        BUTTON_ZOOM_IN_OFF(state) {
+            state.zoomingIn = false;
+        },
+        /**
+         * Control zoom out on the resultVisualization
+         */
+        BUTTON_ZOOM_OUT_ON(state) {
+            state.zoomingOut = true;
+        },
+        BUTTON_ZOOM_OUT_OFF(state) {
+            state.zoomingOut = false;
         },
     },
 
