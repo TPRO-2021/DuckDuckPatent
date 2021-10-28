@@ -93,13 +93,20 @@ export class PatentsService {
      * @param page The page that should be queried
      * @param isSecondAttempt Specifies if this is the second attempt (auth)
      */
-    public async query(terms: string[], page: number, isSecondAttempt = false): Promise<QueryResult> {
+    public async query(
+        terms: string[],
+        page: number,
+        isSecondAttempt = false,
+        date?: string,
+        country?: string,
+        language?: string,
+    ): Promise<QueryResult> {
         // if no auth data is present we need to generate an access token
         if (!this.authData) {
             this.authData = await this.getAccessToken();
         }
 
-        const queryString = PatentsService.getQueryString(terms, PatentsService.queryEndpoint, page);
+        const queryString = PatentsService.getQueryString(terms, PatentsService.queryEndpoint, page, date, country);
 
         try {
             const response = await lastValueFrom(
@@ -254,10 +261,37 @@ export class PatentsService {
      * @param page          The page which should be retrieved
      * @private
      */
-    private static getQueryString(searchTerms: string[], endpoint: string, page = 0): string {
-        return `${process.env.PATENT_API_URL}`
-            .concat(endpoint)
-            .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`)
-            .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+    private static getQueryString(
+        searchTerms: string[],
+        endpoint: string,
+        page = 0,
+        country?: string,
+        date?: string,
+    ): string {
+        if (country.length <= 0 && date.length <= 0) {
+            return `${process.env.PATENT_API_URL}`
+                .concat(endpoint)
+                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`)
+                .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+        } else if (country.length > 0 && date.length > 0) {
+            return `${process.env.PATENT_API_URL}`
+                .concat(endpoint)
+                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms} and`)
+                .concat(` pn any "${country} and`)
+                .concat(`pd within ${date}`)
+                .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+        } else if (country.length > 0) {
+            return `${process.env.PATENT_API_URL}`
+                .concat(endpoint)
+                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`)
+                .concat(` pn any "${country}`)
+                .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+        } else if (date.length > 0) {
+            return `${process.env.PATENT_API_URL}`
+                .concat(endpoint)
+                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`)
+                .concat(`pd within ${date}`)
+                .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+        }
     }
 }
