@@ -72,10 +72,10 @@ export default defineComponent({
         Searchbar,
         PatentPreview,
         KeywordSuggestions,
-        RoundButton,
         OptionsMenu,
         ResultsVisualization,
         Button,
+        RoundButton,
     },
     data() {
         return {
@@ -405,7 +405,7 @@ export default defineComponent({
     padding: 20px;
     position: absolute;
     bottom: 0;
-    right: 0;
+    right: 70px;
     gap: 20px;
     display: flex;
 }

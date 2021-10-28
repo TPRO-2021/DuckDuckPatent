@@ -1,7 +1,13 @@
 <template>
     <div class="d3-container">
-        <svg xmlns="http://www.w3.org/2000/svg" @mousemove="drag($event)" @mouseup="drop()" @click="canvasClicked">
-            <g class="nodes-container">
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            @mousemove="drag($event)"
+            @mouseup="drop()"
+            @click="canvasClicked"
+            @wheel="zoomWithWheel($event)"
+        >
+            <g class="nodes-container" id="testID">
                 <line
                     v-for="link in graph.links"
                     :key="link.index"
@@ -25,6 +31,22 @@
                 />
             </g>
         </svg>
+        <div class="zoom">
+            <RoundButton
+                icon-key="add"
+                @click="
+                    this.zoomLevel < 0.5 ? (this.zoomLevel += 0.3) : (this.zoomLevel += 0.5);
+                    zoom();
+                "
+            />
+            <RoundButton
+                icon-key="remove"
+                @click="
+                    this.zoomLevel === 0.5 ? (this.zoomLevel -= 0.3) : (this.zoomLevel -= 0.5);
+                    zoom();
+                "
+            />
+        </div>
         <div class="tooltip card box-shadow no-select">{{ this.currentNode?.patent.title }}</div>
     </div>
 </template>
@@ -50,6 +72,8 @@ import {
 } from 'd3';
 
 import { VisualPatentNode } from '@/models/VisualPatentNode';
+import Panzoom from '@panzoom/panzoom';
+import RoundButton from '@/components/RoundButton.vue';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
@@ -57,6 +81,9 @@ type d3Graph = { nodes: VisualPatentNode[]; links: SimulationLinkDatum<Simulatio
 
 export default defineComponent({
     name: 'ResultVisualization',
+    components: {
+        RoundButton,
+    },
     props: {
         patents: {
             required: true,
@@ -84,6 +111,8 @@ export default defineComponent({
             } as d3Graph,
             resizeEvent: -1,
             simulation: null as d3ForceSim | null,
+            zoomLevel: 1,
+            panzoomPosition: 0,
         };
     },
     created() {
@@ -93,7 +122,7 @@ export default defineComponent({
     mounted() {
         this.$nextTick(() => {
             this.updateGraph();
-            this.addZoomHandler();
+            //  this.addZoomHandler();
             this.setupGraph();
         });
     },
@@ -113,6 +142,38 @@ export default defineComponent({
         },
     },
     methods: {
+        zoom(): void {
+            const elem = document.getElementById('testID') as HTMLElement; //TODO: find out the type to add to data
+
+            this.centerSVG();
+            const panzoom = Panzoom(elem, { startX: this.panzoomPosition, startY: this.panzoomPosition });
+
+            console.log('level is ', this.zoomLevel);
+            panzoom.zoom(this.zoomLevel);
+        },
+        centerSVG(): void {
+            if (this.zoomLevel < 0.5) {
+                this.panzoomPosition = 2000;
+            }
+            if (this.zoomLevel == 0.5) {
+                this.panzoomPosition = 400;
+            }
+            if (this.zoomLevel == 1.5) {
+                this.panzoomPosition = 0;
+            }
+        },
+        zoomWithWheel(event: WheelEvent): void {
+            //  console.log('zoomWheel entered');
+            const elem = document.getElementById('testID') as HTMLElement;
+            //  console.log('elem is ', elem);
+            const panzoom = Panzoom(elem, { step: 0.5 });
+
+            //  event.shiftKey ? panzoom.zoomWithWheel(event) :
+            panzoom.zoomWithWheel(event, { maxScale: 6, minScale: 0.1, step: 0.5 });
+            // console.log('pan: ', panzoom.getPan());
+            // console.log('scale: ', panzoom.getScale());
+            //panzoom.zoomToPoint(4, event);
+        },
         setupGraph() {
             this.container = select('.d3-container');
             // Selecting the svg as the root for the d3 simulation
@@ -390,26 +451,29 @@ export default defineComponent({
         /**
          * Adds a zoom handler for the
          */
-        addZoomHandler(): void {
-            // TODO: Implement zoom functionality (currently this is buggy in combination with the click event)
-            // select the g-tag from the element
-            // const group = select<SVGSVGElement, unknown>('g');
-            //
-            // // add the zoom handler to the g-tag
-            // group.call(zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 20]).on('zoom', onZoom));
-            //
-            // // eslint-disable-next-line
-            // function onZoom(event: any) {
-            //     if (!event.sourceEvent.ctrlKey) {
-            //         return;
-            //     }
-            //
-            //     // group.selectAll('line').attr('transform', event.transform);
-            //     group.attr('transform', event.transform);
-            //     // group.selectAll('circle').attr('transform', event.transform);
-            //     group.attr('transform', event.transform);
-            // }
-        },
+        // addZoomHandler(): void {
+        //     console.log('in addZoomHandler');
+        //     // TODO: Implement zoom functionality (currently this is buggy in combination with the click event)
+        //     // select the g-tag from the element
+        //     const group = select<SVGSVGElement, unknown>('g');
+        //     console.log('group', group);
+        //
+        //     // add the zoom handler to the g-tag
+        //     group.call(zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 20]).on('zoom', onZoom));
+        //
+        //     // eslint-disable-next-line
+        //     function onZoom(event: any) {
+        //         console.log('in onZoom');
+        //         if (!event.sourceEvent.ctrlKey) {
+        //             return;
+        //         }
+        //
+        //         // group.selectAll('line').attr('transform', event.transform);
+        //         group.attr('transform', event.transform);
+        //         // group.selectAll('circle').attr('transform', event.transform);
+        //         // group.attr('transform', event.transform);
+        //     }
+        // },
 
         /**
          * Function which triggers the updateGraph function after a specific delay is hit
@@ -448,6 +512,15 @@ export default defineComponent({
         height: 100%;
         width: 100%;
     }
+}
+.zoom {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    gap: 20px;
 }
 
 .tooltip {
