@@ -1,0 +1,77 @@
+<template>
+    <div class="filter">
+        <div class="head">{{ name }}</div>
+        <div class="middle">{{ value }}</div>
+        <div class="tail">
+            <div>
+                <span class="control-icon material-icons no-select" @click="onEditClicked()">edit</span>
+                <span class="control-icon material-icons no-select" @click="onRemoveClicked()">delete</span>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
+    name: 'Filter',
+    props: {
+        name: String,
+        value: String,
+    },
+    emits: ['edit', 'delete'],
+    methods: {
+        /**
+         *  @function emits an event remove a filter
+         */
+        onRemoveClicked(): void {
+            this.$emit('delete'); // Emit delete
+        },
+        /**
+         *  @function emits an event to edit a filter
+         */
+        onEditClicked(): void {
+            this.$emit('edit'); // Emit edit
+        },
+    },
+});
+</script>
+
+<style lang="scss" scoped>
+.filter {
+    display: flex;
+    width: 100%;
+    line-height: 1em;
+}
+.filter > div {
+    border: 1px solid black;
+    flex: 1;
+    background-color: black;
+    color: white;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2px 5px;
+}
+.filter > .head {
+    border: 1px solid black;
+    border-radius: 1.5em 0 0 1.5em;
+    border-right: none;
+    background-color: white;
+    color: black;
+}
+.filter > .tail {
+    border: 1px solid black;
+    border-radius: 0 1.5em 1.5em 0;
+    border-left: none;
+    text-align: right;
+}
+
+.control-icon {
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+}
+</style>

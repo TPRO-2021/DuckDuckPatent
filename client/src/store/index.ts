@@ -2,6 +2,7 @@ import { createStore } from 'vuex';
 import { Patent } from '@/models/Patent';
 import { PatentMap } from '@/models/PatentMap';
 import { SavedPatent } from '@/models/SavedPatent';
+import { Filter } from '@/models/Filter';
 
 /**
  * The entire application views will have global containers to share data between components which is the state
@@ -65,6 +66,10 @@ export class AppState {
      */
     public savedPatents = {} as PatentMap;
 
+    /**
+     * API Filters
+     */
+    public filters = [] as Filter[];
     /**
      * Zoom in action
      */
@@ -139,6 +144,44 @@ export default createStore({
          */
         removeVisualizationOption(state, option: string) {
             state.visualizationOptions = state.visualizationOptions.filter((t) => t !== option);
+        },
+
+        /**
+         * Add empty filter
+         */
+        addFilter(state) {
+            // Get the maxId and add one
+            const newId = state.filters.reduce((a, b) => Math.max(a, b.id), -1) + 1;
+            state.filters = [...state.filters, { id: newId, type: 'empty', value: '' } as Filter];
+        },
+
+        /**
+         * Remove filter by id
+         */
+        removeFilter(state, id: number) {
+            state.filters = state.filters.filter((t) => t.id !== id);
+        },
+
+        /**
+         * Update filter
+         */
+        updateFilter<K extends keyof Filter>(state: AppState, args: { prop: K; value: Filter[K]; id: number }) {
+            const startEdit = args.prop === 'isSelectionOpen';
+            state.filters = state.filters
+                .filter((t) => !startEdit || t.type !== 'empty') // If we're starting to edit one, delete all empties
+                .map((filter: Filter) => {
+                    if (args.id !== filter.id) {
+                        // This is not the one that is being updated
+                        // Don't allow for the opening of more than one at a time - close others if open
+                        return filter.isSelectionOpen ? { ...filter, isSelectionOpen: false } : filter;
+                    }
+                    return {
+                        ...filter, // Extend the curent filter
+                        value: args.prop === 'type' ? '' : filter.value, // Clear the value if we are asigning /changing type
+                        isSelectionOpen: args.prop === 'type' || filter.isSelectionOpen, // If we just selected a type, we should show value selection
+                        [args.prop]: args.value, // Set value
+                    };
+                });
         },
 
         /**
