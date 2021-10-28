@@ -114,7 +114,7 @@ export default defineComponent({
 
 .menu {
     display: flex;
-    justify-content: start;
+    justify-content: flex-start;
     position: absolute;
     right: 30px;
     top: 30px;
@@ -134,7 +134,7 @@ export default defineComponent({
 }
 
 .patent-info {
-    justify-content: start;
+    justify-content: flex-start;
     transition: 0.5s;
     margin: 8px;
 }

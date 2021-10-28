@@ -28,6 +28,16 @@ export class AppState {
      * True if the loadingBar should be visible
      */
     public showLoadingBar = false;
+    /**
+     * Holds the showNoResultsToast state
+     * True if the toast should be visible
+     */
+    public showNoResultsToast = false;
+    /**
+     * Holds the showErrorToast state
+     * True if the toast should be visible
+     */
+    public showErrorToast = false;
 
     /**
      * Holds the current search terms of the user
@@ -77,7 +87,36 @@ export default createStore({
         hideLoadingScreen(state) {
             state.showLoadingScreen = false;
         },
+        /**
+         * Sets the NoResultsToast to visible
+         * @param state
+         */
+        SHOW_NORESULT_TOAST(state) {
+            state.showNoResultsToast = true;
+        },
 
+        /**
+         * Hides the NoResultsToast
+         * @param state
+         */
+        HIDE_NORESULT_TOAST(state) {
+            state.showNoResultsToast = false;
+        },
+        /**
+         * Sets the showErrorToast to visible
+         * @param state
+         */
+        SHOW_ERROR_TOAST(state) {
+            state.showErrorToast = true;
+        },
+
+        /**
+         * Hides the ErrorToast
+         * @param state
+         */
+        HIDE_ERROR_TOAST(state) {
+            state.showErrorToast = false;
+        },
         /**
          * Add visualization option
          */
@@ -144,6 +183,15 @@ export default createStore({
             state.searchTerms = state.searchTerms.filter((_t, index) => index !== event.index);
         },
 
+        /**
+         * Clears the keywords and suggestions in input field
+         * @param state
+         * @constructor
+         */
+        CLEAR_INPUT(state) {
+            state.searchTerms = [];
+            state.suggestedTerms = [];
+        },
         /**
          * Shows loading bar
          * @param state
