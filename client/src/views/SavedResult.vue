@@ -1,18 +1,27 @@
 <template>
     <div class="saved-page">
         <div class="saved-controls">
-            <RoundButton class="back-btn" icon-key="reply" @click="backPage"></RoundButton>
+            <RoundButton class="back-btn" icon-key="reply" @click="goBack"></RoundButton>
             <Button class="saved-btn" iconKey="bookmark" btnText="saved item">Saved</Button>
         </div>
         <div class="saved-list">
             <savedPatent
-                v-for="(patent, index) in patents"
+                v-for="(savedPatent, index) in savedPatents"
                 :key="index"
-                :savedPatentTitle="patent.title"
-                :savedpatentAbstract="patent.abstract"
-            >
-            </savedPatent>
+                :savedPatentTitle="savedPatent.patent.title"
+                :savedpatentAbstract="savedPatent.patent.abstract"
+                @click="onSelectPatent(savedPatent)"
+                v-on:on-remove="this.removeFromSaved(savedPatent.patent)"
+                v-on:on-close="this.selectedPatent = null"
+            />
         </div>
+
+        <DetailedPatentView
+            :patent="selectedPatent"
+            :is-saved-page="true"
+            v-on:remove-from-saved="removeFromSaved(selectedPatent.patent)"
+            v-on:on-close="selectedPatent = null"
+        />
     </div>
 </template>
 
@@ -22,24 +31,62 @@ import savedPatent from '@/components/SavedPatent.vue';
 import Button from '@/components/Button.vue';
 import RoundButton from '@/components/RoundButton.vue';
 import { Patent } from '@/models/Patent';
+import DetailedPatentView from '@/components/DetailedPatentView.vue';
+import { SavedPatent } from '@/models/SavedPatent';
+
 export default defineComponent({
     name: 'SavedResult',
-    components: { RoundButton, savedPatent, Button },
+    components: {
+        RoundButton,
+        savedPatent,
+        Button,
+        DetailedPatentView,
+    },
+    data() {
+        return {
+            saved: [] as Patent[],
+            selectedPatent: null as SavedPatent | null,
+        };
+    },
     computed: {
         patents(): Patent[] {
             return this.$store.state.patents;
         },
-        // savedPatents():Patent[]
-        // {
-        //     return this.$store.state.savedPatents;
-        // },
+        savedPatents(): SavedPatent[] {
+            return this.$store.state.savedPatents;
+        },
         searchTerms(): string[] {
             return this.$store.state.searchTerms;
         },
     },
     methods: {
-        backPage(): void {
-            this.$router.push({ path: '/search', query: { terms: this.searchTerms } });
+        /**
+         * Attempts to take the user back to the previous page
+         */
+        goBack(): void {
+            // if no search terms are present (after reload) go back to homepage
+            if (this.searchTerms.length === 0) {
+                this.$router.push({ path: '/' });
+                return;
+            }
+
+            this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
+        },
+
+        /**
+         * Removes a patent from the saved page
+         * @param patent
+         */
+        removeFromSaved(patent: Patent): void {
+            this.$store.commit('REMOVE_SAVED_PATENT', { patent });
+        },
+
+        /**
+         * Set a patent as the selected patent
+         * @param patent
+         */
+        onSelectPatent(patent: SavedPatent): void {
+            this.selectedPatent = patent;
         },
     },
 });
@@ -49,7 +96,6 @@ export default defineComponent({
 .saved-page {
     height: 100vh;
     width: 100%;
-    //overflow: hidden;
 }
 
 .saved-controls {
@@ -60,7 +106,6 @@ export default defineComponent({
     display: flex;
     gap: 20px;
     padding: 20px;
-    //position: absolute;
 }
 
 .saved-btn {

@@ -86,6 +86,11 @@ export default defineComponent({
             simulation: null as d3ForceSim | null,
         };
     },
+    computed: {
+        onClickSave(): boolean {
+            return this.$store.state.onClickSave;
+        },
+    },
     created() {
         // adding the event listener for the resize event here
         window.addEventListener('resize', this.onResize);
