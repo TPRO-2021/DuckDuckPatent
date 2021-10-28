@@ -40,7 +40,7 @@
                 icon-key="check"
                 btn-text="Load more"
             ></Button>
-            <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
+            <!--            <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />-->
         </div>
         <!-- This div contains the top right controls (saved button) -->
         <div class="top-controls">
@@ -437,7 +437,7 @@ export default defineComponent({
     padding: 20px;
     position: absolute;
     bottom: 0;
-    right: 70px;
+    right: 50px;
     gap: 20px;
     display: flex;
 }
@@ -463,5 +463,6 @@ export default defineComponent({
     bottom: 0;
     right: 0;
     gap: 10px;
+    height: 130px;
 }
 </style>

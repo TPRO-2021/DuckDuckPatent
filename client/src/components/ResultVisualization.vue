@@ -94,7 +94,7 @@ export default defineComponent({
             zoomLevel: 1,
             panzoomDefault: {
                 canvas: true,
-                cursor: 'move',
+                cursor: 'default',
                 maxScale: 6,
                 minScale: 0.2,
                 origin: '50% 50%',
@@ -123,7 +123,6 @@ export default defineComponent({
     mounted() {
         this.$nextTick(() => {
             this.updateGraph();
-            //  this.addZoomHandler(); //TODO: remove after review
             this.setupGraph();
         });
     },
@@ -178,8 +177,6 @@ export default defineComponent({
             this.calcZoom(zoomingIn); //checks whether we zoom in or out
 
             panzoom.zoom(this.zoomLevel, this.panzoomZoomOptions);
-            //  console.log('level is ', this.zoomLevel); //TODO: remove after review
-            //  console.log('options: ', panzoom.getOptions()); //TODO: remove after review
         },
         /**
          * Zooms in/out on mousewheel. Currently centers the svg instead of focusing on the location of the cursor
@@ -194,9 +191,6 @@ export default defineComponent({
             event.shiftKey
                 ? panzoom.zoomToPoint(6, event, this.panzoomZoomOptions)
                 : panzoom.zoomToPoint(this.zoomLevel, event, this.panzoomZoomOptions);
-
-            // console.log('scale: ', panzoom.getScale()); //TODO: remove after review
-            // console.log('options: ', panzoom.getOptions()); //TODO: remove after review
         },
         setupGraph() {
             this.container = select('.d3-container');
@@ -520,7 +514,6 @@ export default defineComponent({
                 this.nodeSelected = false;
                 return;
             }
-
             this.$emit('onPatentSelected', { index: -1 });
         },
     },
