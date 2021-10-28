@@ -159,7 +159,7 @@ export default createStore({
             const startEdit = args.prop === 'isSelectionOpen';
             state.filters = state.filters
                 .filter((t) => !startEdit || t.type !== 'empty') // If we're starting to edit one, delete all empties
-                .map((filter: Filter, index: number) => {
+                .map((filter: Filter) => {
                     if (args.id !== filter.id) {
                         // This is not the one that is being updated
                         // Don't allow for the opening of more than one at a time - close others if open
@@ -169,7 +169,6 @@ export default createStore({
                         ...filter, // Extend the curent filter
                         value: args.prop === 'type' ? '' : filter.value, // Clear the value if we are asigning /changing type
                         isSelectionOpen: args.prop === 'type' || filter.isSelectionOpen, // If we just selected a type, we should show value selection
-                        isLast: index === state.filters.length - 1, // This informs where/how we show the edit
                         [args.prop]: args.value, // Set value
                     };
                 });

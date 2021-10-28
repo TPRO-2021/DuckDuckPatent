@@ -5,7 +5,11 @@ export default class PatentService {
     requestPending = false;
     controller?: AbortController;
 
-    public async get(searchTerms: string[], filters: Filter[], page = 0): Promise<{ patents: Patent[]; totalCount: number }> {
+    public async get(
+        searchTerms: string[],
+        filters: Filter[],
+        page = 0,
+    ): Promise<{ patents: Patent[]; totalCount: number }> {
         // Prep the filter get parameters
         const filterParams = filters
             .filter((filter) => filter.type !== 'empty' && filter.value) // Remove unfinished or mal-formed filters
@@ -14,6 +18,7 @@ export default class PatentService {
         const queryString = searchTerms
             .map((term) => `keywords=${term}`)
             .concat(filterParams)
+            .concat(`page=${page}`)
             .join('&');
 
         // if request pending, abort it.

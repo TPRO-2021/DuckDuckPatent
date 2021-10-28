@@ -1,6 +1,6 @@
 <template>
     <div class="list-target">
-        <div class="list-picker">
+        <div class="list-picker" @scroll="$emit('scroll')">
             <div v-for="item in $props.list" :key="item.key">
                 <input
                     :id="item.key"
@@ -32,7 +32,7 @@ export default defineComponent({
     data() {
         return {};
     },
-    emits: ['select'],
+    emits: ['select', 'scroll'],
     methods: {
         /**
          *  @function emits an event to pick an item from the list

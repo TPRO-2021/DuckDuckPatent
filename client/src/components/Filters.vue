@@ -20,15 +20,19 @@
                         <div>
                             <input
                                 id="dateFrom"
+                                ref="dateFrom"
                                 :value="dateFilterFrom"
                                 type="number"
+                                @focus="updateFocus"
                                 @change="onDateChange('from', $event, filter)"
                                 @keyup="onDateChange('from', $event, filter)"
                             />
                             <input
                                 id="dateTo"
+                                ref="dateTo"
                                 :value="dateFilterTo"
                                 type="number"
+                                @focus="updateFocus"
                                 @change="onDateChange('to', $event, filter)"
                                 @keyup="onDateChange('to', $event, filter)"
                             />
@@ -50,6 +54,7 @@
                     :selected="filter.value.split(',')"
                     :list="languageList"
                     v-on:select="onListItemSelected(filter, $event.key)"
+                    v-on:scroll="updateFocus"
                 />
             </div>
 
@@ -66,6 +71,7 @@
                     :selected="filter.value.split(',')"
                     :list="countryList"
                     v-on:select="onListItemSelected(filter, $event.key)"
+                    v-on:scroll="updateFocus"
                 />
             </div>
         </div>
@@ -110,7 +116,7 @@ import FilterComponent from '@/components/Filter.vue';
 import ListPicker from '@/components/ListPicker.vue';
 import { Filter } from '@/models/Filter';
 
-const FOCUS_TIMEOUT_MS = 2000; // one second
+const FOCUS_TIMEOUT_MS = 4000; // four seconds
 
 export default defineComponent({
     name: 'Filters',
@@ -140,12 +146,13 @@ export default defineComponent({
                 { key: 'es', value: 'Spanish' },
             ],
             countryList: [
-                // Country list
+                // Country list (Potentially incomplete)
                 { key: 'at', value: 'Austria' },
                 { key: 'be', value: 'Belgium' },
                 { key: 'bg', value: 'Bulgaria' },
                 { key: 'ca', value: 'Canada' },
                 { key: 'ch', value: 'Switzerland' },
+                { key: 'cn', value: 'China' }, // Unsure if included
                 { key: 'cy', value: 'Cyprus' },
                 { key: 'cz', value: 'Czech Republic' },
                 { key: 'dk', value: 'Denmark' },
@@ -153,6 +160,7 @@ export default defineComponent({
                 { key: 'es', value: 'Spain' },
                 { key: 'fr', value: 'France' },
                 { key: 'gb', value: 'United Kingdom' },
+                { key: 'us', value: 'United States' }, // Unsure if included
                 { key: 'gr', value: 'Greece' },
                 { key: 'hr', value: 'Croatia' },
                 { key: 'ie', value: 'Ireland' },
@@ -167,6 +175,7 @@ export default defineComponent({
                 { key: 'pt', value: 'Portugal' },
                 { key: 'ro', value: 'Romania' },
                 { key: 'rs', value: 'Serbia' },
+                { key: 'ru', value: 'Russia' }, // Unsure if included
                 { key: 'se', value: 'Sweden' },
                 { key: 'sk', value: 'Slovakia' },
             ],
@@ -250,10 +259,11 @@ export default defineComponent({
             clearTimeout(this.dateChangeDebounce);
             this.dateChangeDebounce = setTimeout(() => {
                 // Because this gets called on every keyup, we need to "debounce" it
-                const elem = event.target as HTMLInputElement; // Cast int HTMLInputElement to make TS happy
-                const value = elem?.value ?? ''; // Either get the new value or empty string
-                const yearParts = filter.value.split('-'); // Split the original value into two parts (ignoring other parts)
-                const dateRange = fromTo === 'from' ? `${value}-${yearParts[1]}` : `${yearParts[0]}-${value}`; // Add into new date range depending on wheather it's 'to' or 'from'
+                const fromElem = this.$refs.dateFrom as HTMLInputElement; // Cast int HTMLInputElement to make TS happy
+                const toElem = this.$refs.dateTo as HTMLInputElement; // Cast int HTMLInputElement to make TS happy
+                const fromValue = fromElem?.value ?? ''; // Either get the new value or empty string
+                const toValue = toElem?.value ?? ''; // Either get the new value or empty string
+                const dateRange = `${fromValue}-${toValue}`; // Create new date range
                 this.$emit('updateFilter', { prop: 'value', value: dateRange, id: filter.id }); // Emit update filter with new date range
             }, 500); // .5 sec
             this.updateFocus(); // Update the focus so the user doesn't get kicked out of editing
