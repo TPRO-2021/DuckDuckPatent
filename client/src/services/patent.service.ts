@@ -18,18 +18,16 @@ export default class PatentService {
         this.controller = new AbortController();
         this.requestPending = true;
 
-        const response = await fetch(`http://localhost:3000/patents?${queryString}`, {
+        const response = await fetch(`/api/patents?${queryString}`, {
             signal: this.controller.signal,
         });
 
-        let json: Patent[];
         if (!response.ok) {
-            json = [];
             PatentService.throwError(response.status);
         }
         // accessing x-total-count header which indicates how many results are available
         const totalCount = parseInt(response.headers.get('x-total-count') || '99');
-        json = (await response.json()) as Patent[];
+        const json = (await response.json()) as Patent[];
         this.requestPending = false;
         return { patents: json, totalCount };
     }

@@ -102,6 +102,11 @@ export default defineComponent({
             panzoomZoomOptions: { animate: true, duration: 3000, easing: 'ease-in-out' },
         };
     },
+    computed: {
+        onClickSave(): boolean {
+            return this.$store.state.onClickSave;
+        },
+    },
     created() {
         // adding the event listener for the resize event here
         window.addEventListener('resize', this.onResize);

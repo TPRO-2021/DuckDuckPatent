@@ -42,13 +42,22 @@
             ></Button>
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
-
+        <!-- This div contains the top right controls (saved button) -->
         <div class="top-controls">
-            <Button btnText="Saved" iconKey="turned_in" badge-value="21" v-on:on-clicked="openSavePage" />
+            <Button
+                btnText="Saved"
+                iconKey="turned_in"
+                :badge-value="savedPatentsCount"
+                v-on:on-clicked="openSavePage"
+            />
         </div>
 
         <div class="patent-preview" v-if="selectedPatentIndex > -1">
-            <PatentPreview :patent="patents[selectedPatentIndex]" v-on:on-change-patent="onChangePatent($event)" />
+            <PatentPreview
+                :patent="patents[selectedPatentIndex]"
+                v-on:on-change-patent="onChangePatent($event)"
+                v-on:on-save-patent="onSavePatent($event)"
+            />
         </div>
         <div class="zoom">
             <RoundButton icon-key="add" @click="this.$store.commit('BUTTON_ZOOM_IN_ON')" />
@@ -119,6 +128,13 @@ export default defineComponent({
         },
         currentPage(): number {
             return this.$store.state.pageCount;
+        },
+        savedPatentsCount(): string {
+            if (Object.keys(this.$store.state.savedPatents).length === 0) {
+                return '';
+            }
+
+            return Object.keys(this.$store.state.savedPatents).length.toString();
         },
     },
     async created() {
@@ -334,8 +350,20 @@ export default defineComponent({
             this.moreDataAvailable = this.totalCount > 99 && this.currentPage < this.availablePages;
         },
 
+        /**
+         * Opens the saved page
+         */
         openSavePage(): void {
             this.$router.push({ path: '/saved' });
+        },
+
+        /**
+         * Adds a patent to the saved list
+         * @param event
+         */
+        onSavePatent(event: { patent: Patent }): void {
+            this.$store.commit('ADD_SAVED_PATENT', { patent: event.patent, searchTerms: this.terms });
+            this.selectedPatentIndex = -1;
         },
     },
 });
