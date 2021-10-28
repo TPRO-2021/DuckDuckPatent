@@ -1,4 +1,4 @@
-import { AuthResponse, OpsExchangeDocument, Patent, PatentAPIResponse, QueryResult } from './models';
+import { AuthResponse, OpsAbstract, OpsExchangeDocument, Patent, PatentAPIResponse, QueryResult } from './models';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
@@ -97,16 +97,17 @@ export class PatentsService {
         terms: string[],
         page: number,
         isSecondAttempt = false,
-        date?: string,
+        languages?: string,
         country?: string,
-        language?: string,
+        date?: string,
     ): Promise<QueryResult> {
         // if no auth data is present we need to generate an access token
         if (!this.authData) {
             this.authData = await this.getAccessToken();
         }
 
-        const queryString = PatentsService.getQueryString(terms, PatentsService.queryEndpoint, page, date, country);
+        const queryString = PatentsService.getQueryString(terms, PatentsService.queryEndpoint, page, country, date);
+        console.log(queryString);
 
         try {
             const response = await lastValueFrom(
@@ -118,7 +119,7 @@ export class PatentsService {
                 }),
             );
 
-            return this.processQuery(response.data);
+            return this.processQuery(response.data, languages);
         } catch (error) {
             // if access token is expired we will attempt to renew it and send the request again
             if ((error?.response?.data as string)?.toLowerCase().includes('access token has expired')) {
@@ -138,12 +139,11 @@ export class PatentsService {
      * Processes an OPS query and returns a much cleaner structure with the needed data
      * @param data
      */
-    private processQuery(data: PatentAPIResponse): QueryResult {
+    private processQuery(data: PatentAPIResponse, languages?: string): QueryResult {
         const searchResult = data['ops:world-patent-data']['ops:biblio-search'];
 
         const totalResults = Number(searchResult['@total-result-count']);
         let queryData = searchResult['ops:search-result']['exchange-documents'];
-
         if (!(queryData instanceof Array)) {
             queryData = [queryData];
         }
@@ -152,11 +152,22 @@ export class PatentsService {
             .map((item) => ({
                 ...item['exchange-document'],
             }))
+            /**
+             * filter for only the existing languages for the title and by default if no filter applied it is English
+             */
+            .filter((item) => {
+                let title = item['bibliographic-data']['invention-title'];
+                if (!(title instanceof Array)) {
+                    title = [title];
+                }
+                const patentLanguages = title.filter((t) => t).map((translation) => translation['@lang']);
+                return patentLanguages.some((lang) => languages.includes(lang));
+            })
             .map((item) => ({
                 id: `${item['@country']}${item['@doc-number']}.${item['@kind']}`,
-                title: PatentsService.getTitle(item),
+                title: PatentsService.getTitle(item, languages),
                 citations: PatentsService.getCitations(item),
-                abstract: PatentsService.getAbstract(item),
+                abstract: PatentsService.getAbstract(item, languages),
             }));
 
         return {
@@ -170,7 +181,7 @@ export class PatentsService {
      * @param doc
      * @private
      */
-    private static getTitle(doc: OpsExchangeDocument): string {
+    private static getTitle(doc: OpsExchangeDocument, languages: string): string {
         let titles = doc['bibliographic-data']['invention-title'];
 
         if (!titles) {
@@ -181,16 +192,15 @@ export class PatentsService {
         if (!(titles instanceof Array)) {
             titles = [titles];
         }
-
-        // filtering for the english title
-        const titleEn = titles.filter((title) => title['@lang'] === 'en');
+        // filtering for the provided languages
+        const titleSupported = titles.find((title) => languages.includes(title['@lang']));
 
         // if an english title is available we should use that
-        if (titleEn.length === 1) {
-            titles = titleEn;
+        if (titleSupported == null) {
+            return '';
         }
 
-        return titles[0].$;
+        return titleSupported.$;
     }
 
     /**
@@ -230,7 +240,7 @@ export class PatentsService {
      * @param doc
      * @private
      */
-    private static getAbstract(doc: OpsExchangeDocument): string {
+    private static getAbstract(doc: OpsExchangeDocument, languages: string): string {
         let abstracts = doc.abstract;
 
         // if no abstract exists we can return an empty string
@@ -244,14 +254,14 @@ export class PatentsService {
         }
 
         // filtering for the english abstract
-        const abstractEn = abstracts.filter((abstract) => abstract['@lang'] === 'en');
+        const abstractSupported = abstracts.find((abstract) => languages.includes(abstract['@lang']));
 
-        // if an english abstract is available we should use that
-        if (abstractEn.length === 1) {
-            abstracts = abstractEn;
+        // if an english title is available we should use that
+        if (abstractSupported == null) {
+            return '';
         }
 
-        return abstracts[0].p.$;
+        return abstractSupported.p.$;
     }
 
     /**
@@ -268,29 +278,33 @@ export class PatentsService {
         country?: string,
         date?: string,
     ): string {
+        //if to check if no filter applied
         if (country.length <= 0 && date.length <= 0) {
             return `${process.env.PATENT_API_URL}`
                 .concat(endpoint)
                 .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`)
                 .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+            //check if both country and date applied
         } else if (country.length > 0 && date.length > 0) {
             return `${process.env.PATENT_API_URL}`
                 .concat(endpoint)
                 .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms} and`)
-                .concat(` pn any "${country} and`)
-                .concat(`pd within ${date}`)
+                .concat(` pn any "${country}" and`)
+                .concat(` pd within "${date}"`)
                 .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
-        } else if (country.length > 0) {
+            //check if only the country filter applied
+        } else if (country.length > 0 && date.length <= 0) {
             return `${process.env.PATENT_API_URL}`
                 .concat(endpoint)
-                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`)
-                .concat(` pn any "${country}`)
+                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms} and`)
+                .concat(` pn any "${country}"`)
                 .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
-        } else if (date.length > 0) {
+            //check if only the date filter applied
+        } else if (date.length > 0 && country.length <= 0) {
             return `${process.env.PATENT_API_URL}`
                 .concat(endpoint)
-                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`)
-                .concat(`pd within ${date}`)
+                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms} and`)
+                .concat(` pd within "${date}"`)
                 .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
         }
     }
