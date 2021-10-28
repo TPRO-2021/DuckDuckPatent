@@ -36,16 +36,6 @@
                 v-on:on-patent-selected="onPatentSelected"
             />
         </div>
-        <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
-        <div class="bottom-controls">
-            <Button
-                v-if="moreDataAvailable"
-                v-on:on-clicked="extendSearch"
-                icon-key="check"
-                btn-text="Load more"
-            ></Button>
-            <!--            <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />-->
-        </div>
         <!-- This div contains the top right controls (saved button) -->
         <div class="top-controls">
             <Button
@@ -63,9 +53,21 @@
                 v-on:on-save-patent="onSavePatent($event)"
             />
         </div>
-        <div class="zoom">
-            <RoundButton icon-key="add" @click="this.$store.commit('BUTTON_ZOOM_IN_ON')" />
-            <RoundButton icon-key="remove" @click="this.$store.commit('BUTTON_ZOOM_OUT_ON')" />
+
+        <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
+        <div class="bottom-controls">
+            <div class="bottom-row zoom">
+                <RoundButton icon-key="add" @click="this.$store.commit('BUTTON_ZOOM_IN_ON')" />
+                <RoundButton icon-key="remove" @click="this.$store.commit('BUTTON_ZOOM_OUT_ON')" />
+            </div>
+            <div class="bottom-row">
+                <Button
+                    v-if="moreDataAvailable"
+                    v-on:on-clicked="extendSearch"
+                    icon-key="check"
+                    btn-text="Load more"
+                ></Button>
+            </div>
         </div>
     </div>
 </template>
@@ -462,9 +464,10 @@ export default defineComponent({
     padding: 20px;
     position: absolute;
     bottom: 0;
-    right: 50px;
+    right: 0;
     gap: 20px;
     display: flex;
+    flex-direction: column;
 }
 
 .top-controls {
@@ -483,11 +486,13 @@ export default defineComponent({
 .zoom {
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    position: absolute;
-    bottom: 0;
-    right: 0;
+    justify-content: flex-end;
+    align-items: flex-end;
     gap: 10px;
-    height: 130px;
+
+    button {
+        width: 30px;
+        height: 30px;
+    }
 }
 </style>
