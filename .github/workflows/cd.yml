@@ -1,0 +1,16 @@
+name: CD
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Updating server via ssh
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.API_URL }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.API_DDP }}
+          script: deploy-duckduckpatent.bash
