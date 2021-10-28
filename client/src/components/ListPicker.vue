@@ -1,7 +1,7 @@
 <template>
     <div class="list-target">
         <div class="list-picker" @scroll="$emit('scroll')">
-            <div v-for="item in $props.list" :key="item.key">
+            <div v-for="item in $props.list" :key="item.key" class="list-picker-item">
                 <input
                     :id="item.key"
                     :checked="selected.includes(item.key)"
@@ -61,8 +61,14 @@ export default defineComponent({
     padding: 10px 5px;
     max-height: 300px;
     overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
     z-index: 2000;
+}
+.list-picker-item {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
 }
 .list-picker > * {
     display: flex;

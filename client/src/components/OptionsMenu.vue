@@ -122,7 +122,7 @@ export default defineComponent({
     font-size: 30px;
 }
 .main-container {
-    width: 400px;
+    width: 430px;
     display: flex;
     justify-content: flex-start;
     flex-direction: column;

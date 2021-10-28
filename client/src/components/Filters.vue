@@ -2,13 +2,12 @@
     <div v-for="filter in filters" :key="filter.id" class="filter-container">
         <div v-if="filter.type === 'empty' || filter.isSelectionOpen" class="type-selection">
             <div>
-                <Chip
+                <ChipButton
                     :class="{ invisible: filter.type === 'date' || hasDate }"
                     icon-key="add"
                     text="Date"
                     v-on:on-select="onUpdateFilter('type', 'date', filter.id)"
-                    :has-shadow="false"
-                ></Chip>
+                ></ChipButton>
                 <div
                     :class="{ invisible: filter.type !== 'date', 'year-selector-target': true, 'value-selector': true }"
                 >
@@ -42,13 +41,12 @@
             </div>
 
             <div>
-                <Chip
+                <ChipButton
                     :class="{ invisible: filter.type === 'language' || hasLanguage }"
                     icon-key="add"
                     text="Language"
                     v-on:on-select="onUpdateFilter('type', 'language', filter.id)"
-                    :has-shadow="false"
-                ></Chip>
+                ></ChipButton>
                 <ListPicker
                     :class="{ invisible: filter.type !== 'language', 'value-selector': true }"
                     :selected="filter.value.split(',')"
@@ -59,13 +57,12 @@
             </div>
 
             <div>
-                <Chip
+                <ChipButton
                     :class="{ invisible: filter.type === 'country' || hasCountry }"
                     icon-key="add"
                     text="Country"
                     v-on:on-select="onUpdateFilter('type', 'country', filter.id)"
-                    :has-shadow="false"
-                ></Chip>
+                ></ChipButton>
                 <ListPicker
                     :class="{ invisible: filter.type !== 'country', 'value-selector': true }"
                     :selected="filter.value.split(',')"
@@ -100,18 +97,17 @@
             />
         </div>
     </div>
-    <Chip
+    <ChipButton
         :class="{ invisible: currentFilter || hasAll, 'add-button': true }"
         icon-key="add"
         text="Add"
         v-on:on-select="onAddClicked()"
-        :has-shadow="false"
-    ></Chip>
+    ></ChipButton>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import Chip from '@/components/Chip.vue';
+import ChipButton from '@/components/ChipButton.vue';
 import FilterComponent from '@/components/Filter.vue';
 import ListPicker from '@/components/ListPicker.vue';
 import { Filter } from '@/models/Filter';
@@ -120,7 +116,7 @@ const FOCUS_TIMEOUT_MS = 4000; // four seconds
 
 export default defineComponent({
     name: 'Filters',
-    components: { Chip, ListPicker, FilterComponent },
+    components: { ChipButton, ListPicker, FilterComponent },
     props: {
         filters: {
             type: Array,
@@ -357,17 +353,16 @@ export default defineComponent({
 
 .type-selection {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
     min-height: 2em;
 }
 .type-selection > * {
-    min-width: 130px;
 }
 
 .add-button {
     margin-top: 8px;
-    margin-right: 0px;
     float: right;
+    width: 90px;
 }
 .invisible {
     visibility: hidden;
