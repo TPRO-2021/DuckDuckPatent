@@ -1,4 +1,4 @@
-import { AuthResponse, OpsAbstract, OpsExchangeDocument, Patent, PatentAPIResponse, QueryResult } from './models';
+import { AuthResponse, OpsExchangeDocument, Patent, PatentAPIResponse, QueryResult } from './models';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
@@ -92,14 +92,17 @@ export class PatentsService {
      * @param terms The terms which will be used for querying
      * @param page The page that should be queried
      * @param isSecondAttempt Specifies if this is the second attempt (auth)
+     * @param languages
+     * @param country
+     * @param date
      */
     public async query(
         terms: string[],
         page: number,
         isSecondAttempt = false,
-        languages?: string,
-        country?: string,
-        date?: string,
+        languages = '',
+        country = '',
+        date = '',
     ): Promise<QueryResult> {
         // if no auth data is present we need to generate an access token
         if (!this.authData) {
@@ -138,6 +141,7 @@ export class PatentsService {
     /**
      * Processes an OPS query and returns a much cleaner structure with the needed data
      * @param data
+     * @param languages
      */
     private processQuery(data: PatentAPIResponse, languages?: string): QueryResult {
         const searchResult = data['ops:world-patent-data']['ops:biblio-search'];
@@ -179,6 +183,7 @@ export class PatentsService {
     /**
      * Attempts to get the title of a patent from the provided data
      * @param doc
+     * @param languages
      * @private
      */
     private static getTitle(doc: OpsExchangeDocument, languages: string): string {
@@ -195,8 +200,8 @@ export class PatentsService {
         // filtering for the provided languages
         const titleSupported = titles.find((title) => languages.includes(title['@lang']));
         //if the Title is not existing by default in english or one of the filtered languages return this message
-        if (titleSupported == null) {
-            return 'Title available in a different languages';
+        if (!titleSupported) {
+            return titles[0].$;
         }
 
         return titleSupported.$;
@@ -236,7 +241,9 @@ export class PatentsService {
 
     /**
      * Gets the abstract from a provided OpsExchangeDocument
+     *
      * @param doc
+     * @param languages
      * @private
      */
     private static getAbstract(doc: OpsExchangeDocument, languages: string): string {
@@ -244,7 +251,7 @@ export class PatentsService {
 
         // if no abstract exists we can return unknown abstract
         if (!abstracts) {
-            return 'Unknown Abstract';
+            return 'No abstract available';
         }
 
         // In some edge cases it can happen that the abstract is an object
@@ -255,8 +262,8 @@ export class PatentsService {
         // filtering for the provided languages
         const abstractSupported = abstracts.find((abstract) => languages.includes(abstract['@lang']));
         //if the abstract is not existing by default in english or one of the filtered languages return this message
-        if (abstractSupported == null) {
-            return 'Abstract available in a different languages';
+        if (!abstractSupported) {
+            return abstracts[0].p.$;
         }
 
         return abstractSupported.p.$;
@@ -267,43 +274,23 @@ export class PatentsService {
      * @param searchTerms   The search terms which need to be added to the URL
      * @param endpoint      The target endpoint
      * @param page          The page which should be retrieved
+     * @param country          The page which should be retrieved
+     * @param date          The page which should be retrieved
      * @private
      */
-    private static getQueryString(
-        searchTerms: string[],
-        endpoint: string,
-        page = 0,
-        country?: string,
-        date?: string,
-    ): string {
-        //if to check if no filter applied
-        if (country.length <= 0 && date.length <= 0) {
-            return `${process.env.PATENT_API_URL}`
-                .concat(endpoint)
-                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`)
-                .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
-            //check if both country and date applied
-        } else if (country.length > 0 && date.length > 0) {
-            return `${process.env.PATENT_API_URL}`
-                .concat(endpoint)
-                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms} and`)
-                .concat(` pn any "${country}" and`)
-                .concat(` pd within "${date}"`)
-                .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
-            //check if only the country filter applied
-        } else if (country.length > 0 && date.length <= 0) {
-            return `${process.env.PATENT_API_URL}`
-                .concat(endpoint)
-                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms} and`)
-                .concat(` pn any "${country}"`)
-                .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
-            //check if only the date filter applied
-        } else if (date.length > 0 && country.length <= 0) {
-            return `${process.env.PATENT_API_URL}`
-                .concat(endpoint)
-                .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms} and`)
-                .concat(` pd within "${date}"`)
-                .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+    private static getQueryString(searchTerms: string[], endpoint: string, page = 0, country = '', date = ''): string {
+        let queryString = `${process.env.PATENT_API_URL}`
+            .concat(endpoint)
+            .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`);
+
+        if (country.trim().length > 0) {
+            queryString = queryString.concat(` and pn any "${country}"`);
         }
+
+        if (date.trim().length > 0) {
+            queryString = queryString.concat(` and pd within "${date}"`);
+        }
+
+        return queryString.concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
     }
 }

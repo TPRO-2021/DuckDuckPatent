@@ -202,6 +202,7 @@ export default defineComponent({
         /**
          *  @function returns a display value for a given key
          *  @param keys: string, keys to convert to display value
+         *  @param list
          */
         displayValue(list: { key: string; value: string }[], keys: string): string {
             const codes = keys.split(',') as string[]; // Get the codes by spliting apart
@@ -249,7 +250,7 @@ export default defineComponent({
          *  @function onDateChange handles text input event that should update a date filter
          *  @param fromTo: 'from' | 'to', either 'from' or 'to'
          *  @param event: Event, the input element event
-         *  @param value: Filter[K], the value of the new prop
+         *  @param filter: Filter[K], the value of the new prop
          */
         onDateChange(fromTo: 'from' | 'to', event: Event, filter: Filter) {
             clearTimeout(this.dateChangeDebounce);
@@ -320,8 +321,7 @@ export default defineComponent({
     flex-direction: row;
     border-radius: 5px;
     background-color: white;
-    padding: 5px;
-    box-shadow: 0px 0px 10px grey;
+    box-shadow: 0 0 10px grey;
     box-sizing: border-box;
     padding: 10px 5px;
     max-width: 120px;
@@ -344,7 +344,7 @@ export default defineComponent({
     border-radius: 5px;
     background: lightgrey;
     border: none;
-    padding: 0px 5px;
+    padding: 0 5px;
 }
 
 .filter-container {
