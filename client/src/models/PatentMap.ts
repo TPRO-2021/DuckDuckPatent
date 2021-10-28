@@ -1,3 +1,3 @@
-import { Patent } from '@/models/Patent';
+import { SavedPatent } from '@/models/SavedPatent';
 
-export type PatentMap = Record<string, Patent>;
+export type PatentMap = Record<string, SavedPatent>;

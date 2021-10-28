@@ -358,7 +358,7 @@ export default defineComponent({
          * @param event
          */
         onSavePatent(event: { patent: Patent }): void {
-            this.$store.commit('ADD_SAVED_PATENT', event.patent);
+            this.$store.commit('ADD_SAVED_PATENT', { patent: event.patent, searchTerms: this.terms });
             this.selectedPatentIndex = -1;
         },
     },
