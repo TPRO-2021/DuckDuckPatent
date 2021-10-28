@@ -42,7 +42,7 @@
             ></Button>
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
-
+        <!-- This div contains the top right controls (saved button) -->
         <div class="top-controls">
             <Button
                 btnText="Saved"
@@ -53,7 +53,11 @@
         </div>
 
         <div class="patent-preview" v-if="selectedPatentIndex > -1">
-            <PatentPreview :patent="patents[selectedPatentIndex]" v-on:on-change-patent="onChangePatent($event)" />
+            <PatentPreview
+                :patent="patents[selectedPatentIndex]"
+                v-on:on-change-patent="onChangePatent($event)"
+                v-on:on-save-patent="onSavePatent($event)"
+            />
         </div>
     </div>
 </template>
@@ -120,10 +124,11 @@ export default defineComponent({
             return this.$store.state.pageCount;
         },
         savedPatentsCount(): string {
-            if (this.$store.state.savedPatents.length === 0) {
+            if (Object.keys(this.$store.state.savedPatents).length === 0) {
                 return '';
             }
-            return this.$store.state.savedPatents.length.toString();
+
+            return Object.keys(this.$store.state.savedPatents).length.toString();
         },
     },
     async created() {
@@ -308,8 +313,20 @@ export default defineComponent({
             this.moreDataAvailable = this.totalCount > 99 && this.currentPage < this.availablePages;
         },
 
+        /**
+         * Opens the saved page
+         */
         openSavePage(): void {
             this.$router.push({ path: '/saved' });
+        },
+
+        /**
+         * Adds a patent to the saved list
+         * @param event
+         */
+        onSavePatent(event: { patent: Patent }): void {
+            this.$store.commit('ADD_SAVED_PATENT', event.patent);
+            this.selectedPatentIndex = -1;
         },
     },
 });

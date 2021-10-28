@@ -1,5 +1,6 @@
 import { createStore } from 'vuex';
 import { Patent } from '@/models/Patent';
+import { PatentMap } from '@/models/PatentMap';
 
 /**
  * The entire application views will have global containers to share data between components which is the state
@@ -39,11 +40,6 @@ export class AppState {
     public suggestedTerms = [] as string[];
 
     /**
-     * Container that store the saved patents mark as favorites
-     */
-    public savedPatents = [] as Patent[];
-
-    /**
      * Holds the current total count value
      */
     public totalCount = 0;
@@ -52,7 +48,11 @@ export class AppState {
      * Node visualization options
      */
     public visualizationOptions = ['patents'];
-    public savedMap = new Map<string, Patent>();
+
+    /**
+     * Contains the saved patents
+     */
+    public savedPatents = {} as PatentMap;
 }
 
 export default createStore({
@@ -186,15 +186,15 @@ export default createStore({
          * @constructor
          */
         ADD_SAVED_PATENT(state, savedPatent: Patent): void {
-            if (state.savedMap.has(savedPatent.id)) {
+            if (state.savedPatents[savedPatent.id]) {
                 return;
             }
-            state.savedMap.set(savedPatent.id, savedPatent);
-            state.savedPatents.push(savedPatent);
+
+            state.savedPatents[savedPatent.id] = savedPatent;
         },
 
         REMOVE_SAVED_PATENT(state, event: { index: number; value: Patent }) {
-            state.savedPatents = state.savedPatents.filter((_t, index) => index !== event.index);
+            // state.savedPatents = state.savedPatents.filter((_t, index) => index !== event.index);
         },
     },
 
