@@ -35,15 +35,15 @@
             <RoundButton
                 icon-key="add"
                 @click="
-                    this.zoomLevel < 0.5 ? (this.zoomLevel += 0.3) : (this.zoomLevel += 0.5);
-                    zoom();
+                    calcZoom(true);
+                    zoomWithButton();
                 "
             />
             <RoundButton
                 icon-key="remove"
                 @click="
-                    this.zoomLevel === 0.5 ? (this.zoomLevel -= 0.3) : (this.zoomLevel -= 0.5);
-                    zoom();
+                    calcZoom(false);
+                    zoomWithButton();
                 "
             />
         </div>
@@ -112,7 +112,14 @@ export default defineComponent({
             resizeEvent: -1,
             simulation: null as d3ForceSim | null,
             zoomLevel: 1,
-            panzoomPosition: 0,
+            panzoomDefault: {
+                canvas: true,
+                cursor: 'move',
+                maxScale: 6,
+                minScale: 0.2,
+                origin: '50% 50%',
+            },
+            panzoomZoomOptions: { animate: true, duration: 3000, easing: 'ease-in-out' },
         };
     },
     created() {
@@ -142,37 +149,44 @@ export default defineComponent({
         },
     },
     methods: {
-        zoom(): void {
-            const elem = document.getElementById('testID') as HTMLElement; //TODO: find out the type to add to data
-
-            this.centerSVG();
-            const panzoom = Panzoom(elem, { startX: this.panzoomPosition, startY: this.panzoomPosition });
-
-            console.log('level is ', this.zoomLevel);
-            panzoom.zoom(this.zoomLevel);
+        /**
+         * Calculates the zoom level
+         */
+        calcZoom(zoomingIn: boolean): void {
+            if (zoomingIn) {
+                this.zoomLevel += 0.5;
+                return;
+            }
+            this.zoomLevel < 0.4 ? (this.zoomLevel = 0) : (this.zoomLevel -= 0.5);
         },
-        centerSVG(): void {
-            if (this.zoomLevel < 0.5) {
-                this.panzoomPosition = 2000;
-            }
-            if (this.zoomLevel == 0.5) {
-                this.panzoomPosition = 400;
-            }
-            if (this.zoomLevel == 1.5) {
-                this.panzoomPosition = 0;
-            }
-        },
-        zoomWithWheel(event: WheelEvent): void {
-            //  console.log('zoomWheel entered');
+        /**
+         * Zooms in/out once buttons are clicked
+         */
+        zoomWithButton(): void {
             const elem = document.getElementById('testID') as HTMLElement;
-            //  console.log('elem is ', elem);
-            const panzoom = Panzoom(elem, { step: 0.5 });
+            const panzoom = Panzoom(elem, this.panzoomDefault);
+            panzoom.setOptions({ disablePan: true });
 
-            //  event.shiftKey ? panzoom.zoomWithWheel(event) :
-            panzoom.zoomWithWheel(event, { maxScale: 6, minScale: 0.1, step: 0.5 });
-            // console.log('pan: ', panzoom.getPan());
-            // console.log('scale: ', panzoom.getScale());
-            //panzoom.zoomToPoint(4, event);
+            panzoom.zoom(this.zoomLevel, this.panzoomZoomOptions);
+            console.log('level is ', this.zoomLevel);
+            console.log('options: ', panzoom.getOptions());
+        },
+        /**
+         * Zooms in/out on mousewheel
+         */
+        zoomWithWheel(event: WheelEvent): void {
+            this.calcZoom(event.deltaY < 0);
+            event.deltaY < 0 ? (this.panzoomDefault.cursor = 'zoom-in') : (this.panzoomDefault.cursor = 'zoom-out');
+
+            const elem = document.getElementById('testID') as HTMLElement;
+            const panzoom = Panzoom(elem, this.panzoomDefault);
+
+            event.shiftKey
+                ? panzoom.zoomToPoint(6, event, this.panzoomZoomOptions)
+                : panzoom.zoomToPoint(this.zoomLevel, event, this.panzoomZoomOptions);
+
+            console.log('scale: ', panzoom.getScale());
+            console.log('options: ', panzoom.getOptions());
         },
         setupGraph() {
             this.container = select('.d3-container');
@@ -520,7 +534,7 @@ export default defineComponent({
     position: absolute;
     bottom: 0;
     right: 0;
-    gap: 20px;
+    gap: 10px;
 }
 
 .tooltip {
