@@ -80,7 +80,7 @@ export default defineComponent({
             required: true,
         },
     },
-    emits: ['addNode', 'removeNode'],
+    emits: ['addNode', 'removeNode', 'updateFilter', 'removeFilter', 'addFilter'],
     methods: {
         /**
          *  @function to hide the options menu once the mouse left the panel for 5 seconds
