@@ -253,7 +253,6 @@ export default defineComponent({
                 const patentMap = this.buildMap(patents, 'id'); // Build a map of all patents, this should make finding them by ID faster.
                 const citationNodes = Object.keys(citationMap) // Get the keys (citation ids) from the citationMap.
                     .filter((citationId) => !patentMap[citationId]) // Remove patent-node to patent-node citations (these nodes are already shown)
-                    .filter((citationId) => citationMap[citationId].length > 1) // Only show citations that are cited by multiple patents (for clarity)
                     .map((citationId) => {
                         const citingPatents = citationMap[citationId]; // With the citations of the this patent
                         const patentId = citingPatents[0]; // Select the first patentId arbitrarily (this should change later)
