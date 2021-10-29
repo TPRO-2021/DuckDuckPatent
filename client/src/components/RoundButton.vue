@@ -65,7 +65,6 @@ export default defineComponent({
 }
 
 .roundButton {
-    float: right;
     background-color: black;
     border: none;
     cursor: pointer;
