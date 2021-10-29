@@ -6,13 +6,10 @@
                 <RoundButton class="round-button" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
             <div class="settings-menu" v-if="settingsMenu">
-                <RoundButton
-                    v-for="(option, index) in optionButtons"
-                    :key="index"
-                    class="round-button"
-                    :icon-key="option.iconKey"
-                    @click="option.action"
-                />
+                <RoundButton v-if="!isSaved" class="round-button" icon-key="push_pin" @click="this.savePatent" />
+                <RoundButton class="round-button" icon-key="visibility_off" @click="this.hidePatent" />
+                <RoundButton class="round-button" icon-key="done" />
+                <RoundButton class="round-button" icon-key="read_more" />
             </div>
         </div>
 
@@ -38,6 +35,8 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
+import { Patent } from '@/models/Patent';
+import { PatentMap } from '@/models/PatentMap';
 
 /**
  * This component previews the content of a patent
@@ -50,6 +49,7 @@ export default defineComponent({
     },
     emits: {
         onChangePatent: (event: { direction: string }) => event,
+        onSavePatent: (event: { patent: Patent }) => event,
     },
     data() {
         return {
@@ -59,18 +59,21 @@ export default defineComponent({
              * Holds the info about available buttons
              */
             optionButtons: [
-                { iconKey: 'push_pin', action: 'pin()' },
-                { iconKey: 'visibility_off', action: 'hide' },
+                { iconKey: 'push_pin', action: this.savePatent },
+                { iconKey: 'visibility_off', action: this.hidePatent },
                 { iconKey: 'done', action: 'suggestMore' },
                 { iconKey: 'read_more', action: 'readMore' },
             ],
         };
     },
-    // computed: {
-    //     savedPatents(): Patent[] {
-    //         return this.$store.state.savedPatents;
-    //     },
-    // },
+    computed: {
+        savedPatents(): PatentMap {
+            return this.$store.state.savedPatents;
+        },
+        isSaved(): boolean {
+            return (this.$store.state.savedPatents || {})[this.patent?.id];
+        },
+    },
     methods: {
         /**
          * Method to check if next button is clicked then emit an event to ask the parent to send next patent
@@ -84,9 +87,18 @@ export default defineComponent({
         displayPreviousPatent(): void {
             this.$emit('onChangePatent', { direction: 'previous' });
         },
-        // Pin(): void {
-        //     this.$store.commit('ADD_SAVED_PATENT', this.patent);
-        // },
+        /**
+         * Adds a patent to the saved items list
+         */
+        savePatent(): void {
+            this.$emit('onSavePatent', { patent: this.patent as Patent });
+        },
+        /**
+         * Hides a patent from the results page
+         */
+        hidePatent(): void {
+            // TODO: Implement hide patent functionality
+        },
     },
 });
 </script>

@@ -186,4 +186,7 @@ export interface QueryResult {
 export interface PatentSearchQuery {
     keywords: string[] | string;
     page?: string;
+    language: string;
+    country: string;
+    date: string;
 }

@@ -92,14 +92,25 @@ export class PatentsService {
      * @param terms The terms which will be used for querying
      * @param page The page that should be queried
      * @param isSecondAttempt Specifies if this is the second attempt (auth)
+     * @param languages
+     * @param country
+     * @param date
      */
-    public async query(terms: string[], page: number, isSecondAttempt = false): Promise<QueryResult> {
+    public async query(
+        terms: string[],
+        page: number,
+        isSecondAttempt = false,
+        languages = '',
+        country = '',
+        date = '',
+    ): Promise<QueryResult> {
         // if no auth data is present we need to generate an access token
         if (!this.authData) {
             this.authData = await this.getAccessToken();
         }
 
-        const queryString = PatentsService.getQueryString(terms, PatentsService.queryEndpoint, page);
+        const queryString = PatentsService.getQueryString(terms, PatentsService.queryEndpoint, page, country, date);
+        console.log(queryString);
 
         try {
             const response = await lastValueFrom(
@@ -111,7 +122,7 @@ export class PatentsService {
                 }),
             );
 
-            return this.processQuery(response.data);
+            return this.processQuery(response.data, languages);
         } catch (error) {
             // if access token is expired we will attempt to renew it and send the request again
             if ((error?.response?.data as string)?.toLowerCase().includes('access token has expired')) {
@@ -130,13 +141,13 @@ export class PatentsService {
     /**
      * Processes an OPS query and returns a much cleaner structure with the needed data
      * @param data
+     * @param languages
      */
-    private processQuery(data: PatentAPIResponse): QueryResult {
+    private processQuery(data: PatentAPIResponse, languages?: string): QueryResult {
         const searchResult = data['ops:world-patent-data']['ops:biblio-search'];
 
         const totalResults = Number(searchResult['@total-result-count']);
         let queryData = searchResult['ops:search-result']['exchange-documents'];
-
         if (!(queryData instanceof Array)) {
             queryData = [queryData];
         }
@@ -145,11 +156,22 @@ export class PatentsService {
             .map((item) => ({
                 ...item['exchange-document'],
             }))
+            /**
+             * filter for only the existing languages for the title and by default if no filter applied it is English
+             */
+            .filter((item) => {
+                let title = item['bibliographic-data']['invention-title'];
+                if (!(title instanceof Array)) {
+                    title = [title];
+                }
+                const patentLanguages = title.filter((t) => t).map((translation) => translation['@lang']);
+                return patentLanguages.some((lang) => languages.includes(lang));
+            })
             .map((item) => ({
                 id: `${item['@country']}${item['@doc-number']}.${item['@kind']}`,
-                title: PatentsService.getTitle(item),
+                title: PatentsService.getTitle(item, languages),
                 citations: PatentsService.getCitations(item),
-                abstract: PatentsService.getAbstract(item),
+                abstract: PatentsService.getAbstract(item, languages),
             }));
 
         return {
@@ -161,29 +183,28 @@ export class PatentsService {
     /**
      * Attempts to get the title of a patent from the provided data
      * @param doc
+     * @param languages
      * @private
      */
-    private static getTitle(doc: OpsExchangeDocument): string {
+    private static getTitle(doc: OpsExchangeDocument, languages: string): string {
         let titles = doc['bibliographic-data']['invention-title'];
 
         if (!titles) {
-            return '';
+            return 'Unknown Title';
         }
 
         // In some edge cases it can happen that the title is an object
         if (!(titles instanceof Array)) {
             titles = [titles];
         }
-
-        // filtering for the english title
-        const titleEn = titles.filter((title) => title['@lang'] === 'en');
-
-        // if an english title is available we should use that
-        if (titleEn.length === 1) {
-            titles = titleEn;
+        // filtering for the provided languages
+        const titleSupported = titles.find((title) => languages.includes(title['@lang']));
+        //if the Title is not existing by default in english or one of the filtered languages return this message
+        if (!titleSupported) {
+            return titles[0].$;
         }
 
-        return titles[0].$;
+        return titleSupported.$;
     }
 
     /**
@@ -220,15 +241,17 @@ export class PatentsService {
 
     /**
      * Gets the abstract from a provided OpsExchangeDocument
+     *
      * @param doc
+     * @param languages
      * @private
      */
-    private static getAbstract(doc: OpsExchangeDocument): string {
+    private static getAbstract(doc: OpsExchangeDocument, languages: string): string {
         let abstracts = doc.abstract;
 
-        // if no abstract exists we can return an empty string
+        // if no abstract exists we can return unknown abstract
         if (!abstracts) {
-            return '';
+            return 'No abstract available';
         }
 
         // In some edge cases it can happen that the abstract is an object
@@ -236,15 +259,14 @@ export class PatentsService {
             abstracts = [abstracts];
         }
 
-        // filtering for the english abstract
-        const abstractEn = abstracts.filter((abstract) => abstract['@lang'] === 'en');
-
-        // if an english abstract is available we should use that
-        if (abstractEn.length === 1) {
-            abstracts = abstractEn;
+        // filtering for the provided languages
+        const abstractSupported = abstracts.find((abstract) => languages.includes(abstract['@lang']));
+        //if the abstract is not existing by default in english or one of the filtered languages return this message
+        if (!abstractSupported) {
+            return abstracts[0].p.$;
         }
 
-        return abstracts[0].p.$;
+        return abstractSupported.p.$;
     }
 
     /**
@@ -252,12 +274,23 @@ export class PatentsService {
      * @param searchTerms   The search terms which need to be added to the URL
      * @param endpoint      The target endpoint
      * @param page          The page which should be retrieved
+     * @param country          The page which should be retrieved
+     * @param date          The page which should be retrieved
      * @private
      */
-    private static getQueryString(searchTerms: string[], endpoint: string, page = 0): string {
-        return `${process.env.PATENT_API_URL}`
+    private static getQueryString(searchTerms: string[], endpoint: string, page = 0, country = '', date = ''): string {
+        let queryString = `${process.env.PATENT_API_URL}`
             .concat(endpoint)
-            .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`)
-            .concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+            .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`);
+
+        if (country.trim().length > 0) {
+            queryString = queryString.concat(` and pn any "${country}"`);
+        }
+
+        if (date.trim().length > 0) {
+            queryString = queryString.concat(` and pd within "${date}"`);
+        }
+
+        return queryString.concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
     }
 }

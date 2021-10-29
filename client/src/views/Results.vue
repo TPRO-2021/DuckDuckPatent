@@ -20,8 +20,12 @@
             <!-- This div contains the options menu for user to add more nodes/filters -->
             <div class="options-menu">
                 <OptionsMenu
+                    :filters="filters"
                     v-on:add-node="$store.commit('addVisualizationOption', $event)"
                     v-on:remove-node="$store.commit('removeVisualizationOption', $event)"
+                    v-on:add-filter="$store.commit('addFilter', $event)"
+                    v-on:remove-filter="$store.commit('removeFilter', $event)"
+                    v-on:update-filter="$store.commit('updateFilter', $event)"
                 />
             </div>
         </div>
@@ -42,13 +46,22 @@
             ></Button>
             <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
         </div>
-
+        <!-- This div contains the top right controls (saved button) -->
         <div class="top-controls">
-            <Button btnText="Saved" iconKey="turned_in" badge-value="21" v-on:on-clicked="openSavePage" />
+            <Button
+                btnText="Saved"
+                iconKey="turned_in"
+                :badge-value="savedPatentsCount"
+                v-on:on-clicked="openSavePage"
+            />
         </div>
 
         <div class="patent-preview" v-if="selectedPatentIndex > -1">
-            <PatentPreview :patent="patents[selectedPatentIndex]" v-on:on-change-patent="onChangePatent($event)" />
+            <PatentPreview
+                :patent="patents[selectedPatentIndex]"
+                v-on:on-change-patent="onChangePatent($event)"
+                v-on:on-save-patent="onSavePatent($event)"
+            />
         </div>
     </div>
 </template>
@@ -57,6 +70,7 @@
 import { defineComponent } from 'vue';
 import PatentService from '@/services/patent.service';
 import { Patent } from '@/models/Patent';
+import { Filter } from '@/models/Filter';
 import Searchbar from '@/components/Searchbar.vue';
 import PatentPreview from '@/components/PatentPreview.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
@@ -88,13 +102,33 @@ export default defineComponent({
             selectedPatentIndex: -1,
             inputFieldWaiting: false,
             moreDataAvailable: false,
+            lastFilterString: '',
         };
+    },
+    watch: {
+        filters(filters: Filter[]): void {
+            // On every change of the filters we need to check if we should update the results
+            // Creata a filter string that we can compare to recently sent ones (this could be refactored)
+            const newFilterString = filters
+                .filter((filter) => filter.type !== 'empty' && filter.value) // Remove empty or malformed filters
+                .map((filter) => `${filter.type}=${filter.value}`)
+                .join('&'); // Convert to "key=value&key2=value2" string
+
+            // Compare the string with the last sent, if they're different, refresh the results
+            if (newFilterString !== this.lastFilterString) {
+                this.lastFilterString = newFilterString; // Update the last observered filter string for next time
+                this.debounce(4000); // Refresh the results after 3 seconds
+            }
+        },
     },
     /**
      * Computed property that helps avoiding the continuous reference the global store:searchTerms, suggestedTerms
      * and patents from store/index.ts
      */
     computed: {
+        filters(): Filter[] {
+            return this.$store.state.filters;
+        },
         visualizationOptions(): string[] {
             return this.$store.state.visualizationOptions;
         },
@@ -115,6 +149,13 @@ export default defineComponent({
         },
         currentPage(): number {
             return this.$store.state.pageCount;
+        },
+        savedPatentsCount(): string {
+            if (Object.keys(this.$store.state.savedPatents).length === 0) {
+                return '';
+            }
+
+            return Object.keys(this.$store.state.savedPatents).length.toString();
         },
     },
     async created() {
@@ -208,7 +249,7 @@ export default defineComponent({
 
             await this.$router.push({ query: { terms: this.terms } });
             try {
-                const { patents, totalCount } = await this.patentService.get(this.terms);
+                const { patents, totalCount } = await this.patentService.get(this.terms, this.filters);
                 this.$store.dispatch('addPatents', { patents, totalCount });
                 // eslint-disable-next-line
             } catch (e: any) {
@@ -233,7 +274,7 @@ export default defineComponent({
             const newPage = this.currentPage + 1;
 
             this.$store.commit('SHOW_LOADING_BAR');
-            const { patents, totalCount } = await this.patentService.get(this.terms, newPage);
+            const { patents, totalCount } = await this.patentService.get(this.terms, this.filters, newPage);
             this.$store.dispatch('addPatents', { patents: this.patents.concat(patents), totalCount, page: newPage });
 
             this.checkResult();
@@ -330,8 +371,20 @@ export default defineComponent({
             this.moreDataAvailable = this.totalCount > 99 && this.currentPage < this.availablePages;
         },
 
+        /**
+         * Opens the saved page
+         */
         openSavePage(): void {
             this.$router.push({ path: '/saved' });
+        },
+
+        /**
+         * Adds a patent to the saved list
+         * @param event
+         */
+        onSavePatent(event: { patent: Patent }): void {
+            this.$store.commit('ADD_SAVED_PATENT', { patent: event.patent, searchTerms: this.terms });
+            this.selectedPatentIndex = -1;
         },
     },
 });
