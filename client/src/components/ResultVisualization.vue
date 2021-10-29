@@ -4,8 +4,8 @@
             xmlns="http://www.w3.org/2000/svg"
             @mousemove="drag($event)"
             @mouseup="drop()"
-            @click="canvasClicked"
             @wheel="zoomWithWheel($event)"
+            @mousedown="canvasClicked"
         >
             <g class="nodes-container" id="testID">
                 <line
@@ -20,14 +20,15 @@
                 />
                 <circle
                     class=".node"
+                    id="circle"
                     v-for="node in graph.nodes"
                     :key="node.id"
                     :cx="node.x"
                     :cy="node.y"
                     :r="node.size"
                     :fill="node.color"
-                    @mousemove="currentNode = node"
-                    @mousedown="nodeClicked({ x: $event.screenX, y: $event.screenY, node: node })"
+                    @mousemove.capture="currentNode = node"
+                    @click.capture="nodeClicked({ x: $event.screenX, y: $event.screenY, node: node })"
                 />
             </g>
         </svg>
@@ -93,13 +94,12 @@ export default defineComponent({
             simulation: null as d3ForceSim | null,
             zoomLevel: 1,
             panzoomDefault: {
-                canvas: true,
                 cursor: 'default',
                 maxScale: 6,
                 minScale: 0.2,
                 origin: '50% 50%',
             },
-            panzoomZoomOptions: { animate: true, duration: 3000, easing: 'ease-in-out' },
+            panzoomZoomOptions: { animate: true, duration: 2000, easing: 'ease-in-out' },
         };
     },
     computed: {
@@ -157,14 +157,14 @@ export default defineComponent({
     },
     methods: {
         /**
-         * Calculates the zoom level
+         * Calculates the zoom level.
          */
         calcZoom(zoomingIn: boolean): void {
             if (zoomingIn) {
-                this.zoomLevel += 0.5;
+                this.zoomLevel += 0.2;
                 return;
             }
-            this.zoomLevel < 0.4 ? (this.zoomLevel = 0) : (this.zoomLevel -= 0.5);
+            this.zoomLevel < 0.4 ? (this.zoomLevel = 0) : (this.zoomLevel -= 0.2);
         },
         /**
          * Zooms in/out at button click. SVG centered.
@@ -183,14 +183,11 @@ export default defineComponent({
          */
         zoomWithWheel(event: WheelEvent): void {
             this.calcZoom(event.deltaY < 0);
-            event.deltaY < 0 ? (this.panzoomDefault.cursor = 'zoom-in') : (this.panzoomDefault.cursor = 'zoom-out');
 
             const elem = document.getElementById('testID') as HTMLElement;
             const panzoom = Panzoom(elem, this.panzoomDefault);
 
-            event.shiftKey
-                ? panzoom.zoomToPoint(6, event, this.panzoomZoomOptions)
-                : panzoom.zoomToPoint(this.zoomLevel, event, this.panzoomZoomOptions);
+            panzoom.zoomToPoint(this.zoomLevel, event, this.panzoomZoomOptions);
         },
         setupGraph() {
             this.container = select('.d3-container');
@@ -514,6 +511,7 @@ export default defineComponent({
                 this.nodeSelected = false;
                 return;
             }
+
             this.$emit('onPatentSelected', { index: -1 });
         },
     },
