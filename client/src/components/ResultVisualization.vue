@@ -27,7 +27,9 @@
                     @mousedown="nodeClicked({ x: $event.screenX, y: $event.screenY, node: node })"
                 />
             </g>
-            <!-- define the arrow marker to position the arrow refx and refy was used -->
+            <!-- define the arrow marker to position the arrow refx and refy was used
+
+             -->
             <defs>
                 <marker
                     id="endarrow"
@@ -35,7 +37,7 @@
                     refY="2"
                     orient="auto"
                     markerWidth="8"
-                    markerHeight="0"
+                    markerHeight="8"
                     overflow="visible"
                 >
                     <!-- This design the type of arrow
