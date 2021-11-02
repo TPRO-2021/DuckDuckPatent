@@ -6,7 +6,7 @@
                 <RoundButton class="round-button" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
             <div class="settings-menu" v-if="settingsMenu">
-                <RoundButton v-if="!isSaved" class="round-button" icon-key="push_pin" @click="this.savePatent" />
+                <RoundButton class="round-button" v-if="!isSaved" icon-key="push_pin" @click="this.savePatent" />
                 <RoundButton class="round-button" icon-key="visibility_off" @click="this.hidePatent" />
                 <RoundButton class="round-button" icon-key="done" />
                 <RoundButton class="round-button" icon-key="read_more" />
@@ -127,8 +127,8 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
 }
-
-.round-button {
+//Styling the child through the Parent with Vue's Deep CSS Selector
+/deep/ .round-button {
     width: 28px;
     height: 28px;
 }

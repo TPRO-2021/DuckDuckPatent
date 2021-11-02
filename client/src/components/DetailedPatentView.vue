@@ -143,7 +143,7 @@ export default defineComponent({
     flex-direction: column;
 }
 
-.round-button {
+/deep/.round-button {
     width: 32px;
     height: 32px;
 }
