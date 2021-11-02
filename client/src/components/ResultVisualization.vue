@@ -145,8 +145,6 @@ export default defineComponent({
             this.updateGraph();
         },
         highlightNode(newVal) {
-            //TODO: remove after review
-            //  console.log('watched val: ', newVal);
             if (newVal) {
                 this.highlightOnPreviewActions();
             }
@@ -221,28 +219,29 @@ export default defineComponent({
             this.simulation?.alpha(1);
             this.simulation?.restart();
         },
-        resetHighlight() {
-            const circle = selectAll('circle');
-            circle.classed('selected', false);
-        },
         highlightOnPreviewActions(): void {
             // credits to https://bl.ocks.org/agnjunio/fd86583e176ecd94d37f3d2de3a56814
-            this.resetHighlight();
-
+            selectAll('circle').classed('selected', false);
             //locate the patent
             const patentID = (this.patents[this.$store.state.patentIndex] as Patent).id;
 
             //find the node
-            let nodeOfPatent: any;
-            nodeOfPatent = this.graph.nodes.find((node) => node.id === patentID);
-            console.log('previewed node (x): ', nodeOfPatent.x); //TODO: remove after review
-            console.log('previewed node (y): ', nodeOfPatent.y); //TODO: remove after review
+            const nodeOfPatent = this.graph.nodes.find((node) => node.id === patentID);
 
-            const nodeUnderHighlight = select('circle').attr('cx', nodeOfPatent.x).attr('cy', nodeOfPatent.y);
-            console.log('highlighted node: ', nodeUnderHighlight); //TODO: remove after review
+            if (!nodeOfPatent) {
+                return;
+            }
 
-            //set the node's class
-            nodeUnderHighlight.classed('selected', true);
+            select('circle')
+                .attr('cx', nodeOfPatent.x as number)
+                .attr('cy', nodeOfPatent.y as number)
+                .classed('selected', true);
+            //console.log('highlighted node: ', nodeUnderHighlight); //TODO: remove after review
+            // .style('stroke', '#0048ba')
+            // .style('stroke-width', '3px')
+            // .style('animation', 'selected 2s infinite alternate ease-in-out');
+            // console.log('previewed node (x): ', nodeOfPatent.x as number); //TODO: remove after review
+            // console.log('previewed node (y): ', nodeOfPatent.y as number); //TODO: remove after review
         },
         /**
          * Highlights border color of a node, once it's clicked //TODO: adapt to reflect node on arrows
@@ -250,7 +249,7 @@ export default defineComponent({
          */
         highlightUponClick(): void {
             // credits to https://bl.ocks.org/agnjunio/fd86583e176ecd94d37f3d2de3a56814
-            this.resetHighlight();
+            selectAll('circle').classed('selected', false);
             const circle = selectAll('circle');
             circle.on('click', (e) => {
                 select(e.target).classed('selected', true);
