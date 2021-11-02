@@ -241,12 +241,6 @@ export default defineComponent({
         async refreshResults(): Promise<void> {
             // start showing the smaller loading indicator
             this.$store.commit('SHOW_LOADING_BAR');
-
-            if (this.terms.length === 0) {
-                await this.$router.push({ path: '/' });
-                return;
-            }
-
             await this.$router.push({ query: { terms: this.terms } });
             try {
                 const { patents, totalCount } = await this.patentService.get(this.terms, this.filters);
@@ -323,8 +317,6 @@ export default defineComponent({
             this.selectedPatentIndex = -1;
             this.resetWaiting = true;
             this.resetHandler = setTimeout(async () => {
-                await this.$router.push({ path: '/' });
-                this.$store.commit('CLEAR_INPUT');
                 this.$store.commit('HIDE_NORESULT_TOAST');
                 this.resetWaiting = false;
             }, 6000);

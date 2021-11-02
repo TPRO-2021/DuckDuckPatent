@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@panzoom/panzoom": "^4.4.3",
     "prettier": "^2.2.1"
   },
   "scripts": {
