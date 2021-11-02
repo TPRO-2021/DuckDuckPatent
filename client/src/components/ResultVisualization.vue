@@ -25,7 +25,7 @@
                     :fill="node.color"
                     @mousemove="currentNode = node"
                     @mousedown="
-                        activeBorder();
+                        highlightUponClick();
                         nodeClicked({ x: $event.screenX, y: $event.screenY, node: node });
                     "
                 />
@@ -115,9 +115,9 @@ export default defineComponent({
         onClickSave(): boolean {
             return this.$store.state.onClickSave;
         },
-        // highlightNode(): boolean {
-        //     return this.$store.state.highlightNode;
-        // },
+        highlightNode(): boolean {
+            return this.$store.state.highlightNode;
+        },
     },
     created() {
         // adding the event listener for the resize event here
@@ -144,11 +144,13 @@ export default defineComponent({
         visualizationOptions() {
             this.updateGraph();
         },
-        // highlightNode(newVal) { //TODO: remove after review
-        //     if (newVal) {
-        //         this.activeBorder();
-        //     }
-        // },
+        highlightNode(newVal) {
+            //TODO: remove after review
+            //  console.log('watched val: ', newVal);
+            if (newVal) {
+                this.highlightOnPreviewActions();
+            }
+        },
     },
     methods: {
         setupGraph() {
@@ -219,25 +221,40 @@ export default defineComponent({
             this.simulation?.alpha(1);
             this.simulation?.restart();
         },
+        resetHighlight() {
+            const circle = selectAll('circle');
+            circle.classed('selected', false);
+        },
+        highlightOnPreviewActions(): void {
+            // credits to https://bl.ocks.org/agnjunio/fd86583e176ecd94d37f3d2de3a56814
+            this.resetHighlight();
+
+            //locate the patent
+            const patentID = (this.patents[this.$store.state.patentIndex] as Patent).id;
+
+            //find the node
+            let nodeOfPatent: any;
+            nodeOfPatent = this.graph.nodes.find((node) => node.id === patentID);
+            console.log('previewed node (x): ', nodeOfPatent.x); //TODO: remove after review
+            console.log('previewed node (y): ', nodeOfPatent.y); //TODO: remove after review
+
+            const nodeUnderHighlight = select('circle').attr('cx', nodeOfPatent.x).attr('cy', nodeOfPatent.y);
+            console.log('highlighted node: ', nodeUnderHighlight); //TODO: remove after review
+
+            //set the node's class
+            nodeUnderHighlight.classed('selected', true);
+        },
         /**
          * Highlights border color of a node, once it's clicked //TODO: adapt to reflect node on arrows
          *
          */
-        activeBorder(): void {
+        highlightUponClick(): void {
             // credits to https://bl.ocks.org/agnjunio/fd86583e176ecd94d37f3d2de3a56814
+            this.resetHighlight();
             const circle = selectAll('circle');
-            circle.classed('selected', false);
-
-            // print properties to check what's available
-            //   console.log('circle props ', circle); //TODO: remove after review
-
             circle.on('click', (e) => {
                 select(e.target).classed('selected', true);
             });
-
-            // circle //TODO: rework
-            //     .filter((node: VisualPatentNode) => node.index === this.$store.state.patentIndex)
-            //     .classed('selected', true);
         },
         /**
          * Emits the event onPatentSelected to the parent component
@@ -488,8 +505,6 @@ export default defineComponent({
                 this.nodeSelected = false;
                 return;
             }
-
-            console.log('patent index on resviz ', this.$store.state.patentIndex);
 
             this.$emit('onPatentSelected', { index: -1 });
             this.$store.commit('HIGHLIGHT_NODE_OFF');

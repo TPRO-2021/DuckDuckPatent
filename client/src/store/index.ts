@@ -70,6 +70,9 @@ export class AppState {
      * API Filters
      */
     public filters = [] as Filter[];
+
+    public patentIndex = -1;
+    public highlightNode = false;
 }
 
 export default createStore({
@@ -296,6 +299,15 @@ export default createStore({
          */
         REMOVE_SAVED_PATENT(state, event: { patent: Patent }) {
             delete state.savedPatents[event.patent.id];
+        },
+
+        HIGHLIGHT_NODE_ON(state, index: number) {
+            state.patentIndex = index;
+            state.highlightNode = true;
+        },
+        HIGHLIGHT_NODE_OFF(state) {
+            state.patentIndex = -1;
+            state.highlightNode = false;
         },
     },
 
