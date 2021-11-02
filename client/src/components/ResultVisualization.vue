@@ -24,7 +24,10 @@
                     :r="node.size"
                     :fill="node.color"
                     @mousemove="currentNode = node"
-                    @mousedown="nodeClicked({ x: $event.screenX, y: $event.screenY, node: node })"
+                    @mousedown="
+                        activeBorder();
+                        nodeClicked({ x: $event.screenX, y: $event.screenY, node: node });
+                    "
                 />
             </g>
             <!-- define the arrow marker to position the arrow refx and refy was used
@@ -112,6 +115,9 @@ export default defineComponent({
         onClickSave(): boolean {
             return this.$store.state.onClickSave;
         },
+        // highlightNode(): boolean {
+        //     return this.$store.state.highlightNode;
+        // },
     },
     created() {
         // adding the event listener for the resize event here
@@ -138,6 +144,11 @@ export default defineComponent({
         visualizationOptions() {
             this.updateGraph();
         },
+        // highlightNode(newVal) { //TODO: remove after review
+        //     if (newVal) {
+        //         this.activeBorder();
+        //     }
+        // },
     },
     methods: {
         setupGraph() {
@@ -208,7 +219,26 @@ export default defineComponent({
             this.simulation?.alpha(1);
             this.simulation?.restart();
         },
+        /**
+         * Highlights border color of a node, once it's clicked //TODO: adapt to reflect node on arrows
+         *
+         */
+        activeBorder(): void {
+            // credits to https://bl.ocks.org/agnjunio/fd86583e176ecd94d37f3d2de3a56814
+            const circle = selectAll('circle');
+            circle.classed('selected', false);
 
+            // print properties to check what's available
+            //   console.log('circle props ', circle); //TODO: remove after review
+
+            circle.on('click', (e) => {
+                select(e.target).classed('selected', true);
+            });
+
+            // circle //TODO: rework
+            //     .filter((node: VisualPatentNode) => node.index === this.$store.state.patentIndex)
+            //     .classed('selected', true);
+        },
         /**
          * Emits the event onPatentSelected to the parent component
          * @param e
@@ -216,7 +246,6 @@ export default defineComponent({
         nodeClicked(e: { x: number; y: number; node: VisualPatentNode }) {
             this.currentMove = e;
             this.$emit('onPatentSelected', { patent: e.node.patent, index: e.node.index ?? -1 });
-
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.nodeSelected = true;
         },
@@ -460,7 +489,10 @@ export default defineComponent({
                 return;
             }
 
+            console.log('patent index on resviz ', this.$store.state.patentIndex);
+
             this.$emit('onPatentSelected', { index: -1 });
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
         },
     },
 });
@@ -475,6 +507,12 @@ export default defineComponent({
         height: 100%;
         width: 100%;
     }
+}
+
+circle.selected {
+    stroke: #0048ba;
+    stroke-width: 3px;
+    animation: selected 2s infinite alternate ease-in-out;
 }
 
 .tooltip {
