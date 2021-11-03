@@ -47,6 +47,7 @@ import {
 
 import { VisualPatentNode } from '@/models/VisualPatentNode';
 import VisualizationHelperService from '@/services/visualization-helper.service';
+import { VisualPatentLink } from '@/models/VisualPatentLink';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
@@ -90,6 +91,7 @@ export default defineComponent({
             width: 0,
             height: 0,
             selections: {} as d3Selection,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             zoom: null as any,
             forceProperties: VisualizationHelperService.getVisualizationOptions(),
             dragActive: false,
@@ -215,13 +217,12 @@ export default defineComponent({
                 return;
             }
 
-            // eslint-disable-next-line
-            const link = (d: any) => {
+            const link = (d: VisualPatentLink<VisualPatentNode>) => {
                 return 'M' + d.source.x + ',' + d.source.y + ' L' + d.target.x + ',' + d.target.y;
             };
 
             const graph = this.selections.graph;
-            graph.selectAll<SVGPathElement, SimulationLinkDatum<VisualPatentNode>>('path').attr('d', link);
+            graph.selectAll<SVGPathElement, VisualPatentLink<VisualPatentNode>>('path').attr('d', link);
             graph.selectAll<SVGCircleElement, VisualPatentNode>('circle').attr('transform', (d: VisualPatentNode) => {
                 return 'translate(' + d.x + ',' + d.y + ')';
             });
@@ -239,12 +240,11 @@ export default defineComponent({
             // Links should only exit if not needed anymore
             graph.selectAll('path').data(this.graph.links).exit().remove();
             graph
-                .selectAll<SVGPathElement, SimulationLinkDatum<VisualPatentNode>>('path')
+                .selectAll<SVGPathElement, VisualPatentLink<VisualPatentNode>>('path')
                 .data(this.graph.links)
                 .enter()
                 .append('path')
-                // TODO: Create a type for extended link datum
-                .attr('class', (d: any) => 'link ' + d.type);
+                .attr('class', (d) => 'link ' + (d as VisualPatentLink<VisualPatentNode>).type);
 
             // Nodes should always be redrawn to avoid lines above them
             graph.selectAll('circle').remove();
@@ -269,8 +269,8 @@ export default defineComponent({
             // Add 'marker-end' attribute to each path
             const svg = select('svg');
             svg.selectAll('g')
-                .selectAll('path')
-                .attr('marker-end', (d: any) => {
+                .selectAll<SVGPathElement, VisualPatentLink<VisualPatentNode>>('path')
+                .attr('marker-end', (d) => {
                     // Caption items doesn't have source and target
                     if (d.source && d.target && d.source.index === d.target.index) return 'url(#end-self)';
                     else return 'url(#end)';
@@ -400,7 +400,7 @@ export default defineComponent({
             // get related items and highlight them on hovering
             const graph = this.selections.graph;
             const circle = graph.selectAll('circle');
-            const path = graph.selectAll('path');
+            const path = graph.selectAll<SVGPathElement, VisualPatentLink<VisualPatentNode>>('path');
 
             const related: VisualPatentNode[] = [node];
             const relatedLinks = [];
@@ -420,7 +420,7 @@ export default defineComponent({
             circle.classed('faded', true);
             circle.filter((df) => related.indexOf(df as VisualPatentNode) > -1).classed('highlight', true);
             path.classed('faded-link', true);
-            path.filter((df: any) => df.source === node || df.target === node).classed('highlight', true);
+            path.filter((df) => df.source === node || df.target === node).classed('highlight', true);
 
             this.selections.tooltip.style('visibility', 'visible');
             this.mouseMove(event);
