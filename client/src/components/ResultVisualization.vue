@@ -220,28 +220,18 @@ export default defineComponent({
             this.simulation?.restart();
         },
         highlightOnPreviewActions(): void {
-            // credits to https://bl.ocks.org/agnjunio/fd86583e176ecd94d37f3d2de3a56814
+            // credits to ee2Dev on https://stackoverflow.com/questions/28390754/get-one-element-from-d3js-selection-by-index
+            // reset highlight
             selectAll('circle').classed('selected', false);
-            //locate the patent
-            const patentID = (this.patents[this.$store.state.patentIndex] as Patent).id;
 
-            //find the node
-            const nodeOfPatent = this.graph.nodes.find((node) => node.id === patentID);
+            const index = this.$store.state.patentIndex as number;
 
-            if (!nodeOfPatent) {
-                return;
-            }
-
-            select('circle')
-                .attr('cx', nodeOfPatent.x as number)
-                .attr('cy', nodeOfPatent.y as number)
+            //find node and highlight it
+            selectAll('circle')
+                .filter(function (d, i) {
+                    return i === index;
+                })
                 .classed('selected', true);
-            //console.log('highlighted node: ', nodeUnderHighlight); //TODO: remove after review
-            // .style('stroke', '#0048ba')
-            // .style('stroke-width', '3px')
-            // .style('animation', 'selected 2s infinite alternate ease-in-out');
-            // console.log('previewed node (x): ', nodeOfPatent.x as number); //TODO: remove after review
-            // console.log('previewed node (y): ', nodeOfPatent.y as number); //TODO: remove after review
         },
         /**
          * Highlights border color of a node, once it's clicked //TODO: adapt to reflect node on arrows
@@ -249,9 +239,11 @@ export default defineComponent({
          */
         highlightUponClick(): void {
             // credits to https://bl.ocks.org/agnjunio/fd86583e176ecd94d37f3d2de3a56814
+            //reset highlight
             selectAll('circle').classed('selected', false);
-            const circle = selectAll('circle');
-            circle.on('click', (e) => {
+
+            //apply highlight once clicked
+            selectAll('circle').on('click', (e) => {
                 select(e.target).classed('selected', true);
             });
         },

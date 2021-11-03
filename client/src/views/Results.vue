@@ -295,7 +295,6 @@ export default defineComponent({
          */
         onChangePatent(e: { direction: string }): void {
             this.$store.commit('HIGHLIGHT_NODE_OFF');
-            //     console.log('switched off: ', this.$store.state.highlightNode); //TODO: remove after review
             switch (e.direction) {
                 case 'next':
                     if (this.selectedPatentIndex >= this.patents.length - 1) {
@@ -317,8 +316,7 @@ export default defineComponent({
 
             setTimeout(() => {
                 this.$store.commit('HIGHLIGHT_NODE_ON', this.selectedPatentIndex);
-                //  console.log('about to switch on: ', this.$store.state.highlightNode); //TODO: remove after review
-            }, 1000);
+            }, 100);
         },
         /**
          * Resets to landing page after some time, if no results returned. All input is cleared.
