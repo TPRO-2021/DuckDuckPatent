@@ -144,6 +144,9 @@ export default defineComponent({
         visualizationOptions() {
             this.updateGraph();
         },
+        /**
+         * Call highlight once previewing node's card is true
+         */
         highlightNode(newVal) {
             if (newVal) {
                 this.highlightOnPreviewActions();
@@ -219,6 +222,10 @@ export default defineComponent({
             this.simulation?.alpha(1);
             this.simulation?.restart();
         },
+        /**
+         * Highlights border color of a node, once the preview card's arrows are clicked
+         *
+         */
         highlightOnPreviewActions(): void {
             // credits to ee2Dev on https://stackoverflow.com/questions/28390754/get-one-element-from-d3js-selection-by-index
             // reset highlight
@@ -234,7 +241,7 @@ export default defineComponent({
                 .classed('selected', true);
         },
         /**
-         * Highlights border color of a node, once it's clicked //TODO: adapt to reflect node on arrows
+         * Highlights border color of a node, once it's clicked
          *
          */
         highlightUponClick(): void {
