@@ -8,22 +8,22 @@
     >
         <!-- Menu Buttons for interacting with the patent -->
         <div class="settings-container">
-            <div class="settings-btn">
-                <RoundButton class="round-button" icon-key="more_horiz" @click="isSubMenuOpen = !isSubMenuOpen" />
+            <div class="settings-button">
+                <RoundButton class="round-btn" icon-key="more_horiz" @click="isSubMenuOpen = !isSubMenuOpen" />
             </div>
 
             <div class="settings-menu" v-if="isSubMenuOpen">
                 <!--TODO: Add actions! Once all actions are added this can be moved to a computed property-->
                 <RoundButton
                     v-if="isSavedPage"
-                    class="round-button"
+                    class="round-btn"
                     icon-key="delete_forever"
                     v-on:on-clicked="onRemove"
                 />
-                <RoundButton v-if="!isSavedPage" class="round-button" icon-key="push_pin"></RoundButton>
-                <RoundButton class="round-button" icon-key="open_in_new" />
-                <RoundButton v-if="!isSavedPage" class="round-button" icon-key="visibility_off" />
-                <RoundButton v-if="!isSavedPage" class="round-button" icon-key="done" />
+                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="push_pin"></RoundButton>
+                <RoundButton class="round-btn" icon-key="open_in_new" />
+                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="visibility_off" />
+                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="done" />
             </div>
         </div>
         <template #header>
@@ -143,7 +143,7 @@ export default defineComponent({
     flex-direction: column;
 }
 
-.round-button {
+.round-btn {
     width: 32px;
     height: 32px;
 }
@@ -181,7 +181,7 @@ export default defineComponent({
     gap: 8px;
 }
 
-.settings-btn {
+.settings-button {
     margin-bottom: 14px;
 }
 
