@@ -1,35 +1,6 @@
 <template>
     <div class="d3-container">
-        <svg xmlns="http://www.w3.org/2000/svg" @mousemove="drag($event)" @mouseup="drop()" @click="canvasClicked">
-            <g class="nodes-container">
-                <!-- Create the line that connect the notes-->
-                <line
-                    v-for="link in graph.links"
-                    :key="link.index"
-                    :x1="link.source.x"
-                    :y1="link.source.y"
-                    :x2="link.target.x"
-                    :y2="link.target.y"
-                    stroke="black"
-                    stroke-width="2"
-                    marker-end="url(#endarrow)"
-                />
-                <!-- Create the nodes that represent the patent -->
-                <circle
-                    class=".node"
-                    v-for="node in graph.nodes"
-                    :key="node.id"
-                    :cx="node.x"
-                    :cy="node.y"
-                    :r="node.size"
-                    :fill="node.color"
-                    @mousemove="currentNode = node"
-                    @mousedown="nodeClicked({ x: $event.screenX, y: $event.screenY, node: node })"
-                />
-            </g>
-            <!-- define the arrow marker to position the arrow refx and refy was used
-
-             -->
+        <svg xmlns="http://www.w3.org/2000/svg" @click="canvasClicked">
             <defs>
                 <marker
                     id="endarrow"
@@ -55,27 +26,35 @@
 import { defineComponent } from 'vue';
 import { Patent } from '@/models/Patent';
 import {
-    SimulationLinkDatum,
-    Simulation,
-    SimulationNodeDatum,
-    forceSimulation,
+    BaseType,
+    D3DragEvent,
+    D3ZoomEvent,
+    drag,
     forceCenter,
+    forceCollide,
     forceLink,
+    forceManyBody,
+    forceSimulation,
     forceX,
     forceY,
-    forceManyBody,
-    forceCollide,
     select,
-    selectAll,
     Selection,
-    BaseType,
+    Simulation,
+    SimulationLinkDatum,
+    SimulationNodeDatum,
+    zoom,
 } from 'd3';
 
 import { VisualPatentNode } from '@/models/VisualPatentNode';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
-type d3Graph = { nodes: VisualPatentNode[]; links: SimulationLinkDatum<SimulationNodeDatum>[] };
+type d3Graph = { nodes: VisualPatentNode[]; links: SimulationLinkDatum<VisualPatentNode>[] };
+type d3Selection = {
+    graph: Selection<SVGGraphicsElement, unknown, HTMLElement, unknown>;
+    svg: Selection<SVGElement, unknown, HTMLElement, unknown>;
+    tooltip: Selection<HTMLElement, unknown, HTMLElement, unknown>;
+};
 
 export default defineComponent({
     name: 'ResultVisualization',
@@ -106,22 +85,86 @@ export default defineComponent({
             } as d3Graph,
             resizeEvent: -1,
             simulation: null as d3ForceSim | null,
+
+            width: 0,
+            height: 0,
+            selections: {} as d3Selection,
+            zoom: null as any,
+            forceProperties: {
+                center: {
+                    x: 0.5,
+                    y: 0.5,
+                },
+                charge: {
+                    enabled: true,
+                    strength: -700,
+                    distanceMin: 10,
+                    distanceMax: 2000,
+                },
+                collide: {
+                    enabled: true,
+                    strength: 0.7,
+                    iterations: 1,
+                    radius: 60,
+                },
+                forceX: {
+                    enabled: true,
+                    strength: 0.05,
+                    x: 0.3,
+                },
+                forceY: {
+                    enabled: true,
+                    strength: 0.1,
+                    y: 0.3,
+                },
+                link: {
+                    enabled: true,
+                    distance: 300,
+                    iterations: 1,
+                },
+            },
+            dragActive: false,
+            dragTimeoutHandler: -1,
         };
     },
     computed: {
         onClickSave(): boolean {
             return this.$store.state.onClickSave;
         },
+        nodes(): VisualPatentNode[] {
+            return this.graph.nodes;
+        },
+        links(): SimulationLinkDatum<VisualPatentNode>[] {
+            return this.graph.links;
+        },
     },
     created() {
+        this.updateData();
+
         // adding the event listener for the resize event here
         window.addEventListener('resize', this.onResize);
+
+        // You can set the component width and height in any way
+        // you prefer. It's responsive! :)
+        this.width = window.innerWidth - 10;
+        this.height = window.innerHeight - 110;
+
+        this.simulation = forceSimulation<VisualPatentNode>()
+            .force('link', forceLink())
+            .force('charge', forceManyBody())
+            .force('collide', forceCollide())
+            .force('center', forceCenter())
+            .force('forceX', forceX())
+            .force('forceY', forceY())
+            // .force('center', forceCenter(this.width / 2, this.height / 2))
+            .on('tick', this.tick);
+
+        this.updateForces();
     },
     mounted() {
         this.$nextTick(() => {
-            this.updateGraph();
-            this.addZoomHandler();
             this.setupGraph();
+            this.updateGraph();
         });
     },
     unmounted() {
@@ -133,95 +176,166 @@ export default defineComponent({
          * Watches the patents value and updates the graph
          */
         patents(): void {
+            this.updateData();
             this.updateGraph();
         },
         visualizationOptions() {
+            this.updateData();
             this.updateGraph();
+        },
+        dragActive(newVal): void {
+            if (!newVal) {
+                this.selections.tooltip.style('visibility', 'visible');
+                return;
+            }
+
+            this.selections.tooltip.style('visibility', 'hidden');
         },
     },
     methods: {
+        /**
+         * Sets up the svg for the d3 simulation
+         */
         setupGraph() {
-            this.container = select('.d3-container');
             // Selecting the svg as the root for the d3 simulation
-            const svg = select('svg');
+            this.container = select('.d3-container');
+            this.selections.svg = select('svg');
+            this.selections.tooltip = select('.tooltip');
 
-            // Append a group for the nodes
-            svg.append('g').attr('class', 'nodes-container');
+            const svg = this.selections.svg;
+
+            // Define the arrow marker
+            svg.append('svg:defs')
+                .selectAll('marker')
+                .data(['end']) // Different link/path types can be defined here
+                .enter()
+                .append('svg:marker') // This section adds in the arrows
+                .attr('id', String)
+                .attr('viewBox', '0 -5 10 10')
+                .attr('refX', 43) // Prevents arrowhead from being covered by circle
+                .attr('refY', 0)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 'auto')
+                .append('svg:path')
+                .attr('d', 'M0,-5L10,0L0,5');
+
+            // Define arrow for self-links
+            svg.append('svg:defs')
+                .selectAll('marker')
+                .data(['end-self'])
+                .enter()
+                .append('svg:marker') // This section adds in the arrows
+                .attr('id', String)
+                .attr('viewBox', '0 -5 10 10')
+                .attr('refX', 40)
+                .attr('refY', -15)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 285)
+                .append('svg:path')
+                .attr('d', 'M0,-5L10,0L0,5');
+
+            // Add zoom and panning triggers
+            this.zoom = zoom<SVGSVGElement, unknown>()
+                .scaleExtent([1 / 4, 4])
+                .on('zoom', this.zoomed);
+            svg.call(this.zoom);
+
+            this.selections.graph = svg.append('g');
+        },
+        /**
+         * Is called every frame the simulation is active
+         */
+        tick() {
+            // If no data is passed to the Vue component, do nothing
+            if (!this.patents) {
+                return;
+            }
+
+            // eslint-disable-next-line
+            const transform = (d: any) => {
+                return 'translate(' + d.x + ',' + d.y + ')';
+            };
+
+            // eslint-disable-next-line
+            const link = (d: any) => {
+                // Self-link support
+                if (d.source.index === d.target.index) {
+                    return `M${d.source.x - 1},${d.source.y - 1}A30,30 -10,1,0 ${d.target.x + 1},${d.target.y + 1}`;
+                } else {
+                    return 'M' + d.source.x + ',' + d.source.y + ' L' + d.target.x + ',' + d.target.y;
+                }
+            };
+
+            const graph = this.selections.graph;
+            graph.selectAll('path').attr('d', link);
+            graph.selectAll('circle').attr('transform', transform);
+            graph.selectAll('text').attr('transform', transform);
         },
         /**
          * Updates the graph simulation
          */
         updateGraph() {
+            this.simulation?.nodes(this.nodes);
+            this.simulation?.force('link', forceLink(this.links as SimulationLinkDatum<VisualPatentNode>[]));
+
+            const graph = this.selections.graph;
+
+            // Links should only exit if not needed anymore
+            graph.selectAll('path').data(this.graph.links).exit().remove();
+            graph
+                .selectAll<SVGPathElement, SimulationLinkDatum<VisualPatentNode>>('path')
+                .data(this.graph.links)
+                .enter()
+                .append('path')
+                // TODO: Create a type for extended link datum
+                .attr('class', (d: any) => 'link ' + d.type);
+
+            // Nodes should always be redrawn to avoid lines above them
+            graph.selectAll('circle').remove();
+            graph
+                .selectAll<SVGSVGElement, VisualPatentNode>('circle')
+                .data(this.graph.nodes)
+                .enter()
+                .append('circle')
+                .attr('r', (d) => d.size)
+                .attr('class', (d: VisualPatentNode) => d.type)
+                .call(
+                    drag<SVGCircleElement, VisualPatentNode>()
+                        .on('start', this.nodeDragStarted)
+                        .on('drag', this.dragged)
+                        .on('end', this.drop),
+                )
+                .on('mouseover', this.nodeMouseOver)
+                .on('mouseout', this.mouseOut)
+                .on('click', this.nodeClick)
+                .on('mousemove', this.mouseMove);
+
+            // Add 'marker-end' attribute to each path
+            const svg = select('svg');
+            svg.selectAll('g')
+                .selectAll('path')
+                .attr('marker-end', (d: any) => {
+                    // Caption items doesn't have source and target
+                    if (d.source && d.target && d.source.index === d.target.index) return 'url(#end-self)';
+                    else return 'url(#end)';
+                });
+
+            // Update caption every time data changes
+            this.simulation?.alpha(1).restart();
+        },
+
+        /**
+         * Updates the data for the simulation
+         */
+        updateData(): void {
             const patents = this.patents as Patent[];
             const citationMap = this.getCitationMap(patents);
             this.graph.nodes = this.getNodes(patents, citationMap);
             this.graph.links = this.getLinks(this.graph.nodes, citationMap);
-
-            this.simulation = forceSimulation<VisualPatentNode>(this.graph.nodes as VisualPatentNode[])
-                // Roughly approximates to energy in the system, default: 1
-                .alpha(2)
-                // center the results
-                .force('center', forceCenter(this.documentWidth / 2, this.documentHeight / 2))
-                // adds the links
-                .force('link', forceLink(this.graph.links).strength(0.1))
-                // the x and y alignment of the nodes
-                .force('x', forceX(this.documentWidth / 2).strength(0.1))
-                .force('y', forceY(this.documentHeight / 2).strength(0.13))
-                // set the attraction level between the nodes (default -30)
-                .force('charge', forceManyBody().strength(-400))
-                // avoid collision
-                .force('collide', forceCollide().radius(26));
-
-            // because the nodes are not available now we have to do the setup in the next tick
-            this.$nextTick(() => {
-                this.setupTooltip();
-            });
         },
 
-        /**
-         * Handles the mouse down event on a node
-         * @param e
-         */
-        drag(e: MouseEvent) {
-            if (this.currentMove === null) {
-                return;
-            }
-
-            this.currentMove.node.fx = e.clientX;
-            this.currentMove.node.fy = e.clientY;
-        },
-
-        /**
-         * Handler for when the mouse button is released.
-         */
-        drop() {
-            if (this.currentMove == null) {
-                return;
-            }
-
-            delete this.currentMove.node?.fx;
-            delete this.currentMove.node?.fy;
-            this.currentMove = null;
-
-            if (this.simulation == null) {
-                return;
-            }
-
-            this.simulation?.alpha(1);
-            this.simulation?.restart();
-        },
-
-        /**
-         * Emits the event onPatentSelected to the parent component
-         * @param e
-         */
-        nodeClicked(e: { x: number; y: number; node: VisualPatentNode }) {
-            this.currentMove = e;
-            this.$emit('onPatentSelected', { patent: e.node.patent, index: e.node.index ?? -1 });
-
-            // in order to prevent a canvas event to be triggered specify that a node is selected
-            this.nodeSelected = true;
-        },
         /**
          * Processes the passed patents and returns them as nodes for D3 to display them.
          * A SimulationNodeDatum needs a unique identifier which we can provide by using the
@@ -308,7 +422,7 @@ export default defineComponent({
             }, {});
         },
 
-        /*
+        /**
          * Create a key -> value map that allows for easy look up of all patents that have cited a specific citation
          */
         getCitationMap(patents: Patent[]): { [id: string]: string[] } {
@@ -344,7 +458,7 @@ export default defineComponent({
         getLinks(
             nodes: VisualPatentNode[],
             citationMap: { [id: string]: string[] },
-        ): SimulationLinkDatum<SimulationNodeDatum>[] {
+        ): SimulationLinkDatum<VisualPatentNode>[] {
             const patentNodes = nodes.filter((t) => t.type === 'patent' && t.patent); // Start with just the 'initial' patent nodes
             const nodeMap = this.buildMap(patentNodes, 'id'); // Create a map for faster lookups
 
@@ -397,50 +511,6 @@ export default defineComponent({
         },
 
         /**
-         * Sets up the tooltip which shows info about the patent
-         */
-        setupTooltip(): void {
-            if (!this.container) {
-                return;
-            }
-
-            // Select the tooltip
-            const tooltip = select('.tooltip');
-            selectAll('circle')
-                .on('mouseover', () => tooltip.style('visibility', 'visible'))
-                .on('mousemove', (e) => {
-                    tooltip
-                        .style('top', `${Math.max(0, e.pageY - 100)}px`)
-                        .style('left', `${Math.max(e.pageX - 200, 0)}px`);
-                })
-                .on('mouseout', () => tooltip.style('visibility', 'hidden'));
-        },
-
-        /**
-         * Adds a zoom handler for the
-         */
-        addZoomHandler(): void {
-            // TODO: Implement zoom functionality (currently this is buggy in combination with the click event)
-            // select the g-tag from the element
-            // const group = select<SVGSVGElement, unknown>('g');
-            //
-            // // add the zoom handler to the g-tag
-            // group.call(zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 20]).on('zoom', onZoom));
-            //
-            // // eslint-disable-next-line
-            // function onZoom(event: any) {
-            //     if (!event.sourceEvent.ctrlKey) {
-            //         return;
-            //     }
-            //
-            //     // group.selectAll('line').attr('transform', event.transform);
-            //     group.attr('transform', event.transform);
-            //     // group.selectAll('circle').attr('transform', event.transform);
-            //     group.attr('transform', event.transform);
-            // }
-        },
-
-        /**
          * Function which triggers the updateGraph function after a specific delay is hit
          */
         onResize(): void {
@@ -464,6 +534,219 @@ export default defineComponent({
 
             this.$emit('onPatentSelected', { index: -1 });
         },
+
+        /**
+         * Zoom handler for zooming the canvas
+         * @param event
+         */
+        zoomed(event: D3ZoomEvent<SVGGraphicsElement, unknown>) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const transform = event.transform as any;
+            this.selections.graph.attr('transform', transform);
+
+            // Define some world boundaries based on the graph total size
+            // so we don't scroll indefinitely
+            const graphBox = this.selections.graph.node()?.getBBox();
+
+            if (graphBox) {
+                const margin = 500;
+                const worldTopLeft = [graphBox.x - margin, graphBox.y - margin];
+                const worldBottomRight = [graphBox.x + graphBox.width + margin, graphBox.y + graphBox.height + margin];
+                this.zoom.translateExtent([worldTopLeft, worldBottomRight]);
+            }
+        },
+
+        /**
+         * Drag started handler for a node
+         * @param event
+         * @param d
+         */
+        nodeDragStarted(event: D3DragEvent<SVGCircleElement, unknown, unknown>, d: VisualPatentNode) {
+            this.selections.tooltip.style('visibility', 'hidden');
+
+            if (event.active) {
+                this.simulation?.alphaTarget(0.3).restart();
+            }
+
+            this.dragActive = true;
+
+            d.fx = d.x;
+            d.fy = d.y;
+        },
+
+        /**
+         * Drag handler for a node
+         * @param event
+         * @param d
+         */
+        dragged(event: DragEvent, d: VisualPatentNode) {
+            d.fx = event.x;
+            d.fy = event.y;
+
+            this.mouseMove(event);
+
+            // restart the simulation for the tick function to be called again
+            this.simulation?.alphaTarget(0.0001).restart();
+        },
+
+        /**
+         * Drag-end handler for a node
+         * @param event
+         * @param d
+         */
+        drop(event: D3DragEvent<SVGCircleElement, unknown, unknown>, d: VisualPatentNode) {
+            if (!event.active) {
+                this.simulation?.alphaTarget(0.0001);
+            }
+            d.fx = null;
+            d.fy = null;
+
+            clearTimeout(this.dragTimeoutHandler);
+
+            this.dragTimeoutHandler = setTimeout(() => {
+                this.dragActive = false;
+            }, 100);
+        },
+
+        /**
+         * Called when the mouse is moved over a node
+         * @param event
+         * @param node
+         */
+        nodeMouseOver(event: MouseEvent, node: VisualPatentNode) {
+            // set current node to the value of the hovered node
+            this.currentNode = node;
+
+            // get related items and highlight them on hovering
+            const graph = this.selections.graph;
+            const circle = graph.selectAll('circle');
+            const path = graph.selectAll('path');
+
+            const related: VisualPatentNode[] = [node];
+            const relatedLinks = [];
+
+            this.graph.links.forEach((link) => {
+                if (link.source === node || link.target === node) {
+                    relatedLinks.push(link);
+                    if (related.indexOf(link.source as VisualPatentNode) === -1) {
+                        related.push(link.source as VisualPatentNode);
+                    }
+                    if (related.indexOf(link.target as VisualPatentNode) === -1) {
+                        related.push(link.target as VisualPatentNode);
+                    }
+                }
+            });
+
+            circle.classed('faded', true);
+            circle.filter((df) => related.indexOf(df as VisualPatentNode) > -1).classed('highlight', true);
+            path.classed('faded', true);
+            path.filter((df: any) => df.source === node || df.target === node).classed('highlight', true);
+
+            this.selections.tooltip.style('visibility', 'visible');
+            this.mouseMove(event);
+
+            // This ensures that tick is called so the node count is updated
+            this.simulation?.alphaTarget(0.0001).restart();
+        },
+
+        /**
+         * Event handler for the 'mousemove' event on a node. It will move the tooltip relative to the current mouse
+         * position
+         * @param e
+         */
+        mouseMove(e: MouseEvent): void {
+            this.selections.tooltip
+                .style('top', `${Math.max(0, e.pageY - 100)}px`)
+                .style('left', `${Math.max(e.pageX - 200, 0)}px`);
+        },
+
+        /**
+         * Event handler for the 'out' event on a node. It will hide the tooltip and reset the classes of the items
+         * in the canvas
+         */
+        mouseOut() {
+            // hide tooltip
+            this.selections.tooltip.style('visibility', 'hidden');
+
+            const graph = this.selections.graph;
+            const circle = graph.selectAll('circle');
+            const path = graph.selectAll('path');
+
+            // reset classes for nodes and paths
+            circle.classed('faded', false);
+            circle.classed('highlight', false);
+            path.classed('faded', false);
+            path.classed('highlight', false);
+
+            // This ensures that tick is called so the node count is updated
+            this.simulation?.restart();
+        },
+
+        /**
+         * Selects the clicked node
+         * @param event
+         * @param node
+         */
+        nodeClick(event: PointerEvent, node: VisualPatentNode) {
+            this.selections.graph
+                .selectAll('circle')
+                .classed('selected', false)
+                .filter((td) => td === node)
+                .classed('selected', true);
+
+            this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
+
+            // in order to prevent a canvas event to be triggered specify that a node is selected
+            this.nodeSelected = true;
+        },
+
+        updateForces() {
+            const { simulation, forceProperties, width, height } = this;
+
+            simulation?.force(
+                'center',
+                forceCenter(width * forceProperties.center.x, height * forceProperties.center.y),
+            );
+
+            simulation?.force(
+                'charge',
+                forceManyBody()
+                    .strength(forceProperties.charge.strength * (forceProperties.charge.enabled ? 1 : 0))
+                    .distanceMin(forceProperties.charge.distanceMin)
+                    .distanceMax(forceProperties.charge.distanceMax),
+            );
+
+            simulation?.force(
+                'collide',
+                forceCollide()
+                    .strength(forceProperties.collide.strength * (forceProperties.charge.enabled ? 1 : 0))
+                    .radius(forceProperties.collide.radius)
+                    .iterations(forceProperties.collide.iterations),
+            );
+
+            simulation?.force(
+                'forceX',
+                forceX(width * forceProperties.forceX.x).strength(
+                    forceProperties.forceX.strength * (forceProperties.charge.enabled ? 1 : 0),
+                ),
+            );
+
+            simulation?.force(
+                'forceY',
+                forceY(height * forceProperties.forceY.y).strength(
+                    forceProperties.forceY.strength * (forceProperties.forceY.enabled ? 1 : 0),
+                ),
+            );
+
+            simulation?.force(
+                'link',
+                forceLink().distance(forceProperties.link.distance).iterations(forceProperties.link.iterations),
+            );
+
+            // updates ignored until this is run
+            // restarts the simulation (important if simulation has already slowed down)
+            simulation?.alpha(1).restart();
+        },
     },
 });
 </script>
@@ -486,5 +769,89 @@ export default defineComponent({
     pointer-events: none;
     top: 0;
     left: 0;
+
+    margin-bottom: 30px;
+}
+
+.faded {
+    opacity: 0.6;
+    transition: 0.3s opacity;
+}
+
+.highlight {
+    opacity: 1;
+}
+
+path {
+    stroke-width: 1.5px;
+    stroke: #666;
+}
+
+path.link {
+    fill: none;
+    stroke-width: 1.5px;
+    stroke: #666;
+}
+
+path.link.depends {
+    stroke: #005900;
+    stroke-dasharray: 5, 2;
+}
+
+path.link.needs {
+    stroke: #7f3f00;
+}
+
+circle {
+    fill: #ffff99;
+    stroke: #191900;
+    stroke-width: 1.5px;
+}
+
+circle.patent {
+    fill: rgb(168, 133, 41);
+    stroke: none;
+    r: 16px;
+}
+circle.citation {
+    fill: green;
+    stroke: none;
+}
+circle.init {
+    fill: #b2e8b2;
+    stroke: #001900;
+}
+
+circle.selected {
+    stroke: #ff6666ff !important;
+    stroke-width: 3px;
+    animation: selected 2s infinite alternate ease-in-out;
+}
+
+@keyframes selected {
+    from {
+        stroke-width: 5px;
+        r: 16;
+    }
+    to {
+        stroke-width: 1px;
+        r: 22;
+    }
+}
+
+text {
+    font: 10px sans-serif;
+    pointer-events: none;
+    text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+rect.caption {
+    fill: #ccccccac;
+    stroke: #666;
+    stroke-width: 1px;
+}
+text.caption {
+    font-size: 14px;
+    font-weight: bold;
 }
 </style>
