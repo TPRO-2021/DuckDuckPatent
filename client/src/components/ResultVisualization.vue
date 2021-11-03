@@ -633,15 +633,4 @@ circle.selected {
     stroke-width: 3px;
     animation: selected 2s infinite alternate ease-in-out;
 }
-
-//@keyframes selected {
-//    from {
-//        stroke-width: 5px;
-//        r: 16;
-//    }
-//    to {
-//        stroke-width: 1px;
-//        r: 14;
-//    }
-//}
 </style>
