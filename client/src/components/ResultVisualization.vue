@@ -48,6 +48,22 @@
                     -->
                     <path d="M0,0V 4L6,2Z" style="fill: black"></path>
                 </marker>
+                <!--                <pattern>-->
+                <!--                    <image-->
+                <!--                        id="imageNode"-->
+                <!--                        xlink:href="https://www.reshot.com/preview-assets/icons/RPE62U4DKF/check-RPE62U4DKF.svg"-->
+                <!--                        width="12"-->
+                <!--                        height="12"-->
+                <!--                    ></image>-->
+                <!--                </pattern>style="stroke: black"-->
+                <!--                    <path-->
+                <!--                        fill-rule="evenodd"-->
+                <!--                        clip-rule="evenodd"-->
+                <!--                        d="M18.707 7.293a1 1 0 0 1 0 1.414L11.414 16a2 2 0 0 1-2.828 0l-3.293-3.293a1 1 0 1 1 1.414-1.414L10 14.586l7.293-7.293a1 1 0 0 1 1.414 0z"-->
+                <!--                        fill="#000"-->
+                <!--                        style="stroke: black"  <span class="material-icons">done</span>-->
+                <!--                    />-->
+                <pattern id="imageNode" width="24" height="24" xmlns="http://www.w3.org/2000/svg"></pattern>
             </defs>
         </svg>
         <div class="tooltip card box-shadow no-select">{{ this.currentNode?.patent.title }}</div>
@@ -109,6 +125,7 @@ export default defineComponent({
             } as d3Graph,
             resizeEvent: -1,
             simulation: null as d3ForceSim | null,
+            setupMark: false,
         };
     },
     computed: {
@@ -128,6 +145,7 @@ export default defineComponent({
             this.updateGraph();
             this.addZoomHandler();
             this.setupGraph();
+            this.setupMarking();
         });
     },
     unmounted() {
@@ -240,7 +258,25 @@ export default defineComponent({
                 .filter(function (d, i) {
                     return i === index;
                 })
-                .classed('selected', true);
+                .classed('selected', true)
+                // add a mark to indicate it has been viewed
+                .classed('marked', true);
+        },
+        setupMarking(): void {
+            select('pattern')
+                .attr('id', 'imageNode')
+                .style('width', '12')
+                .style('height', '12')
+                .append('image')
+                .attr('xlink:href', 'https://www.reshot.com/preview-assets/icons/RPE62U4DKF/check-RPE62U4DKF.svg')
+                .style('width', '12')
+                .style('height', '12')
+                .attr('x', '5')
+                .attr('y', '5')
+                .style('fill-opacity', '0.5')
+                .attr('stroke', 'black');
+
+            this.setupMark = true;
         },
         /**
          * Highlights border color of a node, once it's clicked
@@ -250,10 +286,29 @@ export default defineComponent({
             // credits to https://bl.ocks.org/agnjunio/fd86583e176ecd94d37f3d2de3a56814
             //reset highlight
             selectAll('circle').classed('selected', false);
+            //configure pattern if needed
+            if (!this.setupMark) {
+                this.setupMarking();
+            }
 
-            //apply highlight once clicked
             selectAll('circle').on('click', (e) => {
+                //apply highlight once clicked
                 select(e.target).classed('selected', true);
+                //add the single arrow
+                select(e.target).classed('marked', true);
+
+                //.attr('fill', '#imageNode')
+                // .attr('fill', 'url(#imageNode)')
+                // .attr('stroke', 'rgb(168, 133, 41)');
+
+                // const defs = selectAll('circle').append('defs');
+                // defs.
+                //    .attr('xlink:href', 'https://www.reshot.com/preview-assets/icons/RPE62U4DKF/check-RPE62U4DKF.svg'); //.attr('fill', '#done');
+                // .append('image')
+                // .attr('width', '12')
+                // .attr('height', '12')
+                // .attr('fill', '#done');
+                //  .attr('xlink:href', 'https://www.reshot.com/preview-assets/icons/RPE62U4DKF/check-RPE62U4DKF.svg');
             });
         },
         /**
@@ -528,6 +583,16 @@ circle.selected {
     stroke: #0048ba;
     stroke-width: 3px;
     animation: selected 2s infinite alternate ease-in-out;
+}
+
+circle.marked {
+    opacity: 0.8;
+    fill: url(#imageNode);
+    stroke: rgb(168, 133, 41);
+    stroke-width: 3px;
+}
+
+#imageNode {
 }
 
 .tooltip {
