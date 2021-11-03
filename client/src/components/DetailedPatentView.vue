@@ -139,14 +139,13 @@ export default defineComponent({
         highlightTitle(title: string, keywords: string[]) {
             const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
             return title.replace(pattern, (match) => {
-                return '<mark class="highlightText">' + match + '</mark>';
+                return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
             });
         },
         highlightAbstract(abstract: string, keywords: string[]) {
             const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
-            console.log(pattern);
             return abstract.replace(pattern, (match) => {
-                return '<mark class="highlightText">' + match + '</mark>';
+                return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
             });
         },
     },
@@ -269,8 +268,5 @@ export default defineComponent({
 .patent-additional-info {
     display: flex;
     flex-grow: 1;
-}
-.highlightText {
-    background: yellow;
 }
 </style>
