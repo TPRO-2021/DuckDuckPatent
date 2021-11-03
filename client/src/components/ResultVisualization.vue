@@ -16,6 +16,7 @@
                     -->
                     <path d="M0,0V 4L6,2Z" style="fill: black"></path>
                 </marker>
+                <pattern id="imageNode" width="24" height="24" xmlns="http://www.w3.org/2000/svg"></pattern>
             </defs>
         </svg>
         <div class="tooltip card box-shadow no-select">{{ this.currentNode?.patent.title }}</div>
@@ -107,6 +108,9 @@ export default defineComponent({
         links(): SimulationLinkDatum<VisualPatentNode>[] {
             return this.graph.links;
         },
+        highlightNode(): boolean {
+            return this.$store.state.highlightNode;
+        },
     },
     watch: {
         /**
@@ -134,6 +138,15 @@ export default defineComponent({
             }
 
             this.selections.tooltip.style('visibility', 'hidden');
+        },
+
+        /**
+         * Call highlight once previewing node's card is true
+         */
+        highlightNode(newVal) {
+            if (newVal) {
+                this.highlightOnPreviewActions();
+            }
         },
     },
     created() {
@@ -170,9 +183,6 @@ export default defineComponent({
         window.removeEventListener('resize', this.onResize);
     },
     methods: {
-        /**
-         * Sets up the svg for the d3 simulation
-         */
         setupGraph() {
             // Selecting the svg as the root for the d3 simulation
             this.container = select('.d3-container');
@@ -318,7 +328,25 @@ export default defineComponent({
 
             this.$emit('onPatentSelected', { index: -1 });
         },
+        /**
+         * Highlights border color of a node, once the preview card's arrows are clicked
+         *
+         */
+        highlightOnPreviewActions(): void {
+            // credits to ee2Dev on https://stackoverflow.com/questions/28390754/get-one-element-from-d3js-selection-by-index
+            // reset highlight
+            this.selections.graph.selectAll('circle').classed('selected', false);
 
+            const index = this.$store.state.patentIndex as number;
+
+            //find node and highlight it
+            this.selections.graph
+                .selectAll('circle')
+                .filter(function (d, i) {
+                    return i === index;
+                })
+                .classed('selected', true);
+        },
         /**
          * Zoom handler for zooming the canvas
          * @param event
@@ -478,6 +506,7 @@ export default defineComponent({
 
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.nodeSelected = true;
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
         },
 
         /**
@@ -485,7 +514,6 @@ export default defineComponent({
          */
         updateForces() {
             const { simulation, forceProperties, width, height } = this;
-
             simulation?.force(
                 'center',
                 forceCenter(width * forceProperties.center.x, height * forceProperties.center.y),
@@ -601,19 +629,19 @@ circle.company {
 }
 
 circle.selected {
-    stroke: #ff6666ff !important;
+    stroke: #0048ba;
     stroke-width: 3px;
     animation: selected 2s infinite alternate ease-in-out;
 }
 
-@keyframes selected {
-    from {
-        stroke-width: 5px;
-        r: 16;
-    }
-    to {
-        stroke-width: 1px;
-        r: 14;
-    }
-}
+//@keyframes selected {
+//    from {
+//        stroke-width: 5px;
+//        r: 16;
+//    }
+//    to {
+//        stroke-width: 1px;
+//        r: 14;
+//    }
+//}
 </style>
