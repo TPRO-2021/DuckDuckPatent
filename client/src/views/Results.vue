@@ -319,7 +319,7 @@ export default defineComponent({
             // turn highlight on node on. Timeout so to have the component react to state change
             setTimeout(() => {
                 this.$store.commit('HIGHLIGHT_NODE_ON', this.selectedPatentIndex);
-            }, 100);
+            });
         },
         /**
          * Resets to landing page after some time, if no results returned. All input is cleared.
