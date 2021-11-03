@@ -28,13 +28,19 @@
         </div>
         <template #header>
             <div>
-                <div class="patent-title">{{ this.patent.patent.title }}</div>
+                <div
+                    class="patent-title"
+                    v-html="highlightTitle(this.patent.patent.title, this.patent.searchTerms)"
+                ></div>
                 <!-- TODO: Add applicant/owner of the patent -->
                 <div class="patent-owner">Company/Author</div>
             </div>
         </template>
 
-        <div class="patent-abstract">{{ this.patent.patent.abstract }}</div>
+        <div
+            class="patent-abstract"
+            v-html="highlightAbstract(this.patent.patent.abstract, this.patent.searchTerms)"
+        ></div>
 
         <template #footer>
             <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
@@ -129,6 +135,19 @@ export default defineComponent({
         onRemove(): void {
             this.patentAvailable = false;
             this.$emit('removeFromSaved');
+        },
+        highlightTitle(title: string, keywords: string[]) {
+            const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
+            return title.replace(pattern, (match) => {
+                return '<mark class="highlightText">' + match + '</mark>';
+            });
+        },
+        highlightAbstract(abstract: string, keywords: string[]) {
+            const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
+            console.log(pattern);
+            return abstract.replace(pattern, (match) => {
+                return '<mark class="highlightText">' + match + '</mark>';
+            });
         },
     },
 });
@@ -250,5 +269,8 @@ export default defineComponent({
 .patent-additional-info {
     display: flex;
     flex-grow: 1;
+}
+.highlightText {
+    background: yellow;
 }
 </style>
