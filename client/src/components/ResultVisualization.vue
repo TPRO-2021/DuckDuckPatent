@@ -96,6 +96,7 @@ export default defineComponent({
             zoom: null as any,
             forceProperties: VisualizationHelperService.getVisualizationOptions(),
             dragActive: false,
+            setupMark: false,
         };
     },
     computed: {
@@ -177,6 +178,7 @@ export default defineComponent({
             this.setupGraph();
             this.updateGraph();
         });
+        this.setupMarking();
     },
     unmounted() {
         // unregistering the event listener for the resize event
@@ -345,7 +347,25 @@ export default defineComponent({
                 .filter(function (d, i) {
                     return i === index;
                 })
-                .classed('selected', true);
+                .classed('selected', true)
+                // add a mark to indicate it has been viewed
+                .classed('marked', true);
+        },
+        setupMarking(): void {
+            select('pattern')
+                .attr('id', 'imageNode')
+                .style('width', '12')
+                .style('height', '12')
+                .append('image')
+                .attr('xlink:href', 'https://www.reshot.com/preview-assets/icons/RPE62U4DKF/check-RPE62U4DKF.svg')
+                .style('width', '12')
+                .style('height', '12')
+                .attr('x', '5')
+                .attr('y', '5')
+                .style('fill-opacity', '0.5')
+                .attr('stroke', 'black');
+
+            this.setupMark = true;
         },
         /**
          * Zoom handler for zooming the canvas
@@ -496,11 +516,18 @@ export default defineComponent({
          * @param node
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
+            //configure pattern if needed
+            if (!this.setupMark) {
+                this.setupMarking();
+            }
+
             this.selections.graph
                 .selectAll('circle')
                 .classed('selected', false)
                 .filter((td) => td === node)
-                .classed('selected', true);
+                .classed('selected', true)
+                //add the single arrow
+                .classed('marked', true);
 
             this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
 
@@ -632,5 +659,15 @@ circle.selected {
     stroke: #0048ba;
     stroke-width: 3px;
     animation: selected 2s infinite alternate ease-in-out;
+}
+
+circle.marked {
+    opacity: 0.9;
+    fill: url(#imageNode);
+    stroke: rgb(168, 133, 41);
+    stroke-width: 5px;
+}
+
+#imageNode {
 }
 </style>
