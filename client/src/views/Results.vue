@@ -61,8 +61,10 @@
                 :patent="patents[selectedPatentIndex]"
                 v-on:on-change-patent="onChangePatent($event)"
                 v-on:on-save-patent="onSavePatent($event)"
+                v-on:on-show-more="onShowMore($event)"
             />
         </div>
+        <DetailedPatentView :extended-patent="detailedPatent" v-on:on-close="detailedPatent = null" />
     </div>
 </template>
 
@@ -79,6 +81,8 @@ import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
 import ResultsVisualization from '@/components/ResultVisualization.vue';
 import Button from '@/components/Button.vue';
+import DetailedPatentView from '@/components/DetailedPatentView.vue';
+import { ExtendedPatent } from '@/models/ExtendedPatent';
 
 export default defineComponent({
     name: 'Results',
@@ -90,6 +94,7 @@ export default defineComponent({
         OptionsMenu,
         ResultsVisualization,
         Button,
+        DetailedPatentView,
     },
     data() {
         return {
@@ -103,6 +108,7 @@ export default defineComponent({
             inputFieldWaiting: false,
             moreDataAvailable: false,
             lastFilterString: '',
+            detailedPatent: null as ExtendedPatent | null,
         };
     },
     watch: {
@@ -312,6 +318,9 @@ export default defineComponent({
                     this.selectedPatentIndex--;
                     break;
             }
+        },
+        onShowMore(event: { patent: Patent; searchTerms: string[] }) {
+            this.detailedPatent = event as ExtendedPatent;
         },
         /**
          * Resets to landing page after some time, if no results returned. All input is cleared.

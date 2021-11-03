@@ -17,7 +17,7 @@
         </div>
 
         <DetailedPatentView
-            :patent="selectedPatent"
+            :extended-patent="selectedPatent"
             :is-saved-page="true"
             v-on:remove-from-saved="removeFromSaved(selectedPatent.patent)"
             v-on:on-close="selectedPatent = null"
@@ -32,7 +32,7 @@ import Button from '@/components/Button.vue';
 import RoundButton from '@/components/RoundButton.vue';
 import { Patent } from '@/models/Patent';
 import DetailedPatentView from '@/components/DetailedPatentView.vue';
-import { SavedPatent } from '@/models/SavedPatent';
+import { ExtendedPatent } from '@/models/ExtendedPatent';
 
 export default defineComponent({
     name: 'SavedResult',
@@ -45,14 +45,14 @@ export default defineComponent({
     data() {
         return {
             saved: [] as Patent[],
-            selectedPatent: null as SavedPatent | null,
+            selectedPatent: null as ExtendedPatent | null,
         };
     },
     computed: {
         patents(): Patent[] {
             return this.$store.state.patents;
         },
-        savedPatents(): SavedPatent[] {
+        savedPatents(): ExtendedPatent[] {
             return this.$store.state.savedPatents;
         },
         searchTerms(): string[] {
@@ -85,7 +85,7 @@ export default defineComponent({
          * Set a patent as the selected patent
          * @param patent
          */
-        onSelectPatent(patent: SavedPatent): void {
+        onSelectPatent(patent: ExtendedPatent): void {
             this.selectedPatent = patent;
         },
     },
