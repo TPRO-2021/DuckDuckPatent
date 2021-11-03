@@ -87,6 +87,10 @@ export default defineComponent({
          */
         onSelectPatent(patent: SavedPatent): void {
             this.selectedPatent = patent;
+            //inform res vis that a patent was viewed
+            // pass the id
+            //  this.$store.commit('MARK_NODE_VIEWED_ON', patent.patent.id);
+            console.log('patent id: ', patent.patent.id);
         },
     },
 });

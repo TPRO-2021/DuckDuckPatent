@@ -78,6 +78,9 @@ export class AppState {
      * Highlight border of a node upon its click or preview
      */
     public highlightNode = false;
+
+    public patentID = '' as string;
+    public markNode = false;
 }
 
 export default createStore({
@@ -321,6 +324,17 @@ export default createStore({
         HIGHLIGHT_NODE_OFF(state) {
             state.patentIndex = -1;
             state.highlightNode = false;
+        },
+        // MARK_NODE_VIEWED_ON(state, patentid: string) {
+        //     state.patentID = patentid;
+        //     state.markNode = true;
+        // },
+        MARK_NODE_VIEWED_ON(state, index: number) {
+            state.patentIndex = index;
+            state.markNode = true;
+        },
+        MARK_NODE_VIEWED_OFF(state) {
+            state.markNode = false;
         },
     },
 

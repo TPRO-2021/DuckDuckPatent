@@ -391,8 +391,16 @@ export default defineComponent({
          * @param event
          */
         onSavePatent(event: { patent: Patent }): void {
+            //MARK_NODE_VIEWED_OFF
+            //TODO: for testing only
+            this.$store.commit('MARK_NODE_VIEWED_OFF');
             this.$store.commit('ADD_SAVED_PATENT', { patent: event.patent, searchTerms: this.terms });
-            this.selectedPatentIndex = -1;
+            //TODO: for testing only
+            setTimeout(() => {
+                this.$store.commit('MARK_NODE_VIEWED_ON', this.selectedPatentIndex);
+                console.log('patend index: ', this.selectedPatentIndex);
+                this.selectedPatentIndex = -1;
+            });
         },
     },
 });
