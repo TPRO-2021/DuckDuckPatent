@@ -172,6 +172,8 @@ export default defineComponent({
             this.graph.links = this.getLinks(this.graph.nodes, citationMap);
 
             this.simulation = forceSimulation<VisualPatentNode>(this.graph.nodes as VisualPatentNode[])
+                // Roughly approximates to energy in the system, default: 1
+                .alpha(2)
                 // center the results
                 .force('center', forceCenter(this.documentWidth / 2, this.documentHeight / 2))
                 // adds the links
@@ -321,7 +323,7 @@ export default defineComponent({
                     .filter((citationId) => !patentMap[citationId]) // Remove patent-node to patent-node citations (these nodes are already shown)
                     .filter((citationId) => citationMap[citationId].length > 1) // Only show citations that are cited by multiple patents (for clarity)
                     .map((citationId) => {
-                        const citingPatents = citationMap[citationId]; // With the citations of the this patent
+                        const citingPatents = citationMap[citationId]; // With the citations of this patent
                         const patentId = citingPatents[0]; // Select the first patentId arbitrarily (this should change later)
                         return {
                             id: citationId, // Set the Id to the citation Id (this is important so we can look up it's other links later)
