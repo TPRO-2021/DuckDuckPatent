@@ -46,6 +46,7 @@ import {
 } from 'd3';
 
 import { VisualPatentNode } from '@/models/VisualPatentNode';
+import VisualizationHelperService from '@/services/visualization-helper.service';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
@@ -90,41 +91,8 @@ export default defineComponent({
             height: 0,
             selections: {} as d3Selection,
             zoom: null as any,
-            forceProperties: {
-                center: {
-                    x: 0.5,
-                    y: 0.5,
-                },
-                charge: {
-                    enabled: true,
-                    strength: -700,
-                    distanceMin: 10,
-                    distanceMax: 2000,
-                },
-                collide: {
-                    enabled: true,
-                    strength: 0.7,
-                    iterations: 1,
-                    radius: 60,
-                },
-                forceX: {
-                    enabled: true,
-                    strength: 0.05,
-                    x: 0.3,
-                },
-                forceY: {
-                    enabled: true,
-                    strength: 0.1,
-                    y: 0.3,
-                },
-                link: {
-                    enabled: true,
-                    distance: 300,
-                    iterations: 1,
-                },
-            },
+            forceProperties: VisualizationHelperService.getVisualizationOptions(),
             dragActive: false,
-            dragTimeoutHandler: -1,
         };
     },
     computed: {
@@ -138,7 +106,36 @@ export default defineComponent({
             return this.graph.links;
         },
     },
+    watch: {
+        /**
+         * Watches the patents value and updates the graph
+         */
+        patents(): void {
+            this.updateData();
+            this.updateGraph();
+        },
+        /**
+         * Once the visualization options change the simulation needs to be updated
+         */
+        visualizationOptions() {
+            this.updateData();
+            this.updateGraph();
+        },
+        /**
+         * If drag is active the tooltip needs to be hidden, otherwise it will be buggy
+         * @param newVal
+         */
+        dragActive(newVal): void {
+            if (!newVal) {
+                this.selections.tooltip.style('visibility', 'visible');
+                return;
+            }
+
+            this.selections.tooltip.style('visibility', 'hidden');
+        },
+    },
     created() {
+        // update the sent data
         this.updateData();
 
         // adding the event listener for the resize event here
@@ -156,7 +153,6 @@ export default defineComponent({
             .force('center', forceCenter())
             .force('forceX', forceX())
             .force('forceY', forceY())
-            // .force('center', forceCenter(this.width / 2, this.height / 2))
             .on('tick', this.tick);
 
         this.updateForces();
@@ -170,27 +166,6 @@ export default defineComponent({
     unmounted() {
         // unregistering the event listener for the resize event
         window.removeEventListener('resize', this.onResize);
-    },
-    watch: {
-        /**
-         * Watches the patents value and updates the graph
-         */
-        patents(): void {
-            this.updateData();
-            this.updateGraph();
-        },
-        visualizationOptions() {
-            this.updateData();
-            this.updateGraph();
-        },
-        dragActive(newVal): void {
-            if (!newVal) {
-                this.selections.tooltip.style('visibility', 'visible');
-                return;
-            }
-
-            this.selections.tooltip.style('visibility', 'hidden');
-        },
     },
     methods: {
         /**
@@ -211,30 +186,15 @@ export default defineComponent({
                 .enter()
                 .append('svg:marker') // This section adds in the arrows
                 .attr('id', String)
-                .attr('viewBox', '0 -5 10 10')
-                .attr('refX', 43) // Prevents arrowhead from being covered by circle
-                .attr('refY', 0)
-                .attr('markerWidth', 6)
-                .attr('markerHeight', 6)
+                .attr('refX', 13.5) // Prevents arrowhead from being covered by circle
+                .attr('refY', 2)
+                .attr('markerWidth', 8)
+                .attr('markerHeight', 8)
                 .attr('orient', 'auto')
+                .attr('overflow', 'visible')
                 .append('svg:path')
-                .attr('d', 'M0,-5L10,0L0,5');
-
-            // Define arrow for self-links
-            svg.append('svg:defs')
-                .selectAll('marker')
-                .data(['end-self'])
-                .enter()
-                .append('svg:marker') // This section adds in the arrows
-                .attr('id', String)
-                .attr('viewBox', '0 -5 10 10')
-                .attr('refX', 40)
-                .attr('refY', -15)
-                .attr('markerWidth', 6)
-                .attr('markerHeight', 6)
-                .attr('orient', 285)
-                .append('svg:path')
-                .attr('d', 'M0,-5L10,0L0,5');
+                .attr('d', 'M0,0V 4L6,2Z')
+                .attr('style', 'fill: black');
 
             // Add zoom and panning triggers
             this.zoom = zoom<SVGSVGElement, unknown>()
@@ -242,8 +202,10 @@ export default defineComponent({
                 .on('zoom', this.zoomed);
             svg.call(this.zoom);
 
+            // append the g tag
             this.selections.graph = svg.append('g');
         },
+
         /**
          * Is called every frame the simulation is active
          */
@@ -254,25 +216,17 @@ export default defineComponent({
             }
 
             // eslint-disable-next-line
-            const transform = (d: any) => {
-                return 'translate(' + d.x + ',' + d.y + ')';
-            };
-
-            // eslint-disable-next-line
             const link = (d: any) => {
-                // Self-link support
-                if (d.source.index === d.target.index) {
-                    return `M${d.source.x - 1},${d.source.y - 1}A30,30 -10,1,0 ${d.target.x + 1},${d.target.y + 1}`;
-                } else {
-                    return 'M' + d.source.x + ',' + d.source.y + ' L' + d.target.x + ',' + d.target.y;
-                }
+                return 'M' + d.source.x + ',' + d.source.y + ' L' + d.target.x + ',' + d.target.y;
             };
 
             const graph = this.selections.graph;
-            graph.selectAll('path').attr('d', link);
-            graph.selectAll('circle').attr('transform', transform);
-            graph.selectAll('text').attr('transform', transform);
+            graph.selectAll<SVGPathElement, SimulationLinkDatum<VisualPatentNode>>('path').attr('d', link);
+            graph.selectAll<SVGCircleElement, VisualPatentNode>('circle').attr('transform', (d: VisualPatentNode) => {
+                return 'translate(' + d.x + ',' + d.y + ')';
+            });
         },
+
         /**
          * Updates the graph simulation
          */
@@ -303,11 +257,11 @@ export default defineComponent({
                 .attr('class', (d: VisualPatentNode) => d.type)
                 .call(
                     drag<SVGCircleElement, VisualPatentNode>()
-                        .on('start', this.nodeDragStarted)
+                        .on('start', this.dragStart)
                         .on('drag', this.dragged)
                         .on('end', this.drop),
                 )
-                .on('mouseover', this.nodeMouseOver)
+                .on('mouseover', this.mouseOver)
                 .on('mouseout', this.mouseOut)
                 .on('click', this.nodeClick)
                 .on('mousemove', this.mouseMove);
@@ -323,7 +277,7 @@ export default defineComponent({
                 });
 
             // Update caption every time data changes
-            this.simulation?.alpha(1).restart();
+            this.simulation?.alpha(0.6).restart();
         },
 
         /**
@@ -331,183 +285,13 @@ export default defineComponent({
          */
         updateData(): void {
             const patents = this.patents as Patent[];
-            const citationMap = this.getCitationMap(patents);
-            this.graph.nodes = this.getNodes(patents, citationMap);
-            this.graph.links = this.getLinks(this.graph.nodes, citationMap);
-        },
-
-        /**
-         * Processes the passed patents and returns them as nodes for D3 to display them.
-         * A SimulationNodeDatum needs a unique identifier which we can provide by using the
-         * unique patent id
-         */
-        getNodes(patents: Patent[], citationMap: { [id: string]: string[] }): VisualPatentNode[] {
-            let nodes = patents.map((patent) => ({
-                id: patent.id,
-                patent,
-                type: 'patent',
-                color: 'rgb(168, 133, 41)',
-                size: 18,
-            })) as VisualPatentNode[];
-
-            // If the user has selected to view authors
-            if (this.visualizationOptions.includes('authors')) {
-                const brown = 'rgb(168, 41, 41)';
-                // TODO: When we have real authors we can add them here
-                // For the moment we just add one extra node to each
-                const authorNodes = patents.map(
-                    (patent) =>
-                        ({
-                            id: `${patent.id}:author`, // Set the id to be the "parent" patent id + 'author'
-                            patent, // Set the patent for tooltip viewing (this should change later)
-                            type: 'author', // Set the type of the node to 'author'
-                            color: brown, // Set the color to brown
-                            size: 10, // We use a static size that is smaller than the patent size
-                        } as VisualPatentNode),
-                );
-                nodes = [...nodes, ...authorNodes]; // Extend the nodes array with author nodes
-            }
-
-            // If the user has selected to view companies
-            if (this.visualizationOptions.includes('companies')) {
-                // TODO: When we have real companies we can add them here
-                const blue = 'rgb(41, 115, 168)';
-                const companyNodes = patents.map(
-                    (patent) =>
-                        ({
-                            id: `${patent.id}:company`,
-                            patent: patent, // Set the patent for tooltip viewing (this should change later)
-                            type: 'company', // Set the type of the node to 'company'
-                            color: blue, // Set the color to blue
-                            size: 10, // Set the size to 10
-                        } as VisualPatentNode),
-                );
-                nodes = [...nodes, ...companyNodes]; // Extend the nodes array with the company nodes
-            }
-
-            // If the user has selected to view citations
-            if (this.visualizationOptions.includes('citations')) {
-                const green = 'rgb(72, 121, 9)';
-                const patentMap = this.buildMap(patents, 'id'); // Build a map of all patents, this should make finding them by ID faster.
-                const citationNodes = Object.keys(citationMap) // Get the keys (citation ids) from the citationMap.
-                    .filter((citationId) => !patentMap[citationId]) // Remove patent-node to patent-node citations (these nodes are already shown)
-                    .filter((citationId) => citationMap[citationId].length > 1) // Only show citations that are cited by multiple patents (for clarity)
-                    .map((citationId) => {
-                        const citingPatents = citationMap[citationId]; // With the citations of this patent
-                        const patentId = citingPatents[0]; // Select the first patentId arbitrarily (this should change later)
-                        return {
-                            id: citationId, // Set the Id to the citation Id (this is important so we can look up it's other links later)
-                            patent: patentMap[patentId], // Set the "patent" to the "first" patent (this should change later)
-                            type: 'citation', // Set the type to citation
-                            color: green, // Set to color to green
-                            size: citingPatents.length * 3 + 5, // Use dynamic sizing to show relative importance
-                        } as VisualPatentNode;
-                    });
-
-                nodes = [...nodes, ...citationNodes]; // Extend the nodes array with the company nodes
-            }
-
-            return nodes;
-        },
-
-        /**
-         * Create a key -> value map that allows for easy look up of something for given Id
-         */
-        buildMap<T>(items: T[], idKey: keyof T): { [id: string]: T } {
-            return items.reduce((map, b) => {
-                // Reduce the array to an object
-                // eslint-disable-next-line
-                const key = b[idKey] as any as string; // unclear if there is clean way to do this in typescript
-                return { ...map, [key]: b }; // extend the object with a specific key
-            }, {});
-        },
-
-        /**
-         * Create a key -> value map that allows for easy look up of all patents that have cited a specific citation
-         */
-        getCitationMap(patents: Patent[]): { [id: string]: string[] } {
-            return patents
-                .reduce(
-                    (citations, patent) => [
-                        // Iterate through the patents, adding citations to a large list
-                        ...citations, // Extend current citations collected...
-                        ...(patent.citations || []).map(
-                            (citedPatent: Patent) =>
-                                ({
-                                    // ...with the citations of the current patent
-                                    source: citedPatent.id, // first map to source/target ids
-                                    target: patent.id,
-                                } as { source: string; target: string }),
-                        ),
-                    ],
-                    [] as { source: string; target: string }[],
-                )
-                .reduce(
-                    (citations, link) => ({
-                        // Finally reduce the array to a map
-                        ...citations, // extend the current citationMap...
-                        [link.source]: [...(citations[link.source] ?? []), link.target], // with an extended version of the sourceId (citedPatentId) 's array
-                    }),
-                    {} as { [id: string]: string[] },
-                );
-        },
-
-        /**
-         * Processes the passed patents and finds relations between them.
-         */
-        getLinks(
-            nodes: VisualPatentNode[],
-            citationMap: { [id: string]: string[] },
-        ): SimulationLinkDatum<VisualPatentNode>[] {
-            const patentNodes = nodes.filter((t) => t.type === 'patent' && t.patent); // Start with just the 'initial' patent nodes
-            const nodeMap = this.buildMap(patentNodes, 'id'); // Create a map for faster lookups
-
-            // Add links between nodes that have cited one another
-            const interNodeCitations = patentNodes.reduce(
-                // first we need to create an array, containing the relations
-                (relations, node) => [
-                    ...relations, // extend the relations...
-                    ...(node.patent.citations || []).map(
-                        (citedPatent: Patent) =>
-                            ({
-                                // ... with a map of nodes to source & target
-                                source: node, // Source is citing patent node
-                                target: nodeMap[citedPatent.id], // target is the patent node being cited
-                            } as { source: VisualPatentNode; target: VisualPatentNode }),
-                    ),
-                ],
-                [] as { source: VisualPatentNode; target: VisualPatentNode }[],
+            const citationMap = VisualizationHelperService.getCitationMap(patents);
+            this.graph.nodes = VisualizationHelperService.getNodes(
+                patents,
+                citationMap,
+                this.visualizationOptions as string[],
             );
-
-            // Add citations for patents that aren't displayed (but are cited by more than one patent)
-            const citationLinks = nodes
-                .filter((t) => t.type === 'citation') // Only build links for citations
-                .reduce(
-                    (links, node) => [
-                        // Create a large list
-                        ...links, // Extend the current list...
-                        ...citationMap[node.id].map((t) => ({
-                            // ...with the citations (mapped to source/target)
-                            source: node, // Set the source to the current node (the citation)
-                            target: nodeMap[t], // Set the target to the citing patent patent
-                        })),
-                    ],
-                    [] as { source: VisualPatentNode; target: VisualPatentNode }[],
-                );
-
-            // Add other links between the patents and companies/authors
-            const otherLinks = nodes
-                .filter((t) => t.type !== 'patent' && t.type !== 'citation') // Patents & citations are handled separately
-                .map((t) => ({
-                    // Map the nodes to source and target (one link per node)
-                    source: t, // The source is the author or company
-                    target: nodeMap[t.patent.id], // The target is the patent
-                })) as { source: VisualPatentNode; target: VisualPatentNode }[];
-
-            // Combine all links together
-            return [...interNodeCitations, ...citationLinks, ...otherLinks]
-                .filter((t) => t.source && t.target) // Filter out any that have sources/targets that are either: null, 0, '', undefined, or false
-                .map((t, index) => ({ ...t, index })); // Extend citations with an index that VueJS can use when enumerating them
+            this.graph.links = VisualizationHelperService.getLinks(this.graph.nodes, citationMap);
         },
 
         /**
@@ -561,7 +345,7 @@ export default defineComponent({
          * @param event
          * @param d
          */
-        nodeDragStarted(event: D3DragEvent<SVGCircleElement, unknown, unknown>, d: VisualPatentNode) {
+        dragStart(event: D3DragEvent<SVGCircleElement, unknown, unknown>, d: VisualPatentNode) {
             this.selections.tooltip.style('visibility', 'hidden');
 
             if (event.active) {
@@ -572,6 +356,8 @@ export default defineComponent({
 
             d.fx = d.x;
             d.fy = d.y;
+
+            this.nodeClick({} as PointerEvent, d);
         },
 
         /**
@@ -586,7 +372,7 @@ export default defineComponent({
             this.mouseMove(event);
 
             // restart the simulation for the tick function to be called again
-            this.simulation?.alphaTarget(0.0001).restart();
+            this.simulation?.alphaTarget(0.01).restart();
         },
 
         /**
@@ -600,12 +386,6 @@ export default defineComponent({
             }
             d.fx = null;
             d.fy = null;
-
-            clearTimeout(this.dragTimeoutHandler);
-
-            this.dragTimeoutHandler = setTimeout(() => {
-                this.dragActive = false;
-            }, 100);
         },
 
         /**
@@ -613,7 +393,7 @@ export default defineComponent({
          * @param event
          * @param node
          */
-        nodeMouseOver(event: MouseEvent, node: VisualPatentNode) {
+        mouseOver(event: MouseEvent, node: VisualPatentNode) {
             // set current node to the value of the hovered node
             this.currentNode = node;
 
@@ -639,14 +419,14 @@ export default defineComponent({
 
             circle.classed('faded', true);
             circle.filter((df) => related.indexOf(df as VisualPatentNode) > -1).classed('highlight', true);
-            path.classed('faded', true);
+            path.classed('faded-link', true);
             path.filter((df: any) => df.source === node || df.target === node).classed('highlight', true);
 
             this.selections.tooltip.style('visibility', 'visible');
             this.mouseMove(event);
 
             // This ensures that tick is called so the node count is updated
-            this.simulation?.alphaTarget(0.0001).restart();
+            this.simulation?.alphaTarget(0.001).restart();
         },
 
         /**
@@ -675,10 +455,10 @@ export default defineComponent({
             // reset classes for nodes and paths
             circle.classed('faded', false);
             circle.classed('highlight', false);
-            path.classed('faded', false);
+            path.classed('faded-link', false);
             path.classed('highlight', false);
 
-            // This ensures that tick is called so the node count is updated
+            this.nodeSelected = false;
             this.simulation?.restart();
         },
 
@@ -700,6 +480,9 @@ export default defineComponent({
             this.nodeSelected = true;
         },
 
+        /**
+         * Updates the forces based on the config
+         */
         updateForces() {
             const { simulation, forceProperties, width, height } = this;
 
@@ -745,7 +528,7 @@ export default defineComponent({
 
             // updates ignored until this is run
             // restarts the simulation (important if simulation has already slowed down)
-            simulation?.alpha(1).restart();
+            simulation?.alpha(2).restart();
         },
     },
 });
@@ -769,41 +552,30 @@ export default defineComponent({
     pointer-events: none;
     top: 0;
     left: 0;
-
-    margin-bottom: 30px;
 }
 
+.faded-link,
 .faded {
     opacity: 0.6;
     transition: 0.3s opacity;
 }
 
-.highlight {
-    opacity: 1;
+.faded-link {
+    opacity: 0.1 !important;
 }
 
-path {
-    stroke-width: 1.5px;
-    stroke: #666;
+.highlight {
+    opacity: 1 !important;
 }
 
 path.link {
     fill: none;
-    stroke-width: 1.5px;
-    stroke: #666;
-}
-
-path.link.depends {
-    stroke: #005900;
-    stroke-dasharray: 5, 2;
-}
-
-path.link.needs {
-    stroke: #7f3f00;
+    stroke-width: 2px;
+    stroke: black;
 }
 
 circle {
-    fill: #ffff99;
+    fill: black;
     stroke: #191900;
     stroke-width: 1.5px;
 }
@@ -811,15 +583,21 @@ circle {
 circle.patent {
     fill: rgb(168, 133, 41);
     stroke: none;
-    r: 16px;
 }
+
 circle.citation {
     fill: green;
     stroke: none;
 }
-circle.init {
-    fill: #b2e8b2;
-    stroke: #001900;
+
+circle.author {
+    fill: brown;
+    stroke: none;
+}
+
+circle.company {
+    fill: rgb(41, 115, 168);
+    stroke: none;
 }
 
 circle.selected {
@@ -835,23 +613,7 @@ circle.selected {
     }
     to {
         stroke-width: 1px;
-        r: 22;
+        r: 14;
     }
-}
-
-text {
-    font: 10px sans-serif;
-    pointer-events: none;
-    text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
-}
-
-rect.caption {
-    fill: #ccccccac;
-    stroke: #666;
-    stroke-width: 1px;
-}
-text.caption {
-    font-size: 14px;
-    font-weight: bold;
 }
 </style>
