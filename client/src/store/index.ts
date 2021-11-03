@@ -237,22 +237,12 @@ export default createStore({
          * @param state
          * @param savedState
          */
-        LOAD_STATE(state) {
-            const stateAsString = window.localStorage.getItem('state');
-            if (!stateAsString) {
-                return;
-            }
-
-            const newState = JSON.parse(stateAsString) as SavedAppState;
-            const keys = Object.keys(newState) as (keyof SavedAppState)[];
-            const oldState = state as SavedAppState;
+        LOAD_STATE(state: SavedAppState, savedState: SavedAppState) {
+            // Read the keys on the saved state
+            const keys = Object.keys(savedState) as (keyof SavedAppState)[];
             // Set properties being loaded individually
-            keys.forEach((key: keyof SavedAppState) => {
-                // Unfortunately typescript is not happy with key though
-                // it's less than clear why; my guess is it has no way to guarentee
-                // that both sides are the same type (item[key] = item2[key])
-                // eslint-disable-next-line
-                (oldState[key] as any) = (newState[key] as any);
+            keys.forEach(<K extends keyof SavedAppState>(key: K) => {
+                state[key] = savedState[key]; // Set property to value
             });
         },
     },
@@ -273,6 +263,35 @@ export default createStore({
             state.commit('ADD_PATENTS', payload.patents);
             state.commit('ADD_TOTAL_COUNT', payload.totalCount);
             state.commit('SET_PAGE_COUNT', payload.page || 0);
+        },
+
+        /**
+         * Load Saved State
+         * @param store
+         */
+        loadSavedState(store) {
+            // Load string 'state' from localstorage
+            const stateAsString = window.localStorage.getItem('state');
+            if (!stateAsString) {
+                // If state is falsey, return (there's no state to load)
+                return;
+            }
+
+            // Parse the saved state
+            const newState = JSON.parse(stateAsString) as SavedAppState;
+
+            store.commit('LOAD_STATE', newState);
+        },
+
+        /**
+         * Reset Saved State
+         * @param store
+         */
+        resetSavedState(store) {
+            // set state to a blank saved app state
+            window.localStorage.setItem('state', '');
+            // force load of empty/default state
+            store.commit('LOAD_STATE', new SavedAppState());
         },
     },
 

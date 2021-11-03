@@ -16,7 +16,7 @@ export default defineComponent({
     name: 'App',
     components: { LoadingScreen, Toasts },
     beforeCreate() {
-        this.$store.commit('LOAD_STATE');
+        this.$store.dispatch('loadSavedState');
     },
     computed: {
         showLoadingBar(): boolean {
