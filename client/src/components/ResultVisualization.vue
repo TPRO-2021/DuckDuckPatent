@@ -19,7 +19,7 @@
                 <pattern id="imageNode" width="24" height="24" xmlns="http://www.w3.org/2000/svg"></pattern>
             </defs>
         </svg>
-        <div class="tooltip card box-shadow no-select">{{ this.currentNode?.patent.title }}</div>
+        <div class="tooltip card box-shadow no-select">{{ tooltipOnNodes }}</div>
     </div>
 </template>
 
@@ -99,6 +99,19 @@ export default defineComponent({
         };
     },
     computed: {
+        /**
+         * Tooltip on patent, author and company nodes
+         * When the results from DB is empty a tooltip with no data is displayed
+         */
+        tooltipOnNodes(): string | undefined {
+            switch (this.currentNode?.type) {
+                case 'patent':
+                    return this.currentNode?.patent.title;
+                case 'author':
+                    return this.currentNode?.patent.inventors?.toString();
+            }
+            return 'No Data';
+        },
         onClickSave(): boolean {
             return this.$store.state.onClickSave;
         },
