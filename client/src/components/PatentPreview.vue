@@ -30,7 +30,6 @@
                 </div>
             </div>
         </template>
-        <div>
             <div class="patent-abstract">
                 <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
             </div>
