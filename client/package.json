@@ -16,6 +16,8 @@
         "primevue": "^3.3.5",
         "vue": "^3.0.0",
         "vue-class-component": "^8.0.0-0",
+        "vue-highlight-words": "^2.0.0",
+        "vue-highlightable-input": "^1.0.9",
         "vue-router": "^4.0.11",
         "vue-window-size": "^1.1.2",
         "vuex": "^4.0.0-0"
@@ -44,6 +46,7 @@
         "prettier": "^2.2.1",
         "sass-loader": "^8.0.2",
         "typescript": "~4.1.5",
-        "vue-jest": "^5.0.0-0"
+        "vue-jest": "^5.0.0-0",
+        "vue-text-highlight": "^2.0.10"
     }
 }
