@@ -68,21 +68,11 @@ export class KeywordService {
         const flattenedResults = r
             .reduce((a, b) => [...a, ...b], []) // Combine into one big array
             .reduce((a, b) => ({ ...a, [b[0]]: b[1] }), {}); // Remove duplicates by smashing into a map
-        const suggestions = Object.keys(flattenedResults) // Get the terms (the keys of the map)
-            .sort((a, b) => flattenedResults[b] - flattenedResults[a]) // Sort in descending order
-            .filter((t) => !keywords.includes(t))
-            .filter((word) => !word.match('[^s](s|es)$')); // filter plurals of nouns from the suggestion API
-        /**
-         * After the suggestion keywords are added to the search the new suggestion keywords appears
-         */
-        const filtered = suggestions.slice(0, MAX_KEYWORDS).filter((t) => {
-            const similar = keywords.filter((keyword) => t.match(`\b${keyword}\b`)); //\w*(men)(s|es)\b
-            return similar.length === 0;
-        });
-        if (filtered.length < MAX_KEYWORDS) {
-            return filtered.concat(suggestions.slice(MAX_KEYWORDS, MAX_KEYWORDS + MAX_KEYWORDS - filtered.length));
-        }
 
-        return filtered;
+        return Object.keys(flattenedResults) // Get the terms (the keys of the map)
+            .sort((a, b) => flattenedResults[b] - flattenedResults[a]) // Sort in descending order
+            .filter((t) => !keywords.includes(t.toLowerCase()))
+            .filter((word) => !word.match('[^s](s|es)$')) // filter plurals of nouns from the suggestion API
+            .slice(0, MAX_KEYWORDS);
     }
 }
