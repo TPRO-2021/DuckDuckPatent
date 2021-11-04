@@ -28,15 +28,20 @@
         </div>
         <template #header>
             <div>
-                <div class="patent-title">{{ this.extendedPatent.patent.title }}</div>
+                <div
+                    class="patent-title"
+                    v-html="highlightTitle(this.patent.patent.title, this.patent.searchTerms)"
+                ></div>
                 <!-- TODO: Add applicant/owner of the patent -->
                 <div class="patent-owner">Company/Author</div>
             </div>
         </template>
-
-        <div class="patent-abstract">{{ this.extendedPatent.patent.abstract }}</div>
-
-        <template #footer>
+        <div
+            class="patent-abstract"
+            v-html="highlightAbstract(this.patent.patent.abstract, this.patent.searchTerms)"
+        ></div>
+        
+       <template #footer>
             <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
             <div class="footer-container">
                 <div class="patent-additional-info">
@@ -130,6 +135,18 @@ export default defineComponent({
         onRemove(): void {
             this.patentAvailable = false;
             this.$emit('removeFromSaved');
+        },
+        highlightTitle(title: string, keywords: string[]) {
+            const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
+            return title.replace(pattern, (match) => {
+                return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
+            });
+        },
+        highlightAbstract(abstract: string, keywords: string[]) {
+            const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
+            return abstract.replace(pattern, (match) => {
+                return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
+            });
         },
     },
 });
