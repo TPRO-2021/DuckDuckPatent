@@ -16,21 +16,19 @@
                     -->
                     <path d="M0,0V 4L6,2Z" style="fill: black"></path>
                 </marker>
-                <pattern
-                    id="markOnce"
-                    width="15"
-                    height="15"
-                    xmlns="http://www.w3.org/2000/svg"
-                    style="background-color: #5b9761"
-                >
+                <pattern id="markOnce" width="15" height="15" xmlns="http://www.w3.org/2000/svg">
+                    <!--                    <span x="5" y="5" stroke="black" class="material-icons">done</span>-->
                     <image
-                        x="5"
-                        y="5"
+                        x="7"
+                        y="7"
                         xlink:href="https://www.reshot.com/preview-assets/icons/RPE62U4DKF/check-RPE62U4DKF.svg"
                         stroke="black"
+                        stroke-width="5"
+                        style="background-color: blue"
                     ></image>
                 </pattern>
                 <pattern id="markTwice" width="15" height="15" xmlns="http://www.w3.org/2000/svg">
+                    <!--                    <span x="5" y="5" class="material-icons">done-all</span>-->
                     <image
                         x="5"
                         y="5"
@@ -118,7 +116,6 @@ export default defineComponent({
             zoom: null as any,
             forceProperties: VisualizationHelperService.getVisualizationOptions(),
             dragActive: false,
-            setupMark: false, //TODO: remove
         };
     },
     computed: {
@@ -209,7 +206,6 @@ export default defineComponent({
             this.setupGraph();
             this.updateGraph();
         });
-        this.setupMarking();
     },
     unmounted() {
         // unregistering the event listener for the resize event
@@ -360,6 +356,9 @@ export default defineComponent({
             }
 
             this.$emit('onPatentSelected', { index: -1 });
+            //turn highlight of node border off
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
+            this.selections.graph.selectAll('circle').classed('selected', false);
         },
         /**
          * Highlights border color of a node, once the preview card's arrows are clicked
@@ -385,10 +384,6 @@ export default defineComponent({
         },
         markOnFullPreview(): void {
             // credits to ee2Dev on https://stackoverflow.com/questions/28390754/get-one-element-from-d3js-selection-by-index
-            //configure pattern if needed
-            if (!this.setupMark) {
-                this.setupMarking();
-            }
             // const patentID = this.$store.state.patentID as string;
             // const patentIndex = this.patents.indexOf(patentID);
             //
@@ -411,34 +406,6 @@ export default defineComponent({
                 .classed('markedOnce', false)
                 // add a mark to indicate it has been viewed
                 .classed('markedTwice', true);
-        },
-        setupMarking(): void {
-            // select('pattern')
-            //     .attr('id', 'markOnce')
-            //     .style('width', '10')
-            //     .style('height', '10')
-            //     .append('image')
-            //     .attr('xlink:href', 'https://www.reshot.com/preview-assets/icons/RPE62U4DKF/check-RPE62U4DKF.svg')
-            //     .style('width', '10')
-            //     .style('height', '10')
-            //     .attr('x', '5')
-            //     .attr('y', '5')
-            //     .style('fill-opacity', '0.5')
-            //     .attr('stroke', 'black')
-            //     .append('pattern')
-            //     .attr('id', 'markTwice')
-            //     .style('width', '10')
-            //     .style('height', '10')
-            //     .append('image')
-            //     .attr('xlink:href', 'https://www.reshot.com/preview-assets/icons/74WFCQUGE2/check-all-74WFCQUGE2.svg')
-            //     .style('width', '10')
-            //     .style('height', '10')
-            //     .attr('x', '5')
-            //     .attr('y', '5')
-            //     .style('fill-opacity', '0.5')
-            //     .attr('stroke', 'black');
-
-            this.setupMark = true;
         },
         /**
          * Zoom handler for zooming the canvas
@@ -589,11 +556,6 @@ export default defineComponent({
          * @param node
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
-            //configure pattern if needed
-            if (!this.setupMark) {
-                this.setupMarking();
-            }
-
             this.selections.graph
                 .selectAll('circle')
                 .classed('selected', false)
@@ -607,7 +569,6 @@ export default defineComponent({
 
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.nodeSelected = true;
-            // this.$store.commit('HIGHLIGHT_NODE_OFF');
         },
 
         /**
@@ -731,19 +692,19 @@ circle.company {
 
 circle.selected {
     stroke: #0048ba !important;
-    stroke-width: 3px !important;
+    stroke-width: 6px !important;
     animation: selected 2s infinite alternate ease-in-out;
 }
 
 circle.markedOnce {
-    fill: url(#markOnce);
+    fill: url(#markOnce) #cccccc;
     stroke: rgb(168, 133, 41);
-    stroke-width: 2px;
+    stroke-width: 6px;
 }
 
 circle.markedTwice {
     fill: url(#markTwice);
     stroke: rgb(168, 133, 41);
-    stroke-width: 5px;
+    stroke-width: 6px;
 }
 </style>
