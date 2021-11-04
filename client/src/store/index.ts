@@ -70,6 +70,14 @@ export class AppState {
      * API Filters
      */
     public filters = [] as Filter[];
+    /**
+     * Index of patent currently previewed (on Results page)
+     */
+    public patentIndex = -1;
+    /**
+     * Highlight border of a node upon its click or preview
+     */
+    public highlightNode = false;
 }
 
 export default createStore({
@@ -296,6 +304,23 @@ export default createStore({
          */
         REMOVE_SAVED_PATENT(state, event: { patent: Patent }) {
             delete state.savedPatents[event.patent.id];
+        },
+        /**
+         * Switches highlight for node on
+         * @param state
+         * @param index - index of patent being previewed
+         */
+        HIGHLIGHT_NODE_ON(state, index: number) {
+            state.patentIndex = index;
+            state.highlightNode = true;
+        },
+        /**
+         * Switches highlight for node off
+         *
+         */
+        HIGHLIGHT_NODE_OFF(state) {
+            state.patentIndex = -1;
+            state.highlightNode = false;
         },
     },
 
