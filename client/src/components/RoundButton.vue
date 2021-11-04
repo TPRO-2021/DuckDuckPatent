@@ -1,7 +1,7 @@
 <template>
     <button
         type="button"
-        class="roundButton box-shadow no-select"
+        class="round-button box-shadow no-select"
         @click="onClick"
         :class="{ 'button-active': isToggle && isClicked, 'button-light': !isToggle && type === 'light' }"
     >
@@ -57,14 +57,14 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.roundButton,
-.roundButton:hover,
+.round-button,
+.round-button:hover,
 .button-active,
 .button-active:hover {
     transition: all 1s ease;
 }
 
-.roundButton {
+.round-button {
     background-color: black;
     border: none;
     cursor: pointer;

@@ -3,13 +3,14 @@
         <!-- Menu Buttons for interacting with the patent -->
         <div class="settings-container no-select">
             <div class="settings-btn">
-                <RoundButton class="round-button" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
+                <RoundButton class="round-btn" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
             <div class="settings-menu" v-if="settingsMenu">
                 <RoundButton v-if="!isSaved" class="round-button" icon-key="push_pin" @click="this.savePatent" />
                 <RoundButton class="round-button" icon-key="visibility_off" @click="this.hidePatent" />
                 <RoundButton class="round-button" icon-key="done" />
                 <RoundButton class="round-button" icon-key="read_more" @click="this.showMore" />
+
             </div>
         </div>
 
@@ -138,9 +139,9 @@ export default defineComponent({
     flex-direction: column;
 }
 
-.round-button {
-    width: 28px;
-    height: 28px;
+.round-btn {
+    width: 28px !important;
+    height: 28px !important;
 }
 
 .patent-info {
