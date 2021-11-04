@@ -51,7 +51,7 @@ export class KeywordService {
                             // Calls to this API might fail
 
                             // Check if we're in Production, if so we need to just fail - showing mock results is no-go!
-                            if (process.env.NODE_ENV === 'production') {
+                            if (process.env.NODE_ENV === 'production' || error.message.includes('500')) {
                                 // Rethrowing the error breaks out of the catch block
                                 throw error;
                             }
