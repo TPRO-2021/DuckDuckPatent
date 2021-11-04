@@ -4,6 +4,8 @@ import { lastValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 
+import * as _ from 'lodash';
+
 @Injectable()
 export class PatentsService {
     private authData: AuthResponse;
@@ -156,9 +158,7 @@ export class PatentsService {
             .map((item) => ({
                 ...item['exchange-document'],
             }))
-            /**
-             * filter for only the existing languages for the title and by default if no filter applied it is English
-             */
+            // filter for only the existing languages for the title and by default if no filter applied it is English
             .filter((item) => {
                 let title = item['bibliographic-data']['invention-title'];
                 if (!(title instanceof Array)) {
@@ -172,6 +172,51 @@ export class PatentsService {
                 title: PatentsService.getTitle(item, languages),
                 citations: PatentsService.getCitations(item),
                 abstract: PatentsService.getAbstract(item, languages),
+                familyId: item['@family-id'] || null,
+                inventors: PatentsService.getNestedArray<string[]>(
+                    item,
+                    'bibliographic-data.parties.inventors.inventor',
+                    (inventors) => {
+                        const inventorMap = inventors.reduce((map, inventor) => {
+                            const item = map[inventor['@sequence']];
+
+                            if (!item) {
+                                map[inventor['@sequence']] = [inventor];
+                                return map;
+                            }
+
+                            item.push(inventor);
+                            return map;
+                        }, {});
+
+                        return Object.keys(inventorMap).map(
+                            (sequence) => inventorMap[sequence][0]['inventor-name'].name.$,
+                        );
+                    },
+                    [] as string[],
+                ),
+                applicants: PatentsService.getNestedArray<string[]>(
+                    item,
+                    'bibliographic-data.parties.applicants.applicant',
+                    (applicants) => {
+                        const applicantMap = applicants.reduce((map, applicant) => {
+                            const item = map[applicant['@sequence']];
+
+                            if (!item) {
+                                map[applicant['@sequence']] = [applicant];
+                                return map;
+                            }
+
+                            item.push(applicant);
+                            return map;
+                        }, {});
+
+                        return Object.keys(applicantMap).map(
+                            (sequence) => applicantMap[sequence][0]['applicant-name'].name.$,
+                        );
+                    },
+                    [] as string[],
+                ),
             }));
 
         return {
@@ -267,6 +312,28 @@ export class PatentsService {
         }
 
         return abstractSupported.p.$;
+    }
+
+    /**
+     * Attempts to process the passed document according to the passed parameters
+     * @param doc   The document
+     * @param path  The path where the array data is found
+     * @param processingFn  The function which should process the data
+     * @param defaultValue  The default value which should be applied when no data was found
+     * @private
+     */
+    private static getNestedArray<T>(doc: OpsExchangeDocument, path: string, processingFn, defaultValue: T): T {
+        let instanceArr = _.get(doc, path);
+
+        if (!instanceArr) {
+            return defaultValue;
+        }
+
+        if (!(instanceArr instanceof Array)) {
+            instanceArr = [instanceArr];
+        }
+
+        return processingFn(instanceArr);
     }
 
     /**

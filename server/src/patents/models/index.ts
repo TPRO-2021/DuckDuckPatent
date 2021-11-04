@@ -170,6 +170,9 @@ export interface Patent {
     title?: string;
     citations?: Patent[];
     abstract?: string;
+    familyId?: string;
+    inventors?: string[];
+    applicants?: string[];
 }
 
 /**
