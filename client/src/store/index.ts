@@ -1,6 +1,6 @@
 import { createStore } from 'vuex';
 import { Patent } from '@/models/Patent';
-import { SavedPatent } from '@/models/SavedPatent';
+import { ExtendedPatent } from '@/models/ExtendedPatent';
 import { Filter } from '@/models/Filter';
 import { saveStatePlugin } from './SaveStatePlugin';
 import { AppState } from './AppState';
@@ -212,7 +212,7 @@ export default createStore({
          * @param savedPatent
          * @constructor
          */
-        ADD_SAVED_PATENT(state, savedPatent: SavedPatent): void {
+        ADD_SAVED_PATENT(state, savedPatent: ExtendedPatent): void {
             const { patent } = savedPatent;
 
             if (state.savedPatents[patent.id]) {
@@ -230,6 +230,23 @@ export default createStore({
          */
         REMOVE_SAVED_PATENT(state, event: { patent: Patent }) {
             delete state.savedPatents[event.patent.id];
+        },
+        /**
+         * Switches highlight for node on
+         * @param state
+         * @param index - index of patent being previewed
+         */
+        HIGHLIGHT_NODE_ON(state, index: number) {
+            state.patentIndex = index;
+            state.highlightNode = true;
+        },
+        /**
+         * Switches highlight for node off
+         *
+         */
+        HIGHLIGHT_NODE_OFF(state) {
+            state.patentIndex = -1;
+            state.highlightNode = false;
         },
 
         /**

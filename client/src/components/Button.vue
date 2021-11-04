@@ -10,7 +10,12 @@
                 <span>{{ btnText }}</span>
             </div>
         </div>
-        <div :class="{ hide: !hasBadge }" class="button-badge">{{ badgeValue }}</div>
+        <!-- Badge transition zoom at first patent and pulse on addition other patent  -->
+        <transition name="pulsate" mode="in-out">
+            <div :class="{ hide: !hasBadge }" class="button-badge" :key="badgeValue">
+                {{ badgeValue }}
+            </div>
+        </transition>
     </div>
 </template>
 
@@ -46,7 +51,6 @@ export default defineComponent({
             if (!this.badgeValue) {
                 return false;
             }
-
             return this.badgeValue.trim().length !== 0;
         },
     },
@@ -109,6 +113,12 @@ export default defineComponent({
     transition: all 0.5s ease;
     background: #282828;
 }
+.pulsate-leave-active {
+    animation-duration: 1.2s;
+    animation-timing-function: ease-in-out;
+    animation-name: pulse;
+    border: 10px lighten(red, 80%);
+}
 
 @keyframes zoom {
     0% {
@@ -123,6 +133,22 @@ export default defineComponent({
     100% {
         opacity: 1;
         transform: scale(1);
+    }
+}
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
     }
 }
 </style>

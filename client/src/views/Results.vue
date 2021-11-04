@@ -62,8 +62,10 @@
                 :patent="patents[selectedPatentIndex]"
                 v-on:on-change-patent="onChangePatent($event)"
                 v-on:on-save-patent="onSavePatent($event)"
+                v-on:on-show-more="onShowMore($event)"
             />
         </div>
+        <DetailedPatentView :extended-patent="detailedPatent" v-on:on-close="detailedPatent = null" />
     </div>
 </template>
 
@@ -80,6 +82,8 @@ import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
 import ResultsVisualization from '@/components/ResultVisualization.vue';
 import Button from '@/components/Button.vue';
+import DetailedPatentView from '@/components/DetailedPatentView.vue';
+import { ExtendedPatent } from '@/models/ExtendedPatent';
 
 export default defineComponent({
     name: 'Results',
@@ -91,6 +95,7 @@ export default defineComponent({
         OptionsMenu,
         ResultsVisualization,
         Button,
+        DetailedPatentView,
     },
     data() {
         return {
@@ -104,6 +109,7 @@ export default defineComponent({
             inputFieldWaiting: false,
             moreDataAvailable: false,
             lastFilterString: '',
+            detailedPatent: null as ExtendedPatent | null,
         };
     },
     watch: {
@@ -242,12 +248,6 @@ export default defineComponent({
         async refreshResults(): Promise<void> {
             // start showing the smaller loading indicator
             this.$store.commit('SHOW_LOADING_BAR');
-
-            if (this.terms.length === 0) {
-                await this.$router.push({ path: '/' });
-                return;
-            }
-
             await this.$router.push({ query: { terms: this.terms } });
             try {
                 const { patents, totalCount } = await this.patentService.get(this.terms, this.filters);
@@ -295,6 +295,9 @@ export default defineComponent({
          * @param e
          */
         onChangePatent(e: { direction: string }): void {
+            // reset highlight on node
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
+
             switch (e.direction) {
                 case 'next':
                     if (this.selectedPatentIndex >= this.patents.length - 1) {
@@ -313,6 +316,14 @@ export default defineComponent({
                     this.selectedPatentIndex--;
                     break;
             }
+
+            // turn highlight on node on. Timeout so to have the component react to state change
+            setTimeout(() => {
+                this.$store.commit('HIGHLIGHT_NODE_ON', this.selectedPatentIndex);
+            });
+        },
+        onShowMore(event: { patent: Patent; searchTerms: string[] }) {
+            this.detailedPatent = event as ExtendedPatent;
         },
         /**
          * Resets to landing page after some time, if no results returned. All input is cleared.
@@ -324,8 +335,6 @@ export default defineComponent({
             this.selectedPatentIndex = -1;
             this.resetWaiting = true;
             this.resetHandler = setTimeout(async () => {
-                await this.$router.push({ path: '/' });
-                this.$store.commit('CLEAR_INPUT');
                 this.$store.commit('HIDE_NORESULT_TOAST');
                 this.resetWaiting = false;
             }, 6000);
