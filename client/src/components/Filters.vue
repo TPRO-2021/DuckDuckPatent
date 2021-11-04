@@ -152,6 +152,7 @@ export default defineComponent({
                 { key: 'cy', value: 'Cyprus' },
                 { key: 'cz', value: 'Czech Republic' },
                 { key: 'dk', value: 'Denmark' },
+                { key: 'de', value: 'Germany' },
                 { key: 'ee', value: 'Estonia' },
                 { key: 'es', value: 'Spain' },
                 { key: 'fr', value: 'France' },

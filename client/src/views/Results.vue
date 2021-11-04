@@ -20,6 +20,7 @@
             <!-- This div contains the options menu for user to add more nodes/filters -->
             <div class="options-menu">
                 <OptionsMenu
+                    :options="visualizationOptions"
                     :filters="filters"
                     v-on:add-node="$store.commit('addVisualizationOption', $event)"
                     v-on:remove-node="$store.commit('removeVisualizationOption', $event)"
@@ -294,6 +295,9 @@ export default defineComponent({
          * @param e
          */
         onChangePatent(e: { direction: string }): void {
+            // reset highlight on node
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
+
             switch (e.direction) {
                 case 'next':
                     if (this.selectedPatentIndex >= this.patents.length - 1) {
@@ -312,6 +316,11 @@ export default defineComponent({
                     this.selectedPatentIndex--;
                     break;
             }
+
+            // turn highlight on node on. Timeout so to have the component react to state change
+            setTimeout(() => {
+                this.$store.commit('HIGHLIGHT_NODE_ON', this.selectedPatentIndex);
+            });
         },
         onShowMore(event: { patent: Patent; searchTerms: string[] }) {
             this.detailedPatent = event as ExtendedPatent;

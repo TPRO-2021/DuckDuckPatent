@@ -15,6 +15,9 @@ import Toasts from '@/components/Toasts.vue';
 export default defineComponent({
     name: 'App',
     components: { LoadingScreen, Toasts },
+    beforeCreate() {
+        this.$store.dispatch('loadSavedState');
+    },
     computed: {
         showLoadingBar(): boolean {
             return this.$store.state.showLoadingBar;

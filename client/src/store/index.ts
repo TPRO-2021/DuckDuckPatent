@@ -1,76 +1,10 @@
 import { createStore } from 'vuex';
 import { Patent } from '@/models/Patent';
-import { PatentMap } from '@/models/PatentMap';
-import { ExtendedPatent } from '@/models/ExtendedPatent';
 import { Filter } from '@/models/Filter';
-
-/**
- * The entire application views will have global containers to share data between components which is the state
- * This states are rendered in vue components as soon the states will be mutated
- */
-export class AppState {
-    /**
-     * Holds the the patents as a result of research
-     */
-    public patents = [] as Patent[];
-
-    /**
-     * Holds the current result page count
-     */
-    public pageCount = 0;
-
-    /**
-     * Holds the loadingScreen state
-     * True if the loading screen should be visible
-     */
-    public showLoadingScreen = false;
-
-    /**
-     * Holds the loadingBar state
-     * True if the loadingBar should be visible
-     */
-    public showLoadingBar = false;
-    /**
-     * Holds the showNoResultsToast state
-     * True if the toast should be visible
-     */
-    public showNoResultsToast = false;
-    /**
-     * Holds the showErrorToast state
-     * True if the toast should be visible
-     */
-    public showErrorToast = false;
-
-    /**
-     * Holds the current search terms of the user
-     */
-    public searchTerms = [] as string[];
-
-    /**
-     * Holds the suggested terms related with search term of user
-     */
-    public suggestedTerms = [] as string[];
-
-    /**
-     * Holds the current total count value
-     */
-    public totalCount = 0;
-
-    /**
-     * Node visualization options
-     */
-    public visualizationOptions = ['patents'];
-
-    /**
-     * Contains the saved patents
-     */
-    public savedPatents = {} as PatentMap;
-
-    /**
-     * API Filters
-     */
-    public filters = [] as Filter[];
-}
+import { saveStatePlugin } from './SaveStatePlugin';
+import { AppState } from './AppState';
+import { SavedAppState } from './SavedAppState';
+import { ExtendedPatent } from '@/models/ExtendedPatent';
 
 export default createStore({
     state: new AppState(),
@@ -162,13 +96,13 @@ export default createStore({
             state.filters = state.filters
                 .filter((t) => !startEdit || t.type !== 'empty') // If we're starting to edit one, delete all empties
                 .map((filter: Filter) => {
+                    // If this is not the one that is being updated
                     if (args.id !== filter.id) {
-                        // This is not the one that is being updated
-                        // Don't allow for the opening of more than one at a time - close others if open
+                        // Don't allow for the opening of more than one at a time - close if open
                         return filter.isSelectionOpen ? { ...filter, isSelectionOpen: false } : filter;
                     }
                     return {
-                        ...filter, // Extend the curent filter
+                        ...filter, // Extend the current filter
                         value: args.prop === 'type' ? '' : filter.value, // Clear the value if we are asigning /changing type
                         isSelectionOpen: args.prop === 'type' || filter.isSelectionOpen, // If we just selected a type, we should show value selection
                         [args.prop]: args.value, // Set value
@@ -297,6 +231,37 @@ export default createStore({
         REMOVE_SAVED_PATENT(state, event: { patent: Patent }) {
             delete state.savedPatents[event.patent.id];
         },
+        /**
+         * Switches highlight for node on
+         * @param state
+         * @param index - index of patent being previewed
+         */
+        HIGHLIGHT_NODE_ON(state, index: number) {
+            state.patentIndex = index;
+            state.highlightNode = true;
+        },
+        /**
+         * Switches highlight for node off
+         *
+         */
+        HIGHLIGHT_NODE_OFF(state) {
+            state.patentIndex = -1;
+            state.highlightNode = false;
+        },
+
+        /**
+         * Load State
+         * @param state
+         * @param savedState
+         */
+        LOAD_STATE(state: SavedAppState, savedState: SavedAppState) {
+            // Read the keys on the saved state
+            const keys = Object.keys(savedState) as (keyof SavedAppState)[];
+            // Set properties being loaded individually
+            keys.forEach(<K extends keyof SavedAppState>(key: K) => {
+                state[key] = savedState[key]; // Set property to value
+            });
+        },
     },
 
     /**
@@ -316,6 +281,45 @@ export default createStore({
             state.commit('ADD_TOTAL_COUNT', payload.totalCount);
             state.commit('SET_PAGE_COUNT', payload.page || 0);
         },
+
+        /**
+         * Load Saved State
+         * @param store
+         */
+        loadSavedState(store) {
+            // Load string 'state' from localstorage
+            const stateAsString = window.localStorage.getItem('state');
+            if (!stateAsString) {
+                // If state is falsy, return (there's no state to load)
+                return;
+            }
+
+            // Parse the saved state
+            const newState = JSON.parse(stateAsString) as SavedAppState;
+
+            store.commit('LOAD_STATE', newState);
+        },
+
+        /**
+         * Reset Saved State
+         * @param store
+         */
+        resetSavedState(store) {
+            // load current state to preserve saved patents if possible
+            const stateAsString = window.localStorage.getItem('state');
+            const saveState = new SavedAppState();
+
+            if (stateAsString) {
+                const state = JSON.parse(stateAsString) as SavedAppState;
+                saveState.savedPatents = state.savedPatents;
+            }
+
+            // set state to the previously created empty saved app state
+            window.localStorage.setItem('state', JSON.stringify(saveState));
+
+            // force load of new state
+            store.commit('LOAD_STATE', saveState);
+        },
     },
 
     /**
@@ -323,4 +327,5 @@ export default createStore({
      */
     getters: {},
     modules: {},
+    plugins: [saveStatePlugin],
 });
