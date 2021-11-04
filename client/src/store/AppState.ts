@@ -54,12 +54,10 @@ export class AppState extends SavedAppState {
     /**
      * One checkmark will be added to all saved node indices
      */
-    //  public markedOnce = [] as number[];
     public markedOnce = [] as string[];
     /**
      * Two checkmarks will be added to all saved node indices
      */
-    // public markedTwice = [] as number[];
     public markedTwice = [] as string[];
     /**
      * Controls one/two checkmark assignment

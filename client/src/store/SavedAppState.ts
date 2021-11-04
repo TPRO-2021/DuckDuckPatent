@@ -30,4 +30,13 @@ export class SavedAppState {
      * API Filters
      */
     public filters = [] as Filter[];
+
+    /**
+     * One checkmark will be added to all saved node indices
+     */
+    public markedOnce = [] as string[];
+    /**
+     * Two checkmarks will be added to all saved node indices
+     */
+    public markedTwice = [] as string[];
 }
