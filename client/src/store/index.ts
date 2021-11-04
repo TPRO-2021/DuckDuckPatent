@@ -71,9 +71,9 @@ export class AppState {
      */
     public filters = [] as Filter[];
     /**
-     * Index of patent currently previewed (on Results page)
+     * ID of patent currently previewed (on Results page)
      */
-    public patentIndex = -1;
+    public patentID = '' as string;
     /**
      * Highlight border of a node once true
      */
@@ -81,11 +81,13 @@ export class AppState {
     /**
      * One checkmark will be added to all saved node indices
      */
-    public markedOnce = [] as number[];
+    //  public markedOnce = [] as number[];
+    public markedOnce = [] as string[];
     /**
      * Two checkmarks will be added to all saved node indices
      */
-    public markedTwice = [] as number[];
+    // public markedTwice = [] as number[];
+    public markedTwice = [] as string[];
     /**
      * Controls one/two checkmark assignment
      */
@@ -322,8 +324,8 @@ export default createStore({
          * @param state
          * @param index - index of patent being previewed
          */
-        HIGHLIGHT_NODE_ON(state, obj: { index: number; twice: boolean }) {
-            state.patentIndex = obj.index;
+        HIGHLIGHT_NODE_ON(state, obj: { index: string; twice: boolean }) {
+            state.patentID = obj.index;
             state.markTwice = obj.twice; //if true mark twice
             state.markTwice ? state.markedTwice.push(obj.index) : state.markedOnce.push(obj.index);
             state.highlightNode = true;
@@ -333,7 +335,7 @@ export default createStore({
          *
          */
         HIGHLIGHT_NODE_OFF(state) {
-            state.patentIndex = -1;
+            state.patentID = '';
             state.highlightNode = false;
         },
     },

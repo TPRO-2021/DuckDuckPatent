@@ -22,9 +22,8 @@
                         x="7"
                         y="7"
                         xlink:href="https://www.reshot.com/preview-assets/icons/RPE62U4DKF/check-RPE62U4DKF.svg"
-                        stroke="black"
+                        stroke="#6f540f"
                         stroke-width="5"
-                        style="background-color: blue"
                     ></image>
                 </pattern>
                 <pattern id="markTwice" width="15" height="15" xmlns="http://www.w3.org/2000/svg">
@@ -139,6 +138,7 @@ export default defineComponent({
         patents(): void {
             this.updateData();
             this.updateGraph();
+            this.updateMarks();
         },
         /**
          * Once the visualization options change the simulation needs to be updated
@@ -146,6 +146,7 @@ export default defineComponent({
         visualizationOptions() {
             this.updateData();
             this.updateGraph();
+            this.updateMarks();
         },
         /**
          * If drag is active the tooltip needs to be hidden, otherwise it will be buggy
@@ -308,9 +309,6 @@ export default defineComponent({
 
             // Update caption every time data changes
             this.simulation?.alpha(0.6).restart();
-
-            //update nodes with viewed marks
-            this.updateMarks();
         },
 
         /**
@@ -361,33 +359,26 @@ export default defineComponent({
          *
          */
         highlightAndMarkNodes(): void {
-            // credits to ee2Dev on https://stackoverflow.com/questions/28390754/get-one-element-from-d3js-selection-by-index
             // reset highlight
             this.selections.graph.selectAll('circle').classed('selected', false);
 
-            const index = this.$store.state.patentIndex as number;
+            // find patentIndex
+            const patentID = this.$store.state.patentID as string; //TODO: revisit or remove
+            const patentIndex = (this.patents as Patent[]).findIndex((e) => e.id === patentID);
+
+            if (!patentIndex) {
+                return;
+            }
 
             //find node and highlight it
             const target = this.selections.graph
                 .selectAll('circle')
                 .filter(function (d, i) {
-                    return i === index;
+                    return i === patentIndex;
                 })
                 .classed('selected', true);
 
             this.$store.state.markTwice ? target.classed('markedTwice', true) : target.classed('markedOnce', true);
-
-            // const patentID = this.$store.state.patentID as string; //TODO: revisit or remove
-            //     // const patentIndex = this.patents.indexOf(patentID);
-            //     //
-            //     // console.log('patentInd: ', patentIndex);
-            //     //
-            //     // //find node and highlight it
-            //     // this.selections.graph
-            //     //     .selectAll('circle')
-            //     //     .filter(function (d, i) {
-            //     //         return i === patentIndex;
-            //     //     })
         },
         /**
          * Once user comes back from Saved, the marks need to be set again
@@ -397,12 +388,15 @@ export default defineComponent({
             // set marks for viewed once
             const markedOnce = this.$store.state.markedOnce;
 
-            markedOnce.forEach((element: number) => {
+            markedOnce.forEach((element: string) => {
                 //find node and highlight it
+                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
+                if (!nodeIndex) return;
+
                 this.selections.graph
                     .selectAll('circle')
                     .filter(function (d, i) {
-                        return i === element;
+                        return i === nodeIndex;
                     })
                     // add a mark to indicate it has been viewed
                     .classed('markedOnce', true);
@@ -411,12 +405,14 @@ export default defineComponent({
             //set marks for viewed twice
             const markedTwice = this.$store.state.markedTwice;
 
-            markedTwice.forEach((element: number) => {
+            markedTwice.forEach((element: string) => {
                 //find node and highlight it
+                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
+                if (!nodeIndex) return;
                 this.selections.graph
                     .selectAll('circle')
                     .filter(function (d, i) {
-                        return i === element;
+                        return i === nodeIndex;
                     })
                     //remove the old mark if any
                     .classed('markedOnce', false)
@@ -587,9 +583,8 @@ export default defineComponent({
 
             // turn highlight on node on. Timeout so to have the component react to state change
             // highlight node also set the mark once on
-
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', { index: node.index, twice: false });
+                this.$store.commit('HIGHLIGHT_NODE_ON', { index: node.patent.id, twice: false });
             });
 
             // in order to prevent a canvas event to be triggered specify that a node is selected
