@@ -16,7 +16,7 @@
                     -->
                     <path d="M0,0V 4L6,2Z" style="fill: black"></path>
                 </marker>
-                <pattern id="markOnce" width="15" height="15" xmlns="http://www.w3.org/2000/svg">
+                <pattern id="markOnce" width="70%" height="70%" xmlns="http://www.w3.org/2000/svg">
                     <!--                    <span x="5" y="5" stroke="black" class="material-icons">done</span>-->
                     <image
                         x="7"
@@ -26,7 +26,7 @@
                         stroke-width="5"
                     ></image>
                 </pattern>
-                <pattern id="markTwice" width="15" height="15" xmlns="http://www.w3.org/2000/svg">
+                <pattern id="markTwice" width="70%" height="70%" xmlns="http://www.w3.org/2000/svg">
                     <!--                    <span x="5" y="5" class="material-icons">done-all</span>-->
                     <image
                         x="5"
@@ -138,7 +138,6 @@ export default defineComponent({
         patents(): void {
             this.updateData();
             this.updateGraph();
-            this.updateMarks();
         },
         /**
          * Once the visualization options change the simulation needs to be updated
@@ -146,7 +145,6 @@ export default defineComponent({
         visualizationOptions() {
             this.updateData();
             this.updateGraph();
-            this.updateMarks();
         },
         /**
          * If drag is active the tooltip needs to be hidden, otherwise it will be buggy
@@ -257,6 +255,8 @@ export default defineComponent({
             graph.selectAll<SVGCircleElement, VisualPatentNode>('circle').attr('transform', (d: VisualPatentNode) => {
                 return 'translate(' + d.x + ',' + d.y + ')';
             });
+
+            this.updateMarks();
         },
 
         /**
@@ -351,6 +351,7 @@ export default defineComponent({
             //turn highlight of node border off
             this.$store.commit('HIGHLIGHT_NODE_OFF');
             this.selections.graph.selectAll('circle').classed('selected', false);
+            this.updateMarks();
         },
         /**
          * Highlights border color of a node, once node or preview cards are viewed.
@@ -363,7 +364,7 @@ export default defineComponent({
             this.selections.graph.selectAll('circle').classed('selected', false);
 
             // find patentIndex
-            const patentID = this.$store.state.patentID as string; //TODO: revisit or remove
+            const patentID = this.$store.state.patentID as string;
             const patentIndex = (this.patents as Patent[]).findIndex((e) => e.id === patentID);
 
             if (!patentIndex) {
@@ -382,7 +383,7 @@ export default defineComponent({
         },
         /**
          * Once user comes back from Saved, the marks need to be set again
-         * TODO: revisit once localstorage branch is merged
+         *
          */
         updateMarks(): void {
             // set marks for viewed once
@@ -551,7 +552,7 @@ export default defineComponent({
 
             const graph = this.selections.graph;
             const circle = graph.selectAll('circle');
-            const path = graph.selectAll('path'); //TODO: check this one
+            const path = graph.selectAll('path');
 
             // reset classes for nodes and paths
             circle.classed('faded', false);
