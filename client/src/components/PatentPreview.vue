@@ -6,11 +6,10 @@
                 <RoundButton class="round-btn" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
             <div class="settings-menu" v-if="settingsMenu">
-                <RoundButton v-if="!isSaved" class="round-button" icon-key="push_pin" @click="this.savePatent" />
-                <RoundButton class="round-button" icon-key="visibility_off" @click="this.hidePatent" />
-                <RoundButton class="round-button" icon-key="done" />
-                <RoundButton class="round-button" icon-key="read_more" @click="this.showMore" />
-
+                <RoundButton v-if="!isSaved" class="round-btn" icon-key="push_pin" @click="this.savePatent" />
+                <RoundButton class="round-btn" icon-key="visibility_off" @click="this.hidePatent" />
+                <RoundButton class="round-btn" icon-key="done" />
+                <RoundButton class="round-btn" icon-key="read_more" @click="this.showMore" />
             </div>
         </div>
 
