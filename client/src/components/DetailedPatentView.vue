@@ -32,14 +32,35 @@
                     class="patent-title"
                     v-html="highlightTitle(this.extendedPatent.patent.title, this.extendedPatent.searchTerms)"
                 ></div>
-                <!-- TODO: Add applicant/owner of the patent -->
-                <div class="patent-owner">Company/Author</div>
+                <div class="patent-owner">
+                    <span v-for="(applicant, index) in extendedPatent.patent.applicants" :key="index">
+                        {{ applicant }}
+                        <span v-if="index !== extendedPatent.patent.applicants.length - 1">, </span>
+                        <span v-if="index <= extendedPatent.patent.applicants.length - 1"> </span>
+                    </span>
+                </div>
             </div>
         </template>
+        <h3>Abstract</h3>
         <div
             class="patent-abstract"
             v-html="highlightAbstract(this.extendedPatent.patent.abstract, this.extendedPatent.searchTerms)"
         ></div>
+
+        <div class="patent-info">
+            <div>
+                <h3>Inventors</h3>
+                <ul class="inventors-list">
+                    <li v-for="(inventor, index) in extendedPatent.patent.inventors" :key="index">{{ inventor }}</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Applicants</h3>
+                <ul class="inventors-list">
+                    <li v-for="(applicant, index) in extendedPatent.patent.applicants" :key="index">{{ applicant }}</li>
+                </ul>
+            </div>
+        </div>
 
         <template #footer>
             <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
@@ -268,5 +289,15 @@ export default defineComponent({
 .patent-additional-info {
     display: flex;
     flex-grow: 1;
+}
+
+.patent-info {
+    display: flex;
+    width: 100%;
+    gap: 120px;
+}
+
+.inventors-list {
+    transform: translateX(20px);
 }
 </style>
