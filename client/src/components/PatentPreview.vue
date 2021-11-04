@@ -94,18 +94,21 @@ export default defineComponent({
          */
         displayNextPatent(): void {
             this.$emit('onChangePatent', { direction: 'next' });
+            this.settingsMenu = false;
         },
         /**
          * Method to check if back button is clicked then emit an event to ask the parent to send previous patent
          */
         displayPreviousPatent(): void {
             this.$emit('onChangePatent', { direction: 'previous' });
+            this.settingsMenu = false;
         },
         /**
          * Adds a patent to the saved items list
          */
         savePatent(): void {
             this.$emit('onSavePatent', { patent: this.patent as Patent });
+            this.settingsMenu = false;
         },
         /**
          * Hides a patent from the results page
@@ -118,6 +121,7 @@ export default defineComponent({
          */
         showMore(): void {
             this.$emit('onShowMore', { patent: this.patent as Patent, searchTerms: this.terms });
+            this.settingsMenu = false;
         },
     },
 });
