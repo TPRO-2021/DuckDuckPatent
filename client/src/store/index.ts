@@ -75,12 +75,21 @@ export class AppState {
      */
     public patentIndex = -1;
     /**
-     * Highlight border of a node upon its click or preview
+     * Highlight border of a node once true
      */
     public highlightNode = false;
+    /**
+     * One checkmark will be added to all saved node indices
+     */
     public markedOnce = [] as number[];
+    /**
+     * Two checkmarks will be added to all saved node indices
+     */
     public markedTwice = [] as number[];
-    public markNode = false;
+    /**
+     * Controls one/two checkmark assignment
+     */
+    public markTwice = false;
 }
 
 export default createStore({
@@ -313,10 +322,10 @@ export default createStore({
          * @param state
          * @param index - index of patent being previewed
          */
-        HIGHLIGHT_NODE_ON(state, index: number) {
-            state.patentIndex = index;
-            //save the index of the viewed node for update marks later
-            state.markedOnce.push(index);
+        HIGHLIGHT_NODE_ON(state, obj: { index: number; twice: boolean }) {
+            state.patentIndex = obj.index;
+            state.markTwice = obj.twice; //if true mark twice
+            state.markTwice ? state.markedTwice.push(obj.index) : state.markedOnce.push(obj.index);
             state.highlightNode = true;
         },
         /**
@@ -326,29 +335,6 @@ export default createStore({
         HIGHLIGHT_NODE_OFF(state) {
             state.patentIndex = -1;
             state.highlightNode = false;
-        },
-        // MARK_NODE_VIEWED_ON(state, patentid: string) {
-        //     state.patentID = patentid;
-        //     state.markNode = true;
-        // },
-        /**
-         * Marks node with double checks once the extended panel has been viewed
-         *
-         */
-        MARK_NODE_VIEWED_ON(state, index: number) {
-            // for the immediate handler
-            state.patentIndex = index;
-            //save the index of the viewed node for update marks later
-            state.markedTwice.push(index);
-            //proceed with marking it
-            state.markNode = true;
-        },
-        /**
-         * Switches mark for node off
-         *
-         */
-        MARK_NODE_VIEWED_OFF(state) {
-            state.markNode = false;
         },
     },
 

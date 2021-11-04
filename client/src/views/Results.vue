@@ -318,7 +318,7 @@ export default defineComponent({
 
             // turn highlight on node on. Timeout so to have the component react to state change
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', this.selectedPatentIndex);
+                this.$store.commit('HIGHLIGHT_NODE_ON', { index: this.selectedPatentIndex, twice: false });
             });
         },
         /**
@@ -327,12 +327,12 @@ export default defineComponent({
          */
         onShowMore(event: { patent: Patent; searchTerms: string[] }) {
             //MARK_NODE_VIEWED_OFF
-            this.$store.commit('MARK_NODE_VIEWED_OFF');
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
 
             this.detailedPatent = event as ExtendedPatent;
             //set mark twice on viewed node
             setTimeout(() => {
-                this.$store.commit('MARK_NODE_VIEWED_ON', this.selectedPatentIndex);
+                this.$store.commit('HIGHLIGHT_NODE_ON', { index: this.selectedPatentIndex, twice: true });
                 console.log('patent index: ', this.selectedPatentIndex);
             });
         },
