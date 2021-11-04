@@ -1,5 +1,12 @@
 <template>
-    <div class="main-container box-shadow card">
+    <Dialog
+        class="main-dialog"
+        style="max-height: 30vh; max-width: 30vw"
+        v-model:visible="previewAvailable"
+        :close-on-escape="true"
+        :dismissable-mask="true"
+        :closable="false"
+    >
         <!-- Menu Buttons for interacting with the patent -->
         <div class="settings-container no-select">
             <div class="settings-btn">
@@ -12,13 +19,15 @@
                 <RoundButton class="round-btn" icon-key="read_more" @click="this.showMore" />
             </div>
         </div>
+        <template #header>
+            <div>
+                <div class="patent-title">{{ patent?.title }}</div>
 
-        <div class="patent-info">
-            <div class="patent-title">{{ patent?.title }}</div>
-
-            <!-- TODO: Add applicant/owner of the patent -->
-            <div class="patent-owner">Company/Author</div>
-
+                <!-- TODO: Add applicant/owner of the patent -->
+                <div class="patent-owner">Company/Author</div>
+            </div>
+        </template>
+        <div>
             <div class="patent-abstract">
                 <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
             </div>
@@ -29,7 +38,7 @@
             <span class="material-icons search-icon" @click="displayPreviousPatent()">arrow_back</span>
             <span class="material-icons search-icon" @click="displayNextPatent()">arrow_forward</span>
         </div>
-    </div>
+    </Dialog>
 </template>
 
 <script lang="ts">
@@ -65,6 +74,7 @@ export default defineComponent({
                 { iconKey: 'done', action: 'suggestMore' },
                 { iconKey: 'read_more', action: this.showMore },
             ],
+            previewAvailable: true,
         };
     },
     computed: {
@@ -114,12 +124,12 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.main-container {
+.main-dialog {
     display: flex;
     justify-content: flex-start;
     flex-direction: column;
-    width: 650px;
-    min-height: 300px;
+    max-width: 30vw !important;
+    max-height: 30vh !important;
 }
 
 .menu {
@@ -154,14 +164,14 @@ export default defineComponent({
     padding-right: 42px;
     font-style: normal;
     font-weight: normal;
-    font-size: 20px;
+    font-size: 30px;
 }
 .patent-abstract {
     text-align: left;
     padding-right: 60px;
     font-style: normal;
     font-weight: normal;
-    font-size: 16px;
+    font-size: 20px;
     margin-bottom: 32px;
 }
 
