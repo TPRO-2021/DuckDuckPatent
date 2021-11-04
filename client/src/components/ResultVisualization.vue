@@ -517,10 +517,14 @@ export default defineComponent({
                 .filter((td) => td === node)
                 .classed('selected', true);
 
-            this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
+            // only in cases of a patent node the patent preview should show up!
+            if (node.type === 'patent') {
+                this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
 
-            // in order to prevent a canvas event to be triggered specify that a node is selected
-            this.nodeSelected = true;
+                // in order to prevent a canvas event to be triggered specify that a node is selected
+                this.nodeSelected = true;
+            }
+
             this.$store.commit('HIGHLIGHT_NODE_OFF');
         },
 
