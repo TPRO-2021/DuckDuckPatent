@@ -109,6 +109,8 @@ export default defineComponent({
                     return this.currentNode?.patent.title;
                 case 'author':
                     return this.currentNode?.patent.inventors?.toString();
+                case 'company':
+                    return this.currentNode?.patent.applicants?.toString();
             }
             return 'No Data';
         },
