@@ -5,23 +5,9 @@ import { SuggestionAPIResponse } from '../models';
 
 const mockKeywords: SuggestionAPIResponse = [
     ['grain', 0.5],
-    ['grains', 0.5],
-    ['bread', 0.4],
-    ['breads', 0.4],
-    ['hunger', 0.3],
-    ['hungers', 0.3],
     ['water', 0.5],
-    ['waters', 0.5],
-    ['man', 0.5],
-    ['men', 0.5],
-    ['glass', 0.8],
-    ['glasses', 0.8],
-    ['gol', 0.7],
-    ['goles', 0.7],
-    ['duck', 0.2],
-    ['duckes', 0.2],
-    ['CITY', 0.9],
-    ['CITIES', 0.9],
+    ['bread', 0.4],
+    ['hunger', 0.3],
 ];
 
 // How many keywords we want to return
