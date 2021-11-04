@@ -8,7 +8,7 @@
     >
         <!-- Menu Buttons for interacting with the patent -->
         <div class="settings-container">
-            <div class="settings-button">
+            <div class="settings-btn">
                 <RoundButton class="round-btn" icon-key="more_horiz" @click="isSubMenuOpen = !isSubMenuOpen" />
             </div>
 
@@ -30,7 +30,7 @@
             <div>
                 <div
                     class="patent-title"
-                    v-html="highlightTitle(this.patent.patent.title, this.patent.searchTerms)"
+                    v-html="highlightTitle(this.extendedPatent.patent.title, this.extendedPatent.searchTerms)"
                 ></div>
                 <!-- TODO: Add applicant/owner of the patent -->
                 <div class="patent-owner">Company/Author</div>
@@ -38,10 +38,10 @@
         </template>
         <div
             class="patent-abstract"
-            v-html="highlightAbstract(this.patent.patent.abstract, this.patent.searchTerms)"
+            v-html="highlightAbstract(this.extendedPatent.patent.abstract, this.extendedPatent.searchTerms)"
         ></div>
-        
-       <template #footer>
+
+        <template #footer>
             <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
             <div class="footer-container">
                 <div class="patent-additional-info">
