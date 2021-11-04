@@ -28,13 +28,13 @@
         </div>
         <template #header>
             <div>
-                <div class="patent-title">{{ this.patent.patent.title }}</div>
+                <div class="patent-title">{{ this.extendedPatent.patent.title }}</div>
                 <!-- TODO: Add applicant/owner of the patent -->
                 <div class="patent-owner">Company/Author</div>
             </div>
         </template>
 
-        <div class="patent-abstract">{{ this.patent.patent.abstract }}</div>
+        <div class="patent-abstract">{{ this.extendedPatent.patent.abstract }}</div>
 
         <template #footer>
             <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
@@ -57,10 +57,10 @@
                     <div class="keywords">
                         <span class="keywords label-keywords">Searched keywords:</span>
                         <span class="keywords">
-                            <span v-for="(keyword, index) in patent.searchTerms" :key="index">
+                            <span v-for="(keyword, index) in extendedPatent.searchTerms" :key="index">
                                 <span>{{ keyword }}</span>
-                                <span v-if="index !== patent.searchTerms.length - 1">, </span>
-                                <span v-if="index <= patent.searchTerms.length - 1"> </span>
+                                <span v-if="index !== extendedPatent.searchTerms.length - 1">, </span>
+                                <span v-if="index <= extendedPatent.searchTerms.length - 1"> </span>
                             </span>
                         </span>
                     </div>
@@ -77,7 +77,7 @@
 import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import Button from '@/components/Button.vue';
-import { Patent } from '@/models/Patent';
+import { ExtendedPatent } from '@/models/ExtendedPatent';
 
 /**
  * This component previews the content of a patent
@@ -89,7 +89,7 @@ export default defineComponent({
         Button,
     },
     props: {
-        patent: { type: Object },
+        extendedPatent: { type: Object },
         isSavedPage: {
             type: Boolean,
             default: false,
@@ -113,8 +113,9 @@ export default defineComponent({
             patentAvailable: false,
         };
     },
+
     watch: {
-        patent(newVal: Patent): void {
+        extendedPatent(newVal: ExtendedPatent): void {
             this.patentAvailable = !!newVal;
         },
     },

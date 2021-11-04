@@ -6,10 +6,11 @@
                 <RoundButton class="round-btn" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
             <div class="settings-menu" v-if="settingsMenu">
-                <RoundButton v-if="!isSaved" class="round-btn" icon-key="push_pin" @click="this.savePatent" />
-                <RoundButton class="round-btn" icon-key="visibility_off" @click="this.hidePatent" />
-                <RoundButton class="round-btn" icon-key="done" />
-                <RoundButton class="round-btn" icon-key="read_more" />
+                <RoundButton v-if="!isSaved" class="round-button" icon-key="push_pin" @click="this.savePatent" />
+                <RoundButton class="round-button" icon-key="visibility_off" @click="this.hidePatent" />
+                <RoundButton class="round-button" icon-key="done" />
+                <RoundButton class="round-button" icon-key="read_more" @click="this.showMore" />
+
             </div>
         </div>
 
@@ -50,6 +51,7 @@ export default defineComponent({
     emits: {
         onChangePatent: (event: { direction: string }) => event,
         onSavePatent: (event: { patent: Patent }) => event,
+        onShowMore: (event: { patent: Patent; searchTerms: string[] }) => event,
     },
     data() {
         return {
@@ -62,7 +64,7 @@ export default defineComponent({
                 { iconKey: 'push_pin', action: this.savePatent },
                 { iconKey: 'visibility_off', action: this.hidePatent },
                 { iconKey: 'done', action: 'suggestMore' },
-                { iconKey: 'read_more', action: 'readMore' },
+                { iconKey: 'read_more', action: this.showMore },
             ],
         };
     },
@@ -72,6 +74,9 @@ export default defineComponent({
         },
         isSaved(): boolean {
             return (this.$store.state.savedPatents || {})[this.patent?.id];
+        },
+        terms(): string[] {
+            return this.$store.state.searchTerms;
         },
     },
     methods: {
@@ -98,6 +103,12 @@ export default defineComponent({
          */
         hidePatent(): void {
             // TODO: Implement hide patent functionality
+        },
+        /**
+         * Display the DetailedPatentView on Click Show more
+         */
+        showMore(): void {
+            this.$emit('onShowMore', { patent: this.patent as Patent, searchTerms: this.terms });
         },
     },
 });
