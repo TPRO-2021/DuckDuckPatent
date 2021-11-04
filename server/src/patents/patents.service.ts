@@ -156,9 +156,7 @@ export class PatentsService {
             .map((item) => ({
                 ...item['exchange-document'],
             }))
-            /**
-             * filter for only the existing languages for the title and by default if no filter applied it is English
-             */
+            // filter for only the existing languages for the title and by default if no filter applied it is English
             .filter((item) => {
                 let title = item['bibliographic-data']['invention-title'];
                 if (!(title instanceof Array)) {
@@ -172,6 +170,7 @@ export class PatentsService {
                 title: PatentsService.getTitle(item, languages),
                 citations: PatentsService.getCitations(item),
                 abstract: PatentsService.getAbstract(item, languages),
+                familyId: item['@family-id'] || null,
             }));
 
         return {
