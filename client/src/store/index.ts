@@ -1,7 +1,7 @@
 import { createStore } from 'vuex';
 import { Patent } from '@/models/Patent';
 import { PatentMap } from '@/models/PatentMap';
-import { SavedPatent } from '@/models/SavedPatent';
+import { ExtendedPatent } from '@/models/ExtendedPatent';
 import { Filter } from '@/models/Filter';
 
 /**
@@ -289,7 +289,7 @@ export default createStore({
          * @param savedPatent
          * @constructor
          */
-        ADD_SAVED_PATENT(state, savedPatent: SavedPatent): void {
+        ADD_SAVED_PATENT(state, savedPatent: ExtendedPatent): void {
             const { patent } = savedPatent;
 
             if (state.savedPatents[patent.id]) {
