@@ -1,7 +1,7 @@
 <template>
     <Dialog
-        class="main-dialog"
-        style="max-height: 30vh; max-width: 30vw"
+        id="main-dialog"
+        style="height: 400px; width: 650px"
         v-model:visible="previewAvailable"
         :close-on-escape="true"
         :dismissable-mask="true"
@@ -128,12 +128,13 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.main-dialog {
+#main-dialog {
     display: flex;
     justify-content: flex-start;
     flex-direction: column;
     max-width: 30vw !important;
     max-height: 30vh !important;
+    backdrop-filter: unset !important;
 }
 
 .menu {
@@ -168,14 +169,14 @@ export default defineComponent({
     padding-right: 42px;
     font-style: normal;
     font-weight: normal;
-    font-size: 30px;
+    font-size: 20px;
 }
 .patent-abstract {
     text-align: left;
     padding-right: 60px;
     font-style: normal;
     font-weight: normal;
-    font-size: 20px;
+    font-size: 16px;
     margin-bottom: 32px;
 }
 
