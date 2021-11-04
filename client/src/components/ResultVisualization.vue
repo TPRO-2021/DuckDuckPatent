@@ -131,7 +131,7 @@ export default defineComponent({
         highlightNode(): boolean {
             return this.$store.state.highlightNode;
         },
-        markNodeAll(): boolean {
+        markNodeTwice(): boolean {
             return this.$store.state.markNode;
         },
     },
@@ -168,13 +168,14 @@ export default defineComponent({
          */
         highlightNode(newVal) {
             if (newVal) {
-                this.highlightOnPreviewActions();
+                //introduce additional var to avoid duplicating code
+                this.highlightNodeOnPreview();
             }
         },
 
-        markNodeAll(newVal) {
+        markNodeTwice(newVal) {
             if (newVal) {
-                this.markOnFullPreview();
+                this.markTwice();
             }
         },
     },
@@ -317,6 +318,9 @@ export default defineComponent({
 
             // Update caption every time data changes
             this.simulation?.alpha(0.6).restart();
+
+            //update nodes with viewed marks
+            this.updateMarks();
         },
 
         /**
@@ -361,10 +365,11 @@ export default defineComponent({
             this.selections.graph.selectAll('circle').classed('selected', false);
         },
         /**
-         * Highlights border color of a node, once the preview card's arrows are clicked
+         * Highlights border color of a node, once the preview card's arrows are clicked.
+         * Node is marked once simultaneously, since the small preview card is displayed on click.
          *
          */
-        highlightOnPreviewActions(): void {
+        highlightNodeOnPreview(): void {
             // credits to ee2Dev on https://stackoverflow.com/questions/28390754/get-one-element-from-d3js-selection-by-index
             // reset highlight
             this.selections.graph.selectAll('circle').classed('selected', false);
@@ -382,9 +387,13 @@ export default defineComponent({
                 // add a mark to indicate it has been viewed
                 .classed('markedOnce', true);
         },
-        markOnFullPreview(): void {
+        /**
+         * Node is marked with two checkmarks once extended preview is viewed.
+         *
+         */
+        markTwice(): void {
             // credits to ee2Dev on https://stackoverflow.com/questions/28390754/get-one-element-from-d3js-selection-by-index
-            // const patentID = this.$store.state.patentID as string;
+            // const patentID = this.$store.state.patentID as string; //TODO: revisit or remove
             // const patentIndex = this.patents.indexOf(patentID);
             //
             // console.log('patentInd: ', patentIndex);
@@ -397,15 +406,51 @@ export default defineComponent({
             //     })
             const index = this.$store.state.patentIndex as number;
 
-            //find node and highlight it
+            //find node
             this.selections.graph
                 .selectAll('circle')
                 .filter(function (d, i) {
                     return i === index;
                 })
+                //remove the single mark
                 .classed('markedOnce', false)
-                // add a mark to indicate it has been viewed
+                // add mark twice
                 .classed('markedTwice', true);
+        },
+        /**
+         * Once user comes back from Saved, the marks need to be set again
+         * TODO: revisit once localstorage branch is merged
+         */
+        updateMarks(): void {
+            // set marks for viewed once
+            const markedOnce = this.$store.state.markedOnce;
+
+            markedOnce.forEach((element: number) => {
+                //find node and highlight it
+                this.selections.graph
+                    .selectAll('circle')
+                    .filter(function (d, i) {
+                        return i === element;
+                    })
+                    // add a mark to indicate it has been viewed
+                    .classed('markedOnce', true);
+            });
+
+            //set marks for viewed twice
+            const markedTwice = this.$store.state.markedTwice;
+
+            markedTwice.forEach((element: number) => {
+                //find node and highlight it
+                this.selections.graph
+                    .selectAll('circle')
+                    .filter(function (d, i) {
+                        return i === element;
+                    })
+                    //remove the old mark if any
+                    .classed('markedOnce', false)
+                    // add a mark to indicate it has been viewed
+                    .classed('markedTwice', true);
+            });
         },
         /**
          * Zoom handler for zooming the canvas
@@ -556,16 +601,23 @@ export default defineComponent({
          * @param node
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
+            // reset highlight on node
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
+
             this.selections.graph
                 .selectAll('circle')
                 .classed('selected', false)
                 .filter((td) => td === node)
                 //highlight border
-                .classed('selected', true)
-                //add the single arrow
-                .classed('markedOnce', true);
+                .classed('selected', true);
 
             this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
+
+            // turn highlight on node on. Timeout so to have the component react to state change
+            // highlight node also set the mark once on
+            setTimeout(() => {
+                this.$store.commit('HIGHLIGHT_NODE_ON', node.index);
+            });
 
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.nodeSelected = true;

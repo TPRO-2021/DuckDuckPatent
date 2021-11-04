@@ -78,8 +78,8 @@ export class AppState {
      * Highlight border of a node upon its click or preview
      */
     public highlightNode = false;
-
-    public patentID = '' as string;
+    public markedOnce = [] as number[];
+    public markedTwice = [] as number[];
     public markNode = false;
 }
 
@@ -309,12 +309,14 @@ export default createStore({
             delete state.savedPatents[event.patent.id];
         },
         /**
-         * Switches highlight for node on
+         * Switches highlight for node on. Each node is saved for later checkmark restoration.
          * @param state
          * @param index - index of patent being previewed
          */
         HIGHLIGHT_NODE_ON(state, index: number) {
             state.patentIndex = index;
+            //save the index of the viewed node for update marks later
+            state.markedOnce.push(index);
             state.highlightNode = true;
         },
         /**
@@ -329,10 +331,22 @@ export default createStore({
         //     state.patentID = patentid;
         //     state.markNode = true;
         // },
+        /**
+         * Marks node with double checks once the extended panel has been viewed
+         *
+         */
         MARK_NODE_VIEWED_ON(state, index: number) {
+            // for the immediate handler
             state.patentIndex = index;
+            //save the index of the viewed node for update marks later
+            state.markedTwice.push(index);
+            //proceed with marking it
             state.markNode = true;
         },
+        /**
+         * Switches mark for node off
+         *
+         */
         MARK_NODE_VIEWED_OFF(state) {
             state.markNode = false;
         },

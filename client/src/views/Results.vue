@@ -321,8 +321,20 @@ export default defineComponent({
                 this.$store.commit('HIGHLIGHT_NODE_ON', this.selectedPatentIndex);
             });
         },
+        /**
+         * Shows extended patent preview
+         *
+         */
         onShowMore(event: { patent: Patent; searchTerms: string[] }) {
+            //MARK_NODE_VIEWED_OFF
+            this.$store.commit('MARK_NODE_VIEWED_OFF');
+
             this.detailedPatent = event as ExtendedPatent;
+            //set mark twice on viewed node
+            setTimeout(() => {
+                this.$store.commit('MARK_NODE_VIEWED_ON', this.selectedPatentIndex);
+                console.log('patent index: ', this.selectedPatentIndex);
+            });
         },
         /**
          * Resets to landing page after some time, if no results returned. All input is cleared.
@@ -392,16 +404,8 @@ export default defineComponent({
          * @param event
          */
         onSavePatent(event: { patent: Patent }): void {
-            //MARK_NODE_VIEWED_OFF
-            //TODO: for testing only
-            this.$store.commit('MARK_NODE_VIEWED_OFF');
             this.$store.commit('ADD_SAVED_PATENT', { patent: event.patent, searchTerms: this.terms });
-            //TODO: for testing only
-            setTimeout(() => {
-                this.$store.commit('MARK_NODE_VIEWED_ON', this.selectedPatentIndex);
-                console.log('patend index: ', this.selectedPatentIndex);
-                this.selectedPatentIndex = -1;
-            });
+            this.selectedPatentIndex = -1;
         },
     },
 });
