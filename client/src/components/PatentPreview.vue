@@ -24,7 +24,10 @@
                 <div class="patent-title">{{ patent?.title }}</div>
 
                 <!-- TODO: Add applicant/owner of the patent -->
-                <div class="patent-owner">Company/Author</div>
+                <div class="patent-owner">
+                    {{ patent.applicants[0] }}
+                    <span v-if="patent.applicants.length > 1">, ...</span>
+                </div>
             </div>
         </template>
         <div>
