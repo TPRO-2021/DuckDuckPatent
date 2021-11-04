@@ -8,35 +8,40 @@
     >
         <!-- Menu Buttons for interacting with the patent -->
         <div class="settings-container">
-            <div class="settings-btn">
-                <RoundButton class="round-button" icon-key="more_horiz" @click="isSubMenuOpen = !isSubMenuOpen" />
+            <div class="settings-button">
+                <RoundButton class="round-btn" icon-key="more_horiz" @click="isSubMenuOpen = !isSubMenuOpen" />
             </div>
 
             <div class="settings-menu" v-if="isSubMenuOpen">
                 <!--TODO: Add actions! Once all actions are added this can be moved to a computed property-->
                 <RoundButton
                     v-if="isSavedPage"
-                    class="round-button"
+                    class="round-btn"
                     icon-key="delete_forever"
                     v-on:on-clicked="onRemove"
                 />
-                <RoundButton v-if="!isSavedPage" class="round-button" icon-key="push_pin"></RoundButton>
-                <RoundButton class="round-button" icon-key="open_in_new" />
-                <RoundButton v-if="!isSavedPage" class="round-button" icon-key="visibility_off" />
-                <RoundButton v-if="!isSavedPage" class="round-button" icon-key="done" />
+                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="push_pin"></RoundButton>
+                <RoundButton class="round-btn" icon-key="open_in_new" />
+                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="visibility_off" />
+                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="done" />
             </div>
         </div>
         <template #header>
             <div>
-                <div class="patent-title">{{ this.patent.patent.title }}</div>
+                <div
+                    class="patent-title"
+                    v-html="highlightTitle(this.patent.patent.title, this.patent.searchTerms)"
+                ></div>
                 <!-- TODO: Add applicant/owner of the patent -->
                 <div class="patent-owner">Company/Author</div>
             </div>
         </template>
-
-        <div class="patent-abstract">{{ this.patent.patent.abstract }}</div>
-
-        <template #footer>
+        <div
+            class="patent-abstract"
+            v-html="highlightAbstract(this.patent.patent.abstract, this.patent.searchTerms)"
+        ></div>
+        
+       <template #footer>
             <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
             <div class="footer-container">
                 <div class="patent-additional-info">
@@ -57,10 +62,10 @@
                     <div class="keywords">
                         <span class="keywords label-keywords">Searched keywords:</span>
                         <span class="keywords">
-                            <span v-for="(keyword, index) in patent.searchTerms" :key="index">
+                            <span v-for="(keyword, index) in extendedPatent.searchTerms" :key="index">
                                 <span>{{ keyword }}</span>
-                                <span v-if="index !== patent.searchTerms.length - 1">, </span>
-                                <span v-if="index <= patent.searchTerms.length - 1"> </span>
+                                <span v-if="index !== extendedPatent.searchTerms.length - 1">, </span>
+                                <span v-if="index <= extendedPatent.searchTerms.length - 1"> </span>
                             </span>
                         </span>
                     </div>
@@ -77,7 +82,7 @@
 import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import Button from '@/components/Button.vue';
-import { Patent } from '@/models/Patent';
+import { ExtendedPatent } from '@/models/ExtendedPatent';
 
 /**
  * This component previews the content of a patent
@@ -89,7 +94,7 @@ export default defineComponent({
         Button,
     },
     props: {
-        patent: { type: Object },
+        extendedPatent: { type: Object },
         isSavedPage: {
             type: Boolean,
             default: false,
@@ -113,8 +118,9 @@ export default defineComponent({
             patentAvailable: false,
         };
     },
+
     watch: {
-        patent(newVal: Patent): void {
+        extendedPatent(newVal: ExtendedPatent): void {
             this.patentAvailable = !!newVal;
         },
     },
@@ -130,6 +136,18 @@ export default defineComponent({
             this.patentAvailable = false;
             this.$emit('removeFromSaved');
         },
+        highlightTitle(title: string, keywords: string[]) {
+            const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
+            return title.replace(pattern, (match) => {
+                return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
+            });
+        },
+        highlightAbstract(abstract: string, keywords: string[]) {
+            const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
+            return abstract.replace(pattern, (match) => {
+                return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
+            });
+        },
     },
 });
 </script>
@@ -143,7 +161,7 @@ export default defineComponent({
     flex-direction: column;
 }
 
-.round-button {
+.round-btn {
     width: 32px;
     height: 32px;
 }
@@ -181,7 +199,7 @@ export default defineComponent({
     gap: 8px;
 }
 
-.settings-btn {
+.settings-button {
     margin-bottom: 14px;
 }
 
