@@ -354,74 +354,6 @@ export default defineComponent({
             this.updateMarks();
         },
         /**
-         * Highlights border color of a node, once node or preview cards are viewed.
-         * Node is marked once when the small preview card is displayed.
-         * It's marked twice when the extended panel is accessed on results page.
-         *
-         */
-        highlightAndMarkNodes(): void {
-            // reset highlight
-            this.selections.graph.selectAll('circle').classed('selected', false);
-
-            // find patentIndex
-            const patentID = this.$store.state.patentID as string;
-            const patentIndex = (this.patents as Patent[]).findIndex((e) => e.id === patentID);
-
-            if (!patentIndex) {
-                return;
-            }
-
-            //find node and highlight it
-            const target = this.selections.graph
-                .selectAll('circle')
-                .filter(function (d, i) {
-                    return i === patentIndex;
-                })
-                .classed('selected', true);
-
-            this.$store.state.markTwice ? target.classed('markedTwice', true) : target.classed('markedOnce', true);
-        },
-        /**
-         * Once user comes back from Saved, the marks need to be set again
-         *
-         */
-        updateMarks(): void {
-            // set marks for viewed once
-            const markedOnce = this.$store.state.markedOnce;
-
-            markedOnce.forEach((element: string) => {
-                //find node and highlight it
-                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
-                if (!nodeIndex) return;
-
-                this.selections.graph
-                    .selectAll('circle')
-                    .filter(function (d, i) {
-                        return i === nodeIndex;
-                    })
-                    // add a mark to indicate it has been viewed
-                    .classed('markedOnce', true);
-            });
-
-            //set marks for viewed twice
-            const markedTwice = this.$store.state.markedTwice;
-
-            markedTwice.forEach((element: string) => {
-                //find node and highlight it
-                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
-                if (!nodeIndex) return;
-                this.selections.graph
-                    .selectAll('circle')
-                    .filter(function (d, i) {
-                        return i === nodeIndex;
-                    })
-                    //remove the old mark if any
-                    .classed('markedOnce', false)
-                    // add a mark to indicate it has been viewed
-                    .classed('markedTwice', true);
-            });
-        },
-        /**
          * Zoom handler for zooming the canvas
          * @param event
          */
@@ -640,6 +572,74 @@ export default defineComponent({
             // updates ignored until this is run
             // restarts the simulation (important if simulation has already slowed down)
             simulation?.alpha(2).restart();
+        },
+        /**
+         * Highlights border color of a node, once node or preview cards are viewed.
+         * Node is marked once when the small preview card is displayed.
+         * It's marked twice when the extended panel is accessed on results or saved pages.
+         *
+         */
+        highlightAndMarkNodes(): void {
+            // reset highlight
+            this.selections.graph.selectAll('circle').classed('selected', false);
+
+            // find patentIndex
+            const patentID = this.$store.state.patentID as string;
+            const patentIndex = (this.patents as Patent[]).findIndex((e) => e.id === patentID);
+
+            if (!patentIndex) {
+                return;
+            }
+
+            //find node and highlight it
+            const target = this.selections.graph
+                .selectAll('circle')
+                .filter(function (d, i) {
+                    return i === patentIndex;
+                })
+                .classed('selected', true);
+
+            this.$store.state.markTwice ? target.classed('markedTwice', true) : target.classed('markedOnce', true);
+        },
+        /**
+         * Once user comes back from Saved, the marks need to be set again
+         *
+         */
+        updateMarks(): void {
+            // set marks for viewed once
+            const markedOnce = this.$store.state.markedOnce;
+
+            markedOnce.forEach((element: string) => {
+                //find node and highlight it
+                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
+                if (!nodeIndex) return;
+
+                this.selections.graph
+                    .selectAll('circle')
+                    .filter(function (d, i) {
+                        return i === nodeIndex;
+                    })
+                    // add a mark to indicate it has been viewed
+                    .classed('markedOnce', true);
+            });
+
+            //set marks for viewed twice
+            const markedTwice = this.$store.state.markedTwice;
+
+            markedTwice.forEach((element: string) => {
+                //find node and highlight it
+                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
+                if (!nodeIndex) return;
+                this.selections.graph
+                    .selectAll('circle')
+                    .filter(function (d, i) {
+                        return i === nodeIndex;
+                    })
+                    //remove the old mark if any
+                    .classed('markedOnce', false)
+                    // add a mark to indicate it has been viewed
+                    .classed('markedTwice', true);
+            });
         },
     },
 });

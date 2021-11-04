@@ -244,6 +244,14 @@ export default createStore({
             state.patentID = obj.index;
             state.markTwice = obj.twice; //if true mark twice
             state.markTwice ? state.markedTwice.push(obj.index) : state.markedOnce.push(obj.index);
+
+            //filter duplicates out
+            state.markedOnce = state.markedOnce.filter((e, i) => i === state.markedOnce.indexOf(e));
+            state.markedTwice = state.markedTwice.filter((e, i) => i === state.markedTwice.indexOf(e));
+
+            // remove matching ids from markedOnce
+            state.markedOnce = state.markedOnce.filter((e) => state.markedTwice.indexOf(e) < 0);
+
             state.highlightNode = true;
         },
         /**
