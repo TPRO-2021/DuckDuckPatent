@@ -23,22 +23,22 @@
             </div>
             <div class="nodes-togglers">
                 <ToggleSwitch
-                    :default-state="true"
+                    :default-state="isPatentsOn"
                     custom-color="#a88529"
                     v-on:on-clicked="onClicked($event, nodes[0].type)"
                 ></ToggleSwitch>
                 <ToggleSwitch
-                    :default-state="false"
+                    :default-state="isAuthorsOn"
                     custom-color="#A82929"
                     v-on:on-clicked="onClicked($event, nodes[1].type)"
                 ></ToggleSwitch>
                 <ToggleSwitch
-                    :default-state="false"
+                    :default-state="isCompaniesOn"
                     custom-color="#2973A8"
                     v-on:on-clicked="onClicked($event, nodes[2].type)"
                 ></ToggleSwitch>
                 <ToggleSwitch
-                    :default-state="false"
+                    :default-state="isCitationsOn"
                     custom-color="#487909"
                     v-on:on-clicked="onClicked($event, nodes[3].type)"
                 ></ToggleSwitch>
@@ -75,12 +75,31 @@ export default defineComponent({
         };
     },
     props: {
+        options: {
+            type: Array,
+            required: true,
+        },
+
         filters: {
             type: Array,
             required: true,
         },
     },
     emits: ['addNode', 'removeNode', 'updateFilter', 'removeFilter', 'addFilter'],
+    computed: {
+        isPatentsOn(): boolean {
+            return this.$props.options.includes('patents');
+        },
+        isAuthorsOn(): boolean {
+            return this.$props.options.includes('authors');
+        },
+        isCompaniesOn(): boolean {
+            return this.$props.options.includes('companies');
+        },
+        isCitationsOn(): boolean {
+            return this.$props.options.includes('citations');
+        },
+    },
     methods: {
         /**
          *  @function to hide the options menu once the mouse left the panel for 5 seconds
