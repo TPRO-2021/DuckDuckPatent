@@ -1,10 +1,10 @@
 import { createStore } from 'vuex';
 import { Patent } from '@/models/Patent';
-import { ExtendedPatent } from '@/models/ExtendedPatent';
 import { Filter } from '@/models/Filter';
 import { saveStatePlugin } from './SaveStatePlugin';
 import { AppState } from './AppState';
 import { SavedAppState } from './SavedAppState';
+import { ExtendedPatent } from '@/models/ExtendedPatent';
 
 export default createStore({
     state: new AppState(),
@@ -102,7 +102,7 @@ export default createStore({
                         return filter.isSelectionOpen ? { ...filter, isSelectionOpen: false } : filter;
                     }
                     return {
-                        ...filter, // Extend the curent filter
+                        ...filter, // Extend the current filter
                         value: args.prop === 'type' ? '' : filter.value, // Clear the value if we are asigning /changing type
                         isSelectionOpen: args.prop === 'type' || filter.isSelectionOpen, // If we just selected a type, we should show value selection
                         [args.prop]: args.value, // Set value
@@ -290,7 +290,7 @@ export default createStore({
             // Load string 'state' from localstorage
             const stateAsString = window.localStorage.getItem('state');
             if (!stateAsString) {
-                // If state is falsey, return (there's no state to load)
+                // If state is falsy, return (there's no state to load)
                 return;
             }
 
@@ -305,10 +305,20 @@ export default createStore({
          * @param store
          */
         resetSavedState(store) {
-            // set state to a blank saved app state
-            window.localStorage.setItem('state', '');
-            // force load of empty/default state
-            store.commit('LOAD_STATE', new SavedAppState());
+            // load current state to preserve saved patents if possible
+            const stateAsString = window.localStorage.getItem('state');
+            const saveState = new SavedAppState();
+
+            if (stateAsString) {
+                const state = JSON.parse(stateAsString) as SavedAppState;
+                saveState.savedPatents = state.savedPatents;
+            }
+
+            // set state to the previously created empty saved app state
+            window.localStorage.setItem('state', JSON.stringify(saveState));
+
+            // force load of new state
+            store.commit('LOAD_STATE', saveState);
         },
     },
 

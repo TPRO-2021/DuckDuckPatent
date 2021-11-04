@@ -42,4 +42,13 @@ export class AppState extends SavedAppState {
      * Holds the current total count value
      */
     public totalCount = 0;
+
+    /**
+     * Index of patent currently previewed (on Results page)
+     */
+    public patentIndex = -1;
+    /**
+     * Highlight border of a node upon its click or preview
+     */
+    public highlightNode = false;
 }
