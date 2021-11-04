@@ -20,6 +20,8 @@ const mockKeywords: SuggestionAPIResponse = [
     ['goles', 0.7],
     ['duck', 0.2],
     ['duckes', 0.2],
+    ['CITY', 0.9],
+    ['CITIES', 0.9],
 ];
 
 // How many keywords we want to return
@@ -71,7 +73,8 @@ export class KeywordService {
 
         return Object.keys(flattenedResults) // Get the terms (the keys of the map)
             .sort((a, b) => flattenedResults[b] - flattenedResults[a]) // Sort in descending order
-            .filter((t) => !keywords.includes(t.toLowerCase()))
+            .map((word) => word.toLowerCase()) // if the API AI returns first letter or the whole word capital letters to convert to lower case
+            .filter((t) => !keywords.includes(t.toLowerCase())) //remove from suggestion the UPPER searched keyword
             .filter((word) => !word.match('[^s](s|es)$')) // filter plurals of nouns from the suggestion API
             .slice(0, MAX_KEYWORDS);
     }
