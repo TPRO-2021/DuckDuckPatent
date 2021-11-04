@@ -35,6 +35,7 @@ export default defineComponent({
     },
     created(): void {
         this.$store.commit('HIDE_LOADING_BAR');
+        this.$store.dispatch('resetSavedState');
     },
     computed: {
         searchTerms(): string[] {

@@ -20,6 +20,7 @@
             <!-- This div contains the options menu for user to add more nodes/filters -->
             <div class="options-menu">
                 <OptionsMenu
+                    :options="visualizationOptions"
                     :filters="filters"
                     v-on:add-node="$store.commit('addVisualizationOption', $event)"
                     v-on:remove-node="$store.commit('removeVisualizationOption', $event)"
