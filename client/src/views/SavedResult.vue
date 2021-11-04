@@ -86,11 +86,14 @@ export default defineComponent({
          * @param patent
          */
         onSelectPatent(patent: ExtendedPatent): void {
+            //highlight and mark off
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
             this.selectedPatent = patent;
-            //inform res vis that a patent was viewed
-            // pass the id
-            //  this.$store.commit('MARK_NODE_VIEWED_ON', patent.patent.id);
-            console.log('patent id: ', patent.patent.id);
+
+            //set mark twice on viewed node
+            setTimeout(() => {
+                this.$store.commit('HIGHLIGHT_NODE_ON', { index: patent.patent.id, twice: true });
+            });
         },
     },
 });
