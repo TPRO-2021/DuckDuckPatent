@@ -39,7 +39,7 @@ export class KeywordService {
                             // Calls to this API might fail
 
                             // Check if we're in Production, if so we need to just fail - showing mock results is no-go!
-                            if (process.env.NODE_ENV === 'production') {
+                            if (process.env.NODE_ENV === 'production' || error.message.includes('500')) {
                                 // Rethrowing the error breaks out of the catch block
                                 throw error;
                             }
@@ -59,7 +59,9 @@ export class KeywordService {
 
         return Object.keys(flattenedResults) // Get the terms (the keys of the map)
             .sort((a, b) => flattenedResults[b] - flattenedResults[a]) // Sort in descending order
-            .filter((t) => !keywords.includes(t)) // Don't count the ones we started with
-            .slice(0, MAX_KEYWORDS); // Only return the top-n
+            .map((word) => word.toLowerCase()) // if the API AI returns first letter or the whole word capital letters to convert to lower case
+            .filter((t) => !keywords.includes(t.toLowerCase())) //remove from suggestion the UPPER searched keyword
+            .filter((word) => !word.match('[^s](s|es)$')) // filter plurals of nouns from the suggestion API
+            .slice(0, MAX_KEYWORDS);
     }
 }
