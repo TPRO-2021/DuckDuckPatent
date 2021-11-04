@@ -30,11 +30,9 @@
                 </div>
             </div>
         </template>
-            <div class="patent-abstract">
-                <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
-            </div>
+        <div class="patent-abstract">
+            <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
         </div>
-
         <div class="patent-navigation no-select">
             <!-- Navigation buttons -->
             <span class="material-icons search-icon" @click="displayPreviousPatent()">arrow_back</span>
