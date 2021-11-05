@@ -13,6 +13,7 @@ export default class VisualizationHelperService {
     static getNodes(
         patents: Patent[],
         citationMap: RelationMap,
+        familyMap: { [id: string]: string[] },
         vizOptions: string[],
         selectedNode: VisualPatentNode | null,
         authorsMap: RelationMap,
@@ -24,7 +25,6 @@ export default class VisualizationHelperService {
             id: patent.id,
             patent,
             type: 'patent',
-            color: 'rgb(168, 133, 41)',
             size: 18,
         })) as VisualPatentNode[];
 
@@ -35,7 +35,6 @@ export default class VisualizationHelperService {
                 authorsMap,
                 selectedNode,
                 patentMap,
-                'rgb(168, 41, 41)',
                 'author',
             );
 
@@ -49,16 +48,15 @@ export default class VisualizationHelperService {
                 companyMap,
                 selectedNode,
                 patentMap,
-                'rgb(41, 115, 168)',
                 'company',
             );
 
             nodes = [...nodes, ...companyNodes];
         }
 
+
         // If the user has selected to view citations
         if (vizOptions.includes('citations')) {
-            const green = 'rgb(72, 121, 9)';
             const citationNodes = Object.keys(citationMap) // Get the keys (citation ids) from the citationMap.
                 .filter((citationId) => !patentMap[citationId]) // Remove patent-node to patent-node citations (these nodes are already shown)
                 .filter((citationId) => {
@@ -84,7 +82,6 @@ export default class VisualizationHelperService {
                         id: citationId, // Set the Id to the citation Id (this is important so we can look up it's other links later)
                         patent: patentMap[patentId], // Set the "patent" to the "first" patent (this should change later)
                         type: 'citation', // Set the type to citation
-                        color: green, // Set to color to green
                         size: citingPatents.length * 3 + 5, // Use dynamic sizing to show relative importance
                         x: selectedNode?.x,
                         y: selectedNode?.y,
@@ -93,6 +90,19 @@ export default class VisualizationHelperService {
 
             nodes = [...nodes, ...citationNodes]; // Extend the nodes array with the citation nodes
         }
+
+        const familyNodes = Object.keys(familyMap)
+            .filter((t) => familyMap[t].length > 1)
+            .map((id) => {
+                const patentsInFamily = familyMap[id];
+                return {
+                    id, // Set the id to be the family Id
+                    patent: patentMap[patentsInFamily[0]], // used for tooltip ect. - this should change
+                    type: 'family', // Set the type of the node to 'family'
+                    size: patentsInFamily.length * 3 + 5, // Use dynamic sizing to show relative importance
+                } as VisualPatentNode;
+            });
+        nodes = [...nodes, ...familyNodes];
 
         return nodes;
     }
@@ -103,6 +113,7 @@ export default class VisualizationHelperService {
     static getLinks(
         nodes: VisualPatentNode[],
         citationMap: RelationMap,
+        familyMap: { [id: string]: string[] },
         authorsMap: RelationMap,
         companyMap: RelationMap,
     ): SimulationLinkDatum<VisualPatentNode>[] {
@@ -147,17 +158,23 @@ export default class VisualizationHelperService {
         // add company links
         const companyLinks = VisualizationHelperService.getCreatorLinks(nodes, nodeMap, 'company', companyMap);
 
-        // Add other links between the patents and companies/authors
-        const otherLinks = nodes
-            .filter((t) => t.type !== 'patent' && t.type !== 'citation' && t.type !== 'author' && t.type !== 'company') // Patents & citations are handled separately
-            .map((t) => ({
-                // Map the nodes to source and target (one link per node)
-                source: t, // The source is the author or company
-                target: nodeMap[t.patent?.id], // The target is the patent
-            })) as { source: VisualPatentNode; target: VisualPatentNode }[];
+        const familyLinks = nodes
+            .filter((t) => t.type === 'family') // Only build links for family nodes
+            .reduce(
+                (links, node) => [
+                    // Create a large list
+                    ...links, // Extend the current list...
+                    ...familyMap[node.id].map((t) => ({
+                        // ...with the family nodes (mapped to source/target)
+                        source: nodeMap[t], // Set the source to the patent that is part of the family
+                        target: node, // Set the target to the current family node (the citation)
+                    })),
+                ],
+                [] as { source: VisualPatentNode; target: VisualPatentNode }[],
+            );
 
         // Combine all links together
-        return [...interNodeCitations, ...citationLinks, ...authorLinks, ...companyLinks, ...otherLinks]
+        return [...interNodeCitations, ...citationLinks, ...authorLinks, ...companyLinks, ...familyLinks]
             .filter((t) => t.source && t.target) // Filter out any that have sources/targets that are either: null, 0, '', undefined, or false
             .map((t, index) => ({ ...t, index })); // Extend citations with an index that VueJS can use when enumerating them
     }
@@ -270,7 +287,6 @@ export default class VisualizationHelperService {
         stakeholderMap: RelationMap,
         selectedNode: VisualPatentNode | null,
         patentMap: { [p: string]: Patent },
-        nodeColor: string,
         stakeholderType: 'author' | 'company',
     ): VisualPatentNode[] {
         return stakeholders
@@ -298,12 +314,25 @@ export default class VisualizationHelperService {
                     id: stakeholder,
                     type: stakeholderType,
                     patent: patentMap[patentId],
-                    color: nodeColor,
                     size: relatedPatents.length * 3 + 5,
                     x: selectedNode?.x,
                     y: selectedNode?.y,
                 };
             }) as VisualPatentNode[];
+    }
+
+    /**
+     * Create a key -> value map that allows for easy look up of patents for given familyId
+     */
+    static getFamilyMap(patents: Patent[]): { [id: string]: string[] } {
+        return patents.reduce((map: { [id: string]: string[] }, b: Patent) => {
+            // Ignore patents without familyIds
+            if (b.familyId == null) {
+                return map;
+            }
+            const patentIds = map[b.familyId] || []; // Get current array of patentIds
+            return { ...map, [b.familyId]: [...patentIds, b.id] }; // extend the family with a new patentId
+        }, {});
     }
 
     /**
@@ -314,6 +343,10 @@ export default class VisualizationHelperService {
             // Reduce the array to an object
             // eslint-disable-next-line
             const key = b[idKey] as any as string; // unclear if there is clean way to do this in typescript
+            // Don't add null/undefined ids to the map
+            if (key == null) {
+                return map;
+            }
             return { ...map, [key]: b }; // extend the object with a specific key
         }, {});
     }
