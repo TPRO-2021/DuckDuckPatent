@@ -16,6 +16,7 @@ export default class VisualizationHelperService {
         vizOptions: string[],
         selectedNode: VisualPatentNode | null,
         authorsMap: RelationMap,
+        companyMap: RelationMap,
     ): VisualPatentNode[] {
         const patentMap = VisualizationHelperService.buildMap(patents, 'id'); // Build a map of all patents, this should make finding them by ID faster.
 
@@ -43,19 +44,16 @@ export default class VisualizationHelperService {
 
         // If the user has selected to view companies
         if (vizOptions.includes('companies')) {
-            // TODO: When we have real companies we can add them here
-            const blue = 'rgb(41, 115, 168)';
-            const companyNodes = patents.map(
-                (patent) =>
-                    ({
-                        id: `${patent.id}:company`,
-                        patent: patent, // Set the patent for tooltip viewing (this should change later)
-                        type: 'company', // Set the type of the node to 'company'
-                        color: blue, // Set the color to blue
-                        size: 10, // Set the size to 10
-                    } as VisualPatentNode),
+            const companyNodes = VisualizationHelperService.getCreatorNodes(
+                Object.keys(companyMap),
+                companyMap,
+                selectedNode,
+                patentMap,
+                'rgb(41, 115, 168)',
+                'company',
             );
-            nodes = [...nodes, ...companyNodes]; // Extend the nodes array with the company nodes
+
+            nodes = [...nodes, ...companyNodes];
         }
 
         // If the user has selected to view citations
@@ -106,6 +104,7 @@ export default class VisualizationHelperService {
         nodes: VisualPatentNode[],
         citationMap: RelationMap,
         authorsMap: RelationMap,
+        companyMap: RelationMap,
     ): SimulationLinkDatum<VisualPatentNode>[] {
         const patentNodes = nodes.filter((t) => t.type === 'patent' && t.patent); // Start with just the 'initial' patent nodes
         const nodeMap = VisualizationHelperService.buildMap(patentNodes, 'id'); // Create a map for faster lookups
@@ -145,10 +144,12 @@ export default class VisualizationHelperService {
 
         // add author links
         const authorLinks = VisualizationHelperService.getCreatorLinks(nodes, nodeMap, 'author', authorsMap);
+        // add company links
+        const companyLinks = VisualizationHelperService.getCreatorLinks(nodes, nodeMap, 'company', companyMap);
 
         // Add other links between the patents and companies/authors
         const otherLinks = nodes
-            .filter((t) => t.type !== 'patent' && t.type !== 'citation' && t.type !== 'author') // Patents & citations are handled separately
+            .filter((t) => t.type !== 'patent' && t.type !== 'citation' && t.type !== 'author' && t.type !== 'company') // Patents & citations are handled separately
             .map((t) => ({
                 // Map the nodes to source and target (one link per node)
                 source: t, // The source is the author or company
@@ -156,7 +157,7 @@ export default class VisualizationHelperService {
             })) as { source: VisualPatentNode; target: VisualPatentNode }[];
 
         // Combine all links together
-        return [...interNodeCitations, ...citationLinks, ...authorLinks, ...otherLinks]
+        return [...interNodeCitations, ...citationLinks, ...authorLinks, ...companyLinks, ...otherLinks]
             .filter((t) => t.source && t.target) // Filter out any that have sources/targets that are either: null, 0, '', undefined, or false
             .map((t, index) => ({ ...t, index })); // Extend citations with an index that VueJS can use when enumerating them
     }
@@ -290,12 +291,12 @@ export default class VisualizationHelperService {
                 }
                 return patents.some((t) => stakeholderMap[stakeholderId].includes(t));
             })
-            .map((author) => {
-                const relatedPatents = stakeholderMap[author];
+            .map((stakeholder) => {
+                const relatedPatents = stakeholderMap[stakeholder];
                 const patentId = relatedPatents[0]; // Select the first patentId arbitrarily (this should change later)
                 return {
-                    id: author,
-                    type: 'author',
+                    id: stakeholder,
+                    type: stakeholderType,
                     patent: patentMap[patentId],
                     color: nodeColor,
                     size: relatedPatents.length * 3 + 5,

@@ -23,6 +23,8 @@
                         stroke="black"
                         x="-4"
                         y="-4"
+                        height=""
+                        width=""
                     ></image>
                 </pattern>
                 <pattern id="markTwice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -32,6 +34,8 @@
                         stroke="black"
                         x="-6"
                         y="-4"
+                        height=""
+                        width=""
                     ></image>
                 </pattern>
             </defs>
@@ -129,7 +133,7 @@ export default defineComponent({
                 case 'author':
                     return this.currentNode?.id;
                 case 'company':
-                    return this.currentNode?.patent.applicants?.toString();
+                    return this.currentNode?.id;
             }
             return 'No Data';
         },
@@ -333,9 +337,13 @@ export default defineComponent({
             const citationMap = VisualizationHelperService.getCitationMap(patents);
 
             let authorsMap = {} as RelationMap;
-
             if (this.visualizationOptions.includes('authors')) {
                 authorsMap = VisualizationHelperService.getCreatorMap(patents, 'inventors');
+            }
+
+            let companyMap = {} as RelationMap;
+            if (this.visualizationOptions.includes('companies')) {
+                companyMap = VisualizationHelperService.getCreatorMap(patents, 'applicants');
             }
 
             const nextNodes = VisualizationHelperService.getNodes(
@@ -344,11 +352,17 @@ export default defineComponent({
                 this.visualizationOptions as string[],
                 this.selectedNode,
                 authorsMap,
+                companyMap,
             );
             const newNodes = nextNodes.filter((t) => !this.graph.nodes.some((k) => k.id === t.id));
             this.graph.nodes = this.graph.nodes.filter((t) => nextNodes.some((k) => k.id === t.id)).concat(newNodes);
 
-            this.graph.links = VisualizationHelperService.getLinks(this.graph.nodes, citationMap, authorsMap);
+            this.graph.links = VisualizationHelperService.getLinks(
+                this.graph.nodes,
+                citationMap,
+                authorsMap,
+                companyMap,
+            );
         },
 
         /**
