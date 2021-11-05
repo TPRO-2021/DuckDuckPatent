@@ -527,8 +527,6 @@ export default defineComponent({
                 //highlight border
                 .classed('selected', true);
 
-            this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
-
             // turn highlight on node on. Timeout so to have the component react to state change
             // highlight node also set the mark once on
             setTimeout(() => {
