@@ -238,12 +238,13 @@ export default createStore({
         /**
          * Switches highlight for node on. Each node is saved for later checkmark restoration.
          * @param state
-         * @param index - index of patent being previewed
+         * @param pID - ID of patent being previewed
+         * @param twice - boolean: if true, mark twice
          */
-        HIGHLIGHT_NODE_ON(state, obj: { index: string; twice: boolean }) {
-            state.patentID = obj.index;
+        HIGHLIGHT_NODE_ON(state, obj: { pID: string; twice: boolean }) {
+            state.patentID = obj.pID;
             state.markTwice = obj.twice; //if true mark twice
-            state.markTwice ? state.markedTwice.push(obj.index) : state.markedOnce.push(obj.index);
+            state.markTwice ? state.markedTwice.push(obj.pID) : state.markedOnce.push(obj.pID);
 
             //filter duplicates out
             state.markedOnce = state.markedOnce.filter((e, i) => i === state.markedOnce.indexOf(e));
@@ -326,6 +327,9 @@ export default createStore({
             if (stateAsString) {
                 const state = JSON.parse(stateAsString) as SavedAppState;
                 saveState.savedPatents = state.savedPatents;
+                // save the checkmarks too
+                saveState.markedOnce = state.markedOnce;
+                saveState.markedTwice = state.markedTwice;
             }
 
             // set state to the previously created empty saved app state

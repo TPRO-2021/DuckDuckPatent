@@ -82,7 +82,7 @@ export default defineComponent({
         },
 
         /**
-         * Set a patent as the selected patent
+         * Set a patent as the selected patent and mark it twice on preview
          * @param patent
          */
         onSelectPatent(patent: ExtendedPatent): void {

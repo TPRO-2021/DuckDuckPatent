@@ -17,7 +17,6 @@
                     <path d="M0,0V 4L6,2Z" style="fill: black"></path>
                 </marker>
                 <pattern id="markOnce" width="70%" height="70%" xmlns="http://www.w3.org/2000/svg">
-                    <!--                    <span x="5" y="5" stroke="black" class="material-icons">done</span>-->
                     <image
                         x="7"
                         y="7"
@@ -27,7 +26,6 @@
                     ></image>
                 </pattern>
                 <pattern id="markTwice" width="70%" height="70%" xmlns="http://www.w3.org/2000/svg">
-                    <!--                    <span x="5" y="5" class="material-icons">done-all</span>-->
                     <image
                         x="5"
                         y="5"
@@ -255,7 +253,6 @@ export default defineComponent({
             graph.selectAll<SVGCircleElement, VisualPatentNode>('circle').attr('transform', (d: VisualPatentNode) => {
                 return 'translate(' + d.x + ',' + d.y + ')';
             });
-
             this.updateMarks();
         },
 
@@ -351,7 +348,6 @@ export default defineComponent({
             //turn highlight of node border off
             this.$store.commit('HIGHLIGHT_NODE_OFF');
             this.selections.graph.selectAll('circle').classed('selected', false);
-            this.updateMarks();
         },
         /**
          * Zoom handler for zooming the canvas
@@ -581,6 +577,9 @@ export default defineComponent({
          */
         highlightAndMarkNodes(): void {
             // reset highlight
+            if (!this.selections.graph) {
+                return;
+            }
             this.selections.graph.selectAll('circle').classed('selected', false);
 
             // find patentIndex
@@ -602,11 +601,14 @@ export default defineComponent({
             this.$store.state.markTwice ? target.classed('markedTwice', true) : target.classed('markedOnce', true);
         },
         /**
-         * Once user comes back from Saved, the marks need to be set again
+         * Once the visualization changes, the marks need to be set again
          *
          */
         updateMarks(): void {
             // set marks for viewed once
+            if (!this.selections.graph) {
+                return;
+            }
             const markedOnce = this.$store.state.markedOnce;
 
             markedOnce.forEach((element: string) => {
