@@ -2,6 +2,7 @@ import { Patent } from '@/models/Patent';
 import { VisualPatentNode } from '@/models/VisualPatentNode';
 import { SimulationLinkDatum } from 'd3';
 import { VisualizationOptions } from '@/models/VisualizationOptions';
+import { RelationMap } from '@/models/RelationMap';
 
 export default class VisualizationHelperService {
     /**
@@ -11,10 +12,13 @@ export default class VisualizationHelperService {
      */
     static getNodes(
         patents: Patent[],
-        citationMap: { [id: string]: string[] },
+        citationMap: RelationMap,
         vizOptions: string[],
         selectedNode: VisualPatentNode | null,
+        authorsMap: RelationMap,
     ): VisualPatentNode[] {
+        const patentMap = VisualizationHelperService.buildMap(patents, 'id'); // Build a map of all patents, this should make finding them by ID faster.
+
         let nodes = patents.map((patent) => ({
             id: patent.id,
             patent,
@@ -25,19 +29,15 @@ export default class VisualizationHelperService {
 
         // If the user has selected to view authors
         if (vizOptions.includes('authors')) {
-            const brown = 'rgb(168, 41, 41)';
-            // TODO: When we have real authors we can add them here
-            // For the moment we just add one extra node to each
-            const authorNodes = patents.map(
-                (patent) =>
-                    ({
-                        id: `${patent.id}:author`, // Set the id to be the "parent" patent id + 'author'
-                        patent, // Set the patent for tooltip viewing (this should change later)
-                        type: 'author', // Set the type of the node to 'author'
-                        color: brown, // Set the color to brown
-                        size: 10, // We use a static size that is smaller than the patent size
-                    } as VisualPatentNode),
+            const authorNodes = VisualizationHelperService.getCreatorNodes(
+                Object.keys(authorsMap),
+                authorsMap,
+                selectedNode,
+                patentMap,
+                'rgb(168, 41, 41)',
+                'author',
             );
+
             nodes = [...nodes, ...authorNodes]; // Extend the nodes array with author nodes
         }
 
@@ -61,7 +61,6 @@ export default class VisualizationHelperService {
         // If the user has selected to view citations
         if (vizOptions.includes('citations')) {
             const green = 'rgb(72, 121, 9)';
-            const patentMap = VisualizationHelperService.buildMap(patents, 'id'); // Build a map of all patents, this should make finding them by ID faster.
             const citationNodes = Object.keys(citationMap) // Get the keys (citation ids) from the citationMap.
                 .filter((citationId) => !patentMap[citationId]) // Remove patent-node to patent-node citations (these nodes are already shown)
                 .filter((citationId) => {
@@ -94,7 +93,7 @@ export default class VisualizationHelperService {
                     } as VisualPatentNode;
                 });
 
-            nodes = [...nodes, ...citationNodes]; // Extend the nodes array with the company nodes
+            nodes = [...nodes, ...citationNodes]; // Extend the nodes array with the citation nodes
         }
 
         return nodes;
@@ -105,7 +104,8 @@ export default class VisualizationHelperService {
      */
     static getLinks(
         nodes: VisualPatentNode[],
-        citationMap: { [id: string]: string[] },
+        citationMap: RelationMap,
+        authorsMap: RelationMap,
     ): SimulationLinkDatum<VisualPatentNode>[] {
         const patentNodes = nodes.filter((t) => t.type === 'patent' && t.patent); // Start with just the 'initial' patent nodes
         const nodeMap = VisualizationHelperService.buildMap(patentNodes, 'id'); // Create a map for faster lookups
@@ -143,17 +143,20 @@ export default class VisualizationHelperService {
                 [] as { source: VisualPatentNode; target: VisualPatentNode }[],
             );
 
+        // add author links
+        const authorLinks = VisualizationHelperService.getCreatorLinks(nodes, nodeMap, 'author', authorsMap);
+
         // Add other links between the patents and companies/authors
         const otherLinks = nodes
-            .filter((t) => t.type !== 'patent' && t.type !== 'citation') // Patents & citations are handled separately
+            .filter((t) => t.type !== 'patent' && t.type !== 'citation' && t.type !== 'author') // Patents & citations are handled separately
             .map((t) => ({
                 // Map the nodes to source and target (one link per node)
                 source: t, // The source is the author or company
-                target: nodeMap[t.patent.id], // The target is the patent
+                target: nodeMap[t.patent?.id], // The target is the patent
             })) as { source: VisualPatentNode; target: VisualPatentNode }[];
 
         // Combine all links together
-        return [...interNodeCitations, ...citationLinks, ...otherLinks]
+        return [...interNodeCitations, ...citationLinks, ...authorLinks, ...otherLinks]
             .filter((t) => t.source && t.target) // Filter out any that have sources/targets that are either: null, 0, '', undefined, or false
             .map((t, index) => ({ ...t, index })); // Extend citations with an index that VueJS can use when enumerating them
     }
@@ -193,6 +196,113 @@ export default class VisualizationHelperService {
                 },
                 {} as { [id: string]: string[] },
             );
+    }
+
+    /**
+     * Gets a map for creators of patents (inventors or applicants)
+     * @param patents
+     * @param path
+     */
+    static getCreatorMap(patents: Patent[], path: 'inventors' | 'applicants'): { [id: string]: string[] } {
+        return patents
+            .reduce(
+                (stakeholders, patent) => [
+                    ...stakeholders,
+                    ...(patent[path] || []).map((inventor: string) => ({
+                        source: inventor,
+                        target: patent.id,
+                    })),
+                ],
+                [] as { source: string; target: string }[],
+            )
+            .reduce((stakeholders, link) => {
+                let updatedNodes = stakeholders[link.source] ?? [];
+
+                if (!updatedNodes.includes(link.target)) {
+                    updatedNodes = [...updatedNodes, link.target];
+                }
+                return {
+                    ...stakeholders,
+                    [link.source]: updatedNodes,
+                };
+            }, {} as { [id: string]: string[] });
+    }
+
+    /**
+     * Gets links for creators (authors or company)
+     * @param nodes
+     * @param nodeMap
+     * @param nodeType
+     * @param relationMap
+     */
+    static getCreatorLinks(
+        nodes: VisualPatentNode[],
+        nodeMap: { [p: string]: VisualPatentNode },
+        nodeType: 'author' | 'company',
+        relationMap: RelationMap,
+    ): { source: VisualPatentNode; target: VisualPatentNode }[] {
+        return nodes
+            .filter((t) => t.type === nodeType)
+            .reduce(
+                (links, node) => [
+                    ...links,
+                    ...relationMap[node.id].map((t) => ({
+                        source: node,
+                        target: nodeMap[t],
+                    })),
+                ],
+                [] as { source: VisualPatentNode; target: VisualPatentNode }[],
+            );
+    }
+
+    /**
+     * Gets creator nodes (authors | company)
+     * @param stakeholders
+     * @param stakeholderMap
+     * @param selectedNode
+     * @param patentMap
+     * @param nodeColor
+     * @param stakeholderType
+     */
+    static getCreatorNodes(
+        stakeholders: string[],
+        stakeholderMap: RelationMap,
+        selectedNode: VisualPatentNode | null,
+        patentMap: { [p: string]: Patent },
+        nodeColor: string,
+        stakeholderType: 'author' | 'company',
+    ): VisualPatentNode[] {
+        return stakeholders
+            .filter((stakeholderId) => {
+                // Default to only showing authors that are responsible for multiple patents (for clarity)
+                if (stakeholderMap[stakeholderId].length > 1) {
+                    return true;
+                }
+                // If none selected (and not multiple authors), don't show
+                if (selectedNode === null) {
+                    return false;
+                }
+
+                // If a node is selected, only show if connected to it
+                let patents = [selectedNode.id];
+                if (selectedNode.type === stakeholderType) {
+                    patents = stakeholderMap[selectedNode.id] || [];
+                }
+                return patents.some((t) => stakeholderMap[stakeholderId].includes(t));
+            })
+            .map((author) => {
+                const relatedPatents = stakeholderMap[author];
+                const patentId = relatedPatents[0]; // Select the first patentId arbitrarily (this should change later)
+                return {
+                    id: author,
+                    type: 'author',
+                    patent: patentMap[patentId],
+                    color: nodeColor,
+                    size: relatedPatents.length * 3 + 5,
+                    x: selectedNode?.x,
+                    y: selectedNode?.y,
+                };
+            }) as VisualPatentNode[];
     }
 
     /**

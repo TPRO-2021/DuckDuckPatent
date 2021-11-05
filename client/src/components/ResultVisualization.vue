@@ -66,6 +66,7 @@ import {
 import { VisualPatentNode } from '@/models/VisualPatentNode';
 import VisualizationHelperService from '@/services/visualization-helper.service';
 import { VisualPatentLink } from '@/models/VisualPatentLink';
+import { RelationMap } from '@/models/RelationMap';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
@@ -126,7 +127,7 @@ export default defineComponent({
                 case 'patent':
                     return this.currentNode?.patent.title;
                 case 'author':
-                    return this.currentNode?.patent.inventors?.toString();
+                    return this.currentNode?.id;
                 case 'company':
                     return this.currentNode?.patent.applicants?.toString();
             }
@@ -331,16 +332,23 @@ export default defineComponent({
             const patents = this.patents as Patent[];
             const citationMap = VisualizationHelperService.getCitationMap(patents);
 
+            let authorsMap = {} as RelationMap;
+
+            if (this.visualizationOptions.includes('authors')) {
+                authorsMap = VisualizationHelperService.getCreatorMap(patents, 'inventors');
+            }
+
             const nextNodes = VisualizationHelperService.getNodes(
                 patents,
                 citationMap,
                 this.visualizationOptions as string[],
                 this.selectedNode,
+                authorsMap,
             );
             const newNodes = nextNodes.filter((t) => !this.graph.nodes.some((k) => k.id === t.id));
             this.graph.nodes = this.graph.nodes.filter((t) => nextNodes.some((k) => k.id === t.id)).concat(newNodes);
 
-            this.graph.links = VisualizationHelperService.getLinks(this.graph.nodes, citationMap);
+            this.graph.links = VisualizationHelperService.getLinks(this.graph.nodes, citationMap, authorsMap);
         },
 
         /**
