@@ -16,22 +16,22 @@
                     -->
                     <path d="M0,0V 4L6,2Z" style="fill: black"></path>
                 </marker>
-                <pattern id="markOnce" width="70%" height="70%" xmlns="http://www.w3.org/2000/svg">
+                <pattern id="markOnce" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                     <image
-                        x="7"
-                        y="7"
-                        xlink:href="https://www.reshot.com/preview-assets/icons/RPE62U4DKF/check-RPE62U4DKF.svg"
-                        stroke="#6f540f"
-                        stroke-width="5"
-                    ></image>
-                </pattern>
-                <pattern id="markTwice" width="70%" height="70%" xmlns="http://www.w3.org/2000/svg">
-                    <image
-                        x="5"
-                        y="5"
-                        xlink:href="https://www.reshot.com/preview-assets/icons/74WFCQUGE2/check-all-74WFCQUGE2.svg"
+                        xlink:href="../assets/singleTick.svg"
                         style="fill-opacity: 0.5"
                         stroke="black"
+                        x="-4"
+                        y="-4"
+                    ></image>
+                </pattern>
+                <pattern id="markTwice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <image
+                        xlink:href="../assets/doubleTick.svg"
+                        style="fill-opacity: 0.5"
+                        stroke="black"
+                        x="-6"
+                        y="-4"
                     ></image>
                 </pattern>
             </defs>
@@ -349,6 +349,7 @@ export default defineComponent({
             this.$store.commit('HIGHLIGHT_NODE_OFF');
             this.selections.graph.selectAll('circle').classed('selected', false);
         },
+
         /**
          * Zoom handler for zooming the canvas
          * @param event
