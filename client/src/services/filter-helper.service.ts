@@ -7,7 +7,7 @@ export default class FilterHelperService {
             case 'date':
                 [year1, year2] = filter.value.split('-').map((t) => parseInt(t, 10));
                 return (
-                    FilterHelperService.isValidYear(year1) && FilterHelperService.isValidYear(year2) && year2 > year1
+                    FilterHelperService.isValidYear(year1) && FilterHelperService.isValidYear(year2) && year2 > year1 //Check the validity of the inputted numbers
                 );
             case 'empty':
                 return false;
