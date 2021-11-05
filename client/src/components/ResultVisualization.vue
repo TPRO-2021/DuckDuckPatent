@@ -504,7 +504,9 @@ export default defineComponent({
          * @param node
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
-            this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
+            if (node.type === 'patent') {
+                this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
+            }
 
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.selectedNode = node;
