@@ -20,7 +20,10 @@
             :extended-patent="selectedPatent"
             :is-saved-page="true"
             v-on:remove-from-saved="removeFromSaved(selectedPatent.patent)"
-            v-on:on-close="selectedPatent = null"
+            v-on:on-close="
+                selectedPatent = null;
+                this.$store.commit('HIDE_DIALOG_MASK');
+            "
         />
     </div>
 </template>
@@ -87,6 +90,7 @@ export default defineComponent({
          */
         onSelectPatent(patent: ExtendedPatent): void {
             this.selectedPatent = patent;
+            this.$store.commit('SHOW_DIALOG_MASK');
         },
     },
 });

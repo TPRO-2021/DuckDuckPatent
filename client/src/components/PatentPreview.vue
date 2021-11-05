@@ -1,5 +1,13 @@
 <template>
-    <div class="main-container box-shadow card">
+    <Dialog
+        id="main-dialog"
+        style="height: 350px; width: 650px"
+        v-model:visible="previewAvailable"
+        :close-on-escape="true"
+        :dismissable-mask="true"
+        :closable="false"
+        position="bottomleft"
+    >
         <!-- Menu Buttons for interacting with the patent -->
         <div class="settings-container no-select">
             <div class="settings-btn">
@@ -12,26 +20,26 @@
                 <RoundButton class="round-btn" icon-key="read_more" @click="this.showMore" />
             </div>
         </div>
+        <template #header>
+            <div>
+                <div class="patent-title">{{ patent?.title }}</div>
 
-        <div class="patent-info">
-            <div class="patent-title">{{ patent?.title }}</div>
-
-            <div class="patent-owner">
-                {{ patent.applicants[0] }}
-                <span v-if="patent.applicants.length > 1">, ...</span>
+                <!-- TODO: Add applicant/owner of the patent -->
+                <div class="patent-owner">
+                    {{ patent.applicants[0] }}
+                    <span v-if="patent.applicants.length > 1">, ...</span>
+                </div>
             </div>
-
-            <div class="patent-abstract">
-                <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
-            </div>
+        </template>
+        <div class="patent-abstract">
+            <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
         </div>
-
         <div class="patent-navigation no-select">
             <!-- Navigation buttons -->
             <span class="material-icons search-icon" @click="displayPreviousPatent()">arrow_back</span>
             <span class="material-icons search-icon" @click="displayNextPatent()">arrow_forward</span>
         </div>
-    </div>
+    </Dialog>
 </template>
 
 <script lang="ts">
@@ -67,7 +75,13 @@ export default defineComponent({
                 { iconKey: 'done', action: 'suggestMore' },
                 { iconKey: 'read_more', action: this.showMore },
             ],
+            previewAvailable: true,
         };
+    },
+    watch: {
+        patent() {
+            this.settingsMenu = false;
+        },
     },
     computed: {
         savedPatents(): PatentMap {
@@ -86,18 +100,21 @@ export default defineComponent({
          */
         displayNextPatent(): void {
             this.$emit('onChangePatent', { direction: 'next' });
+            this.settingsMenu = false;
         },
         /**
          * Method to check if back button is clicked then emit an event to ask the parent to send previous patent
          */
         displayPreviousPatent(): void {
             this.$emit('onChangePatent', { direction: 'previous' });
+            this.settingsMenu = false;
         },
         /**
          * Adds a patent to the saved items list
          */
         savePatent(): void {
             this.$emit('onSavePatent', { patent: this.patent as Patent });
+            this.settingsMenu = false;
         },
         /**
          * Hides a patent from the results page
@@ -110,18 +127,20 @@ export default defineComponent({
          */
         showMore(): void {
             this.$emit('onShowMore', { patent: this.patent as Patent, searchTerms: this.terms });
+            this.settingsMenu = false;
         },
     },
 });
 </script>
 
 <style lang="scss" scoped>
-.main-container {
+#main-dialog {
     display: flex;
     justify-content: flex-start;
     flex-direction: column;
-    width: 650px;
-    min-height: 300px;
+    max-width: 30vw !important;
+    max-height: 30vh !important;
+    backdrop-filter: unset !important;
 }
 
 .menu {
