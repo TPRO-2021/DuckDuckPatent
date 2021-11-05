@@ -262,6 +262,24 @@ export default createStore({
                 state[key] = savedState[key]; // Set property to value
             });
         },
+
+        /**
+         * Show the dialog mask on top of the content
+         * @param state
+         * @constructor
+         */
+        SHOW_DIALOG_MASK(state) {
+            state.showDialogMask = true;
+        },
+
+        /**
+         * Hide dialog mask from the screen
+         * @param state
+         * @constructor
+         */
+        HIDE_DIALOG_MASK(state) {
+            state.showDialogMask = false;
+        },
     },
 
     /**

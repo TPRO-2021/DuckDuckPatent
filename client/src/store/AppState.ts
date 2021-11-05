@@ -47,8 +47,15 @@ export class AppState extends SavedAppState {
      * Index of patent currently previewed (on Results page)
      */
     public patentIndex = -1;
+
     /**
      * Highlight border of a node upon its click or preview
      */
     public highlightNode = false;
+
+    /**
+     * Holds the dialog mask state
+     * True if dialog mask should be visible
+     */
+    public showDialogMask = false;
 }

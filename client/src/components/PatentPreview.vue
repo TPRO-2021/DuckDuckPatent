@@ -6,6 +6,7 @@
         :close-on-escape="true"
         :dismissable-mask="true"
         :closable="false"
+        position="bottomleft"
     >
         <!-- Menu Buttons for interacting with the patent -->
         <div class="settings-container no-select">
@@ -76,6 +77,11 @@ export default defineComponent({
             ],
             previewAvailable: true,
         };
+    },
+    watch: {
+        patent() {
+            this.settingsMenu = false;
+        },
     },
     computed: {
         savedPatents(): PatentMap {
