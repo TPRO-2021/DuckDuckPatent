@@ -23,8 +23,6 @@
                         stroke="black"
                         x="-4"
                         y="-4"
-                        height=""
-                        width=""
                     ></image>
                 </pattern>
                 <pattern id="markTwice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -34,8 +32,6 @@
                         stroke="black"
                         x="-6"
                         y="-4"
-                        height=""
-                        width=""
                     ></image>
                 </pattern>
             </defs>
