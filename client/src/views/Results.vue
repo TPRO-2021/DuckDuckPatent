@@ -325,18 +325,27 @@ export default defineComponent({
 
             // turn highlight on node on. Timeout so to have the component react to state change
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', this.selectedPatentIndex);
+                this.$store.commit('HIGHLIGHT_NODE_ON', {
+                    pID: (this.patents as Patent[])[this.selectedPatentIndex].id,
+                    twice: false,
+                });
             });
         },
-
         /**
          * Shows the detailed patent view
          * Is called when the user clicks on the show-more button of a patent
          * @param event
          */
         onShowMore(event: { patent: Patent; searchTerms: string[] }) {
+            //MARK_NODE_VIEWED_OFF
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
+
             this.$store.commit('SHOW_DIALOG_MASK');
             this.detailedPatent = event as ExtendedPatent;
+            //set mark twice on viewed node
+            setTimeout(() => {
+                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: this.detailedPatent?.patent.id, twice: true });
+            });
         },
 
         /**

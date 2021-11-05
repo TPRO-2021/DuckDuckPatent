@@ -42,20 +42,29 @@ export class AppState extends SavedAppState {
      * Holds the current total count value
      */
     public totalCount = 0;
-
-    /**
-     * Index of patent currently previewed (on Results page)
-     */
-    public patentIndex = -1;
-
-    /**
-     * Highlight border of a node upon its click or preview
-     */
-    public highlightNode = false;
-
     /**
      * Holds the dialog mask state
      * True if dialog mask should be visible
      */
     public showDialogMask = false;
+    /**
+     * Id of patent currently previewed (on Results page)
+     */
+    public patentID = '' as string;
+    /**
+     * Highlight border of a node upon its click or preview
+     */
+    public highlightNode = false;
+    /**
+     * One checkmark will be added to all saved node indices
+     */
+    public markedOnce = [] as string[];
+    /**
+     * Two checkmarks will be added to all saved node indices
+     */
+    public markedTwice = [] as string[];
+    /**
+     * Controls one/two checkmark assignment
+     */
+    public markTwice = false;
 }
