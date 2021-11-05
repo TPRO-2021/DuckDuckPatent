@@ -242,7 +242,7 @@ export default defineComponent({
         /**
          * Updates the graph simulation
          */
-        updateGraph() {
+        updateGraph(alpha = 0.6) {
             this.simulation?.nodes(this.nodes);
             this.simulation?.force('link', forceLink(this.links as SimulationLinkDatum<VisualPatentNode>[]));
 
@@ -288,7 +288,7 @@ export default defineComponent({
                 });
 
             // Update caption every time data changes
-            this.simulation?.alpha(0.6).restart();
+            this.simulation?.alpha(alpha).restart();
         },
 
         /**
@@ -333,7 +333,7 @@ export default defineComponent({
             }
             this.selectedNode = null;
             this.updateData();
-            this.updateGraph();
+            this.updateGraph(0.01);
             this.$emit('onPatentSelected', { index: -1 });
         },
         /**
@@ -511,7 +511,7 @@ export default defineComponent({
             this.nodeSelected = true;
             this.$store.commit('HIGHLIGHT_NODE_OFF');
             this.updateData();
-            this.updateGraph();
+            this.updateGraph(0.01);
 
             this.selections.graph
                 .selectAll('circle')
