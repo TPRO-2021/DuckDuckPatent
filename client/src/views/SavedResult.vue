@@ -92,7 +92,7 @@ export default defineComponent({
 
             //set mark twice on viewed node
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', { index: patent.patent.id, twice: true });
+                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: patent.patent.id, twice: true });
             });
         },
     },

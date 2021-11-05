@@ -242,6 +242,9 @@ export default createStore({
          * @param twice - boolean: if true, mark twice
          */
         HIGHLIGHT_NODE_ON(state, obj: { pID: string; twice: boolean }) {
+            if (!obj.pID) {
+                return;
+            }
             state.patentID = obj.pID;
             state.markTwice = obj.twice; //if true mark twice
             state.markTwice ? state.markedTwice.push(obj.pID) : state.markedOnce.push(obj.pID);

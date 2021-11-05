@@ -501,6 +501,9 @@ export default defineComponent({
             // reset highlight on node
             this.$store.commit('HIGHLIGHT_NODE_OFF');
 
+            // console.log('click entered');
+            // console.log('arrays', this.$store.state.markedOnce);
+            // console.log('arrays', this.$store.state.markedTwice);
             this.selections.graph
                 .selectAll('circle')
                 .classed('selected', false)
@@ -513,8 +516,13 @@ export default defineComponent({
             // turn highlight on node on. Timeout so to have the component react to state change
             // highlight node also set the mark once on
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', { index: node.patent.id, twice: false });
-            });
+                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: node.patent.id, twice: false });
+                // console.log('click highlight entered');
+                // console.log('patent id: ', node.patent.id);
+                // console.log('state patent id: ', this.$store.state.patentID);
+                // console.log('arrays', this.$store.state.markedOnce);
+                // console.log('arrays', this.$store.state.markedTwice);
+            }, 100);
 
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.nodeSelected = true;
