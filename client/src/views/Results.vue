@@ -65,7 +65,13 @@
                 v-on:on-show-more="onShowMore($event)"
             />
         </div>
-        <DetailedPatentView :extended-patent="detailedPatent" v-on:on-close="detailedPatent = null" />
+        <DetailedPatentView
+            :extended-patent="detailedPatent"
+            v-on:on-close="
+                detailedPatent = null;
+                this.$store.commit('HIDE_DIALOG_MASK');
+            "
+        />
     </div>
 </template>
 
@@ -326,19 +332,22 @@ export default defineComponent({
             });
         },
         /**
-         * Shows extended patent preview
-         *
+         * Shows the detailed patent view
+         * Is called when the user clicks on the show-more button of a patent
+         * @param event
          */
         onShowMore(event: { patent: Patent; searchTerms: string[] }) {
             //MARK_NODE_VIEWED_OFF
             this.$store.commit('HIGHLIGHT_NODE_OFF');
 
+            this.$store.commit('SHOW_DIALOG_MASK');
             this.detailedPatent = event as ExtendedPatent;
             //set mark twice on viewed node
             setTimeout(() => {
                 this.$store.commit('HIGHLIGHT_NODE_ON', { pID: this.detailedPatent?.patent.id, twice: true });
             });
         },
+
         /**
          * Resets to landing page after some time, if no results returned. All input is cleared.
          * If user adds/removes keywords, it should cancel going back to the landing page

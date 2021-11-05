@@ -247,7 +247,6 @@ export default createStore({
             }
 
             state.patentID = obj.pID;
-            console.log('p at index in state: ', state.patentID);
             state.markTwice = obj.twice; //if true mark twice
             state.markTwice ? state.markedTwice.push(obj.pID) : state.markedOnce.push(obj.pID);
 
@@ -281,6 +280,24 @@ export default createStore({
             keys.forEach(<K extends keyof SavedAppState>(key: K) => {
                 state[key] = savedState[key]; // Set property to value
             });
+        },
+
+        /**
+         * Show the dialog mask on top of the content
+         * @param state
+         * @constructor
+         */
+        SHOW_DIALOG_MASK(state) {
+            state.showDialogMask = true;
+        },
+
+        /**
+         * Hide dialog mask from the screen
+         * @param state
+         * @constructor
+         */
+        HIDE_DIALOG_MASK(state) {
+            state.showDialogMask = false;
         },
     },
 

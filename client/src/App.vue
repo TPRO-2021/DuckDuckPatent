@@ -3,6 +3,7 @@
         <ProgressBar mode="indeterminate" v-if="showLoadingBar"></ProgressBar>
     </div>
     <LoadingScreen></LoadingScreen>
+    <DialogMask></DialogMask>
     <Toasts />
     <router-view />
 </template>
@@ -11,10 +12,11 @@
 import { defineComponent } from 'vue';
 import LoadingScreen from '@/components/LoadingScreen.vue';
 import Toasts from '@/components/Toasts.vue';
+import DialogMask from '@/components/DialogMask.vue';
 
 export default defineComponent({
     name: 'App',
-    components: { LoadingScreen, Toasts },
+    components: { LoadingScreen, Toasts, DialogMask },
     beforeCreate() {
         this.$store.dispatch('loadSavedState');
     },

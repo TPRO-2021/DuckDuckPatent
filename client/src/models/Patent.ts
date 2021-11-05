@@ -6,4 +6,7 @@ export interface Patent {
     abstract?: string;
     title?: string;
     citations?: Patent[];
+    familyId?: string;
+    inventors?: string[];
+    applicants?: string[];
 }

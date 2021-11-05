@@ -42,7 +42,11 @@ export class AppState extends SavedAppState {
      * Holds the current total count value
      */
     public totalCount = 0;
-
+    /**
+     * Holds the dialog mask state
+     * True if dialog mask should be visible
+     */
+    public showDialogMask = false;
     /**
      * Id of patent currently previewed (on Results page)
      */

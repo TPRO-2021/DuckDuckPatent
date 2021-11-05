@@ -113,6 +113,7 @@ export default defineComponent({
             zoom: null as any,
             forceProperties: VisualizationHelperService.getVisualizationOptions(),
             dragActive: false,
+            selectedNode: null as VisualPatentNode | null,
         };
     },
     computed: {
@@ -259,7 +260,7 @@ export default defineComponent({
         /**
          * Updates the graph simulation
          */
-        updateGraph() {
+        updateGraph(alpha = 0.6) {
             this.simulation?.nodes(this.nodes);
             this.simulation?.force('link', forceLink(this.links as SimulationLinkDatum<VisualPatentNode>[]));
 
@@ -305,7 +306,7 @@ export default defineComponent({
                 });
 
             // Update caption every time data changes
-            this.simulation?.alpha(0.6).restart();
+            this.simulation?.alpha(alpha).restart();
         },
 
         /**
@@ -314,11 +315,16 @@ export default defineComponent({
         updateData(): void {
             const patents = this.patents as Patent[];
             const citationMap = VisualizationHelperService.getCitationMap(patents);
-            this.graph.nodes = VisualizationHelperService.getNodes(
+
+            const nextNodes = VisualizationHelperService.getNodes(
                 patents,
                 citationMap,
                 this.visualizationOptions as string[],
+                this.selectedNode,
             );
+            const newNodes = nextNodes.filter((t) => !this.graph.nodes.some((k) => k.id === t.id));
+            this.graph.nodes = this.graph.nodes.filter((t) => nextNodes.some((k) => k.id === t.id)).concat(newNodes);
+
             this.graph.links = VisualizationHelperService.getLinks(this.graph.nodes, citationMap);
         },
 
@@ -343,7 +349,9 @@ export default defineComponent({
                 this.nodeSelected = false;
                 return;
             }
-
+            this.selectedNode = null;
+            this.updateData();
+            this.updateGraph(0.01);
             this.$emit('onPatentSelected', { index: -1 });
             //turn highlight of node border off
             this.$store.commit('HIGHLIGHT_NODE_OFF');
@@ -499,8 +507,18 @@ export default defineComponent({
          * @param node
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
-            // reset highlight on node
+            if (node.type === 'patent') {
+                this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
+            } else {
+                this.$emit('onPatentSelected', { index: -1 });
+            }
+
+            // in order to prevent a canvas event to be triggered specify that a node is selected
+            this.selectedNode = node;
+            this.nodeSelected = true;
             this.$store.commit('HIGHLIGHT_NODE_OFF');
+            this.updateData();
+            this.updateGraph(0.01);
 
             this.selections.graph
                 .selectAll('circle')
@@ -516,9 +534,6 @@ export default defineComponent({
             setTimeout(() => {
                 this.$store.commit('HIGHLIGHT_NODE_ON', { pID: node.patent.id, twice: false });
             });
-
-            // in order to prevent a canvas event to be triggered specify that a node is selected
-            this.nodeSelected = true;
         },
 
         /**
