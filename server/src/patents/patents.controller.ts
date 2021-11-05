@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Query, Response } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Query, Response } from '@nestjs/common';
 import { Response as Res } from 'express';
 import { PatentsService } from './patents.service';
 import { Patent, PatentSearchQuery } from './models';
@@ -34,7 +34,6 @@ export class PatentsController {
         const { patents, total } = await this.patentService.query(
             keywords,
             parseInt(page),
-            false,
             language,
             country.toUpperCase(),
             date,
@@ -42,5 +41,10 @@ export class PatentsController {
 
         // set the X-Total-Count header on the response
         return res.set({ 'X-Total-Count': total }).json(patents);
+    }
+
+    @Get('/:patentId/images')
+    async queryImages(@Param('patentId') patentId) {
+        return this.patentService.queryImages(patentId);
     }
 }

@@ -11,7 +11,8 @@ export class PatentsService {
     private authData: AuthResponse;
     private data: PatentAPIResponse;
 
-    private static queryEndpoint = '/rest-services/published-data/search/biblio';
+    private static patentQueryEndpoint = '/rest-services/published-data/search/biblio';
+    private static imageQueryEndpoint = '/rest-services/published-data/publication/epodoc/';
 
     constructor(private readonly httpService: HttpService) {}
 
@@ -93,51 +94,32 @@ export class PatentsService {
      * Queries the patent API with the provided search terms
      * @param terms The terms which will be used for querying
      * @param page The page that should be queried
-     * @param isSecondAttempt Specifies if this is the second attempt (auth)
      * @param languages
      * @param country
      * @param date
      */
-    public async query(
-        terms: string[],
-        page: number,
-        isSecondAttempt = false,
-        languages = '',
-        country = '',
-        date = '',
-    ): Promise<QueryResult> {
-        // if no auth data is present we need to generate an access token
+    public async query(terms: string[], page: number, languages = '', country = '', date = ''): Promise<QueryResult> {
+        const queryString = PatentsService.getQueryString(
+            terms,
+            PatentsService.patentQueryEndpoint,
+            page,
+            country,
+            date,
+        );
+        console.log(queryString);
+
+        const data = await this.sendOpsRequest<PatentAPIResponse>(queryString, {}, 'get');
+        return this.processQuery(data, languages);
+    }
+
+    public async queryImages(patentId: string) {
         if (!this.authData) {
             this.authData = await this.getAccessToken();
         }
 
-        const queryString = PatentsService.getQueryString(terms, PatentsService.queryEndpoint, page, country, date);
-        console.log(queryString);
+        const queryUrl = `${process.env.PATENT_API_URL}${PatentsService.imageQueryEndpoint}${patentId}/images`;
 
-        try {
-            const response = await lastValueFrom(
-                this.httpService.get<PatentAPIResponse>(queryString, {
-                    headers: {
-                        Authorization: `Bearer ${this.authData.access_token}`,
-                        Accept: 'application/json',
-                    },
-                }),
-            );
-
-            return this.processQuery(response.data, languages);
-        } catch (error) {
-            // if access token is expired we will attempt to renew it and send the request again
-            if ((error?.response?.data as string)?.toLowerCase().includes('access token has expired')) {
-                // after a second attempt there should be no access expired error therefore we can stop here to prevent a stackoverflow
-                if (isSecondAttempt) {
-                    throw error;
-                }
-
-                this.authData = await this.getAccessToken();
-                return this.query(terms, page, true);
-            }
-            throw error;
-        }
+        return this.sendOpsRequest(queryUrl, {}, 'get');
     }
 
     /**
@@ -359,5 +341,50 @@ export class PatentsService {
         }
 
         return queryString.concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+    }
+
+    /**
+     * Sends an ops request. It will also attempt to renew the access token once expired
+     * @param endpoint
+     * @param config
+     * @param requestType
+     * @param isSecondAttempt
+     * @private
+     */
+    private async sendOpsRequest<T>(
+        endpoint: string,
+        config: { headers? },
+        requestType: 'get',
+        isSecondAttempt = false,
+    ): Promise<T> {
+        try {
+            // if no auth data is present we need to generate an access token
+            if (!this.authData) {
+                this.authData = await this.getAccessToken();
+            }
+
+            // extend the provided config object with the auth info
+            config.headers = {
+                ...(config.headers || {}),
+                Authorization: `Bearer ${this.authData.access_token}`,
+                Accept: 'application/json',
+            };
+
+            const response = await lastValueFrom(this.httpService[requestType]<T>(endpoint, config));
+
+            return response.data as T;
+        } catch (error) {
+            // if access token is expired we will attempt to renew it and send the request again
+            if ((error?.response?.data as string)?.toLowerCase().includes('access token has expired')) {
+                // after a second attempt there should be no access expired error therefore we can stop here to prevent a stackoverflow
+                if (isSecondAttempt) {
+                    throw error;
+                }
+
+                this.authData = await this.getAccessToken();
+                return this.sendOpsRequest<T>(endpoint, config, requestType, true);
+            }
+            throw error;
+        }
     }
 }
