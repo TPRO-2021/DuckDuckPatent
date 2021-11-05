@@ -1,7 +1,7 @@
 <template>
     <Dialog
         id="main-dialog"
-        style="height: 400px; width: 650px"
+        style="height: 350px; width: 650px"
         v-model:visible="previewAvailable"
         :close-on-escape="true"
         :dismissable-mask="true"
