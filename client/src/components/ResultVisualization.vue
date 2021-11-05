@@ -501,9 +501,6 @@ export default defineComponent({
             // reset highlight on node
             this.$store.commit('HIGHLIGHT_NODE_OFF');
 
-            // console.log('click entered');
-            // console.log('arrays', this.$store.state.markedOnce);
-            // console.log('arrays', this.$store.state.markedTwice);
             this.selections.graph
                 .selectAll('circle')
                 .classed('selected', false)
@@ -517,12 +514,7 @@ export default defineComponent({
             // highlight node also set the mark once on
             setTimeout(() => {
                 this.$store.commit('HIGHLIGHT_NODE_ON', { pID: node.patent.id, twice: false });
-                // console.log('click highlight entered');
-                // console.log('patent id: ', node.patent.id);
-                // console.log('state patent id: ', this.$store.state.patentID);
-                // console.log('arrays', this.$store.state.markedOnce);
-                // console.log('arrays', this.$store.state.markedTwice);
-            }, 100);
+            });
 
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.nodeSelected = true;
@@ -594,9 +586,8 @@ export default defineComponent({
             const patentID = this.$store.state.patentID as string;
             const patentIndex = (this.patents as Patent[]).findIndex((e) => e.id === patentID);
 
-            if (!patentIndex) {
-                return;
-            }
+            // if patent index not found, no highlight/mark
+            if (patentIndex < 0) return;
 
             //find node and highlight it
             const target = this.selections.graph
@@ -622,7 +613,8 @@ export default defineComponent({
             markedOnce.forEach((element: string) => {
                 //find node and highlight it
                 const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
-                if (!nodeIndex) return;
+                // if patent index not found, no highlight/mark
+                if (nodeIndex < 0) return;
 
                 this.selections.graph
                     .selectAll('circle')
@@ -639,7 +631,8 @@ export default defineComponent({
             markedTwice.forEach((element: string) => {
                 //find node and highlight it
                 const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
-                if (!nodeIndex) return;
+                // if patent index not found, no highlight/mark
+                if (nodeIndex < 0) return;
                 this.selections.graph
                     .selectAll('circle')
                     .filter(function (d, i) {
