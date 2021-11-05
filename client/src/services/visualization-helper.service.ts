@@ -13,6 +13,7 @@ export default class VisualizationHelperService {
         patents: Patent[],
         citationMap: { [id: string]: string[] },
         vizOptions: string[],
+        selectedNode: VisualPatentNode | null,
     ): VisualPatentNode[] {
         let nodes = patents.map((patent) => ({
             id: patent.id,
@@ -63,7 +64,22 @@ export default class VisualizationHelperService {
             const patentMap = VisualizationHelperService.buildMap(patents, 'id'); // Build a map of all patents, this should make finding them by ID faster.
             const citationNodes = Object.keys(citationMap) // Get the keys (citation ids) from the citationMap.
                 .filter((citationId) => !patentMap[citationId]) // Remove patent-node to patent-node citations (these nodes are already shown)
-                .filter((citationId) => citationMap[citationId].length > 1) // Only show citations that are cited by multiple patents (for clarity)
+                .filter((citationId) => {
+                    // Default to only showing citations that are cited by multiple patents (for clarity)
+                    if (citationMap[citationId].length > 1) {
+                        return true;
+                    }
+                    // If none selected (and not multiple citaitons), don't show
+                    if (selectedNode == null) {
+                        return false;
+                    }
+                    // If a node is selected, only show if connected to it
+                    let patents = [selectedNode.patent.id];
+                    if (selectedNode.type === 'citation') {
+                        patents = citationMap[selectedNode.id];
+                    }
+                    return patents.some((t) => citationMap[citationId].includes(t));
+                })
                 .map((citationId) => {
                     const citingPatents = citationMap[citationId]; // With the citations of this patent
                     const patentId = citingPatents[0]; // Select the first patentId arbitrarily (this should change later)
@@ -73,6 +89,8 @@ export default class VisualizationHelperService {
                         type: 'citation', // Set the type to citation
                         color: green, // Set to color to green
                         size: citingPatents.length * 3 + 5, // Use dynamic sizing to show relative importance
+                        x: selectedNode?.x,
+                        y: selectedNode?.y,
                     } as VisualPatentNode;
                 });
 
@@ -118,8 +136,8 @@ export default class VisualizationHelperService {
                     ...links, // Extend the current list...
                     ...citationMap[node.id].map((t) => ({
                         // ...with the citations (mapped to source/target)
-                        source: node, // Set the source to the current node (the citation)
-                        target: nodeMap[t], // Set the target to the citing patent patent
+                        source: nodeMap[t], // Set the source to the citing patent patent
+                        target: node, // Set the target to the current node (the citation)
                     })),
                 ],
                 [] as { source: VisualPatentNode; target: VisualPatentNode }[],
@@ -161,11 +179,18 @@ export default class VisualizationHelperService {
                 [] as { source: string; target: string }[],
             )
             .reduce(
-                (citations, link) => ({
-                    // Finally reduce the array to a map
-                    ...citations, // extend the current citationMap...
-                    [link.source]: [...(citations[link.source] ?? []), link.target], // with an extended version of the sourceId (citedPatentId) 's array
-                }),
+                // Finally reduce the array to a map
+                (citations, link) => {
+                    let updatedCitations = citations[link.source] ?? [];
+                    if (!updatedCitations.includes(link.target)) {
+                        // If this target doesn't already exist
+                        updatedCitations = [...updatedCitations, link.target]; // Add it
+                    }
+                    return {
+                        ...citations, // extend the current citationMap...
+                        [link.source]: updatedCitations, // with an extended version of the sourceId (citedPatentId) 's array
+                    };
+                },
                 {} as { [id: string]: string[] },
             );
     }

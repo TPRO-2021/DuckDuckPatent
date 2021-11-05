@@ -16,7 +16,24 @@
                     -->
                     <path d="M0,0V 4L6,2Z" style="fill: black"></path>
                 </marker>
-                <pattern id="imageNode" width="24" height="24" xmlns="http://www.w3.org/2000/svg"></pattern>
+                <pattern id="markOnce" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <image
+                        xlink:href="../assets/singleTick.svg"
+                        style="fill-opacity: 0.5"
+                        stroke="black"
+                        x="-4"
+                        y="-4"
+                    ></image>
+                </pattern>
+                <pattern id="markTwice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <image
+                        xlink:href="../assets/doubleTick.svg"
+                        style="fill-opacity: 0.5"
+                        stroke="black"
+                        x="-6"
+                        y="-4"
+                    ></image>
+                </pattern>
             </defs>
         </svg>
         <div class="tooltip card box-shadow no-select">{{ tooltipOnNodes }}</div>
@@ -96,6 +113,7 @@ export default defineComponent({
             zoom: null as any,
             forceProperties: VisualizationHelperService.getVisualizationOptions(),
             dragActive: false,
+            selectedNode: null as VisualPatentNode | null,
         };
     },
     computed: {
@@ -160,7 +178,7 @@ export default defineComponent({
          */
         highlightNode(newVal) {
             if (newVal) {
-                this.highlightOnPreviewActions();
+                this.highlightAndMarkNodes();
             }
         },
     },
@@ -251,12 +269,13 @@ export default defineComponent({
             graph.selectAll<SVGCircleElement, VisualPatentNode>('circle').attr('transform', (d: VisualPatentNode) => {
                 return 'translate(' + d.x + ',' + d.y + ')';
             });
+            this.updateMarks();
         },
 
         /**
          * Updates the graph simulation
          */
-        updateGraph() {
+        updateGraph(alpha = 0.6) {
             this.simulation?.nodes(this.nodes);
             this.simulation?.force('link', forceLink(this.links as SimulationLinkDatum<VisualPatentNode>[]));
 
@@ -302,7 +321,7 @@ export default defineComponent({
                 });
 
             // Update caption every time data changes
-            this.simulation?.alpha(0.6).restart();
+            this.simulation?.alpha(alpha).restart();
         },
 
         /**
@@ -311,11 +330,16 @@ export default defineComponent({
         updateData(): void {
             const patents = this.patents as Patent[];
             const citationMap = VisualizationHelperService.getCitationMap(patents);
-            this.graph.nodes = VisualizationHelperService.getNodes(
+
+            const nextNodes = VisualizationHelperService.getNodes(
                 patents,
                 citationMap,
                 this.visualizationOptions as string[],
+                this.selectedNode,
             );
+            const newNodes = nextNodes.filter((t) => !this.graph.nodes.some((k) => k.id === t.id));
+            this.graph.nodes = this.graph.nodes.filter((t) => nextNodes.some((k) => k.id === t.id)).concat(newNodes);
+
             this.graph.links = VisualizationHelperService.getLinks(this.graph.nodes, citationMap);
         },
 
@@ -340,28 +364,15 @@ export default defineComponent({
                 this.nodeSelected = false;
                 return;
             }
-
+            this.selectedNode = null;
+            this.updateData();
+            this.updateGraph(0.01);
             this.$emit('onPatentSelected', { index: -1 });
-        },
-        /**
-         * Highlights border color of a node, once the preview card's arrows are clicked
-         *
-         */
-        highlightOnPreviewActions(): void {
-            // credits to ee2Dev on https://stackoverflow.com/questions/28390754/get-one-element-from-d3js-selection-by-index
-            // reset highlight
+            //turn highlight of node border off
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
             this.selections.graph.selectAll('circle').classed('selected', false);
-
-            const index = this.$store.state.patentIndex as number;
-
-            //find node and highlight it
-            this.selections.graph
-                .selectAll('circle')
-                .filter(function (d, i) {
-                    return i === index;
-                })
-                .classed('selected', true);
         },
+
         /**
          * Zoom handler for zooming the canvas
          * @param event
@@ -511,21 +522,31 @@ export default defineComponent({
          * @param node
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
+            if (node.type === 'patent') {
+                this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
+            } else {
+                this.$emit('onPatentSelected', { index: -1 });
+            }
+
+            // in order to prevent a canvas event to be triggered specify that a node is selected
+            this.selectedNode = node;
+            this.nodeSelected = true;
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
+            this.updateData();
+            this.updateGraph(0.01);
+
             this.selections.graph
                 .selectAll('circle')
                 .classed('selected', false)
                 .filter((td) => td === node)
+                //highlight border
                 .classed('selected', true);
 
-            // only in cases of a patent node the patent preview should show up!
-            if (node.type === 'patent') {
-                this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
-
-                // in order to prevent a canvas event to be triggered specify that a node is selected
-                this.nodeSelected = true;
-            }
-
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
+            // turn highlight on node on. Timeout so to have the component react to state change
+            // highlight node also set the mark once on
+            setTimeout(() => {
+                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: node.patent.id, twice: false });
+            });
         },
 
         /**
@@ -576,6 +597,83 @@ export default defineComponent({
             // updates ignored until this is run
             // restarts the simulation (important if simulation has already slowed down)
             simulation?.alpha(2).restart();
+        },
+
+        /**
+         * Highlights border color of a node, once node or preview cards are viewed.
+         * Node is marked once when the small preview card is displayed.
+         * It's marked twice when the extended panel is accessed on results or saved pages.
+         *
+         */
+        highlightAndMarkNodes(): void {
+            // reset highlight
+            if (!this.selections.graph) {
+                return;
+            }
+            this.selections.graph.selectAll('circle').classed('selected', false);
+
+            // find patentIndex
+            const patentID = this.$store.state.patentID as string;
+            const patentIndex = (this.patents as Patent[]).findIndex((e) => e.id === patentID);
+
+            // if patent index not found, no highlight/mark
+            if (patentIndex < 0) return;
+
+            //find node and highlight it
+            const target = this.selections.graph
+                .selectAll('circle')
+                .filter(function (d, i) {
+                    return i === patentIndex;
+                })
+                .classed('selected', true);
+
+            this.$store.state.markTwice ? target.classed('markedTwice', true) : target.classed('markedOnce', true);
+        },
+
+        /**
+         * Once the visualization changes, the marks need to be set again
+         *
+         */
+        updateMarks(): void {
+            // set marks for viewed once
+            if (!this.selections.graph) {
+                return;
+            }
+            const markedOnce = this.$store.state.markedOnce;
+
+            markedOnce.forEach((element: string) => {
+                //find node and highlight it
+                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
+                // if patent index not found, no highlight/mark
+                if (nodeIndex < 0) return;
+
+                this.selections.graph
+                    .selectAll('circle')
+                    .filter(function (d, i) {
+                        return i === nodeIndex;
+                    })
+                    // add a mark to indicate it has been viewed
+                    .classed('markedOnce', true);
+            });
+
+            //set marks for viewed twice
+            const markedTwice = this.$store.state.markedTwice;
+
+            markedTwice.forEach((element: string) => {
+                //find node and highlight it
+                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
+                // if patent index not found, no highlight/mark
+                if (nodeIndex < 0) return;
+                this.selections.graph
+                    .selectAll('circle')
+                    .filter(function (d, i) {
+                        return i === nodeIndex;
+                    })
+                    //remove the old mark if any
+                    .classed('markedOnce', false)
+                    // add a mark to indicate it has been viewed
+                    .classed('markedTwice', true);
+            });
         },
     },
 });
@@ -648,8 +746,20 @@ circle.company {
 }
 
 circle.selected {
-    stroke: #0048ba;
-    stroke-width: 3px;
+    stroke: #0048ba !important;
+    stroke-width: 6px !important;
     animation: selected 2s infinite alternate ease-in-out;
+}
+
+circle.markedOnce {
+    fill: url(#markOnce) #cccccc;
+    stroke: rgb(168, 133, 41);
+    stroke-width: 6px;
+}
+
+circle.markedTwice {
+    fill: url(#markTwice);
+    stroke: rgb(168, 133, 41);
+    stroke-width: 6px;
 }
 </style>

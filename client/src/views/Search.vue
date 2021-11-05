@@ -55,10 +55,14 @@ export default defineComponent({
             this.$store.commit('ADD_SEARCH_TERM', event.value);
             this.$store.commit('SHOW_LOADING_BAR');
 
-            const newSuggestions = await this.keywordService.getSuggestions(this.searchTerms);
-            this.$store.commit('ADD_SUGGESTIONS', newSuggestions);
-
-            this.$store.commit('HIDE_LOADING_BAR');
+            try {
+                const newSuggestions = await this.keywordService.getSuggestions(this.searchTerms);
+                this.$store.commit('ADD_SUGGESTIONS', newSuggestions);
+            } catch (err) {
+                console.log(err);
+            } finally {
+                this.$store.commit('HIDE_LOADING_BAR');
+            }
         },
         /**
          * Update the search and the suggestion terms arrays  from store

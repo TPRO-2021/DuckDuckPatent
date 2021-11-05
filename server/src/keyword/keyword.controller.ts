@@ -9,6 +9,6 @@ export class KeywordController {
     query(@Query() query): Promise<string[]> {
         const keywords = (Object.keys(query)[0] || '').split(',');
 
-        return this.keywordService.getSuggestions(keywords);
+        return this.keywordService.getSuggestions(keywords.map((k) => k.toLowerCase()));
     }
 }

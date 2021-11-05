@@ -6,6 +6,10 @@ import { AppState } from './AppState';
 import { SavedAppState } from './SavedAppState';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
 
+/**
+ * The entire application views will have global containers to share data between components which is the state
+ * This states are rendered in vue components as soon the states will be mutated
+ */
 export default createStore({
     state: new AppState(),
     /**
@@ -232,12 +236,27 @@ export default createStore({
             delete state.savedPatents[event.patent.id];
         },
         /**
-         * Switches highlight for node on
+         * Switches highlight for node on. Each node is saved for later checkmark restoration.
          * @param state
-         * @param index - index of patent being previewed
+         * @param pID - ID of patent being previewed
+         * @param twice - boolean: if true, mark twice
          */
-        HIGHLIGHT_NODE_ON(state, index: number) {
-            state.patentIndex = index;
+        HIGHLIGHT_NODE_ON(state, obj: { pID: string; twice: boolean }) {
+            if (obj.pID === null || obj.pID.length < 0 || obj.pID === 'undefined') {
+                return;
+            }
+
+            state.patentID = obj.pID;
+            state.markTwice = obj.twice; //if true mark twice
+            state.markTwice ? state.markedTwice.push(obj.pID) : state.markedOnce.push(obj.pID);
+
+            //filter duplicates out
+            state.markedOnce = state.markedOnce.filter((e, i) => i === state.markedOnce.indexOf(e));
+            state.markedTwice = state.markedTwice.filter((e, i) => i === state.markedTwice.indexOf(e));
+
+            // remove matching ids from markedOnce
+            state.markedOnce = state.markedOnce.filter((e) => state.markedTwice.indexOf(e) < 0);
+
             state.highlightNode = true;
         },
         /**
@@ -245,7 +264,7 @@ export default createStore({
          *
          */
         HIGHLIGHT_NODE_OFF(state) {
-            state.patentIndex = -1;
+            state.patentID = '';
             state.highlightNode = false;
         },
 
@@ -261,6 +280,24 @@ export default createStore({
             keys.forEach(<K extends keyof SavedAppState>(key: K) => {
                 state[key] = savedState[key]; // Set property to value
             });
+        },
+
+        /**
+         * Show the dialog mask on top of the content
+         * @param state
+         * @constructor
+         */
+        SHOW_DIALOG_MASK(state) {
+            state.showDialogMask = true;
+        },
+
+        /**
+         * Hide dialog mask from the screen
+         * @param state
+         * @constructor
+         */
+        HIDE_DIALOG_MASK(state) {
+            state.showDialogMask = false;
         },
     },
 
@@ -312,6 +349,9 @@ export default createStore({
             if (stateAsString) {
                 const state = JSON.parse(stateAsString) as SavedAppState;
                 saveState.savedPatents = state.savedPatents;
+                // save the checkmarks too
+                saveState.markedOnce = state.markedOnce;
+                saveState.markedTwice = state.markedTwice;
             }
 
             // set state to the previously created empty saved app state
