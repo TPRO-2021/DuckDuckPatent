@@ -323,12 +323,14 @@ export default defineComponent({
                     break;
             }
 
+            //set mark once on viewed node
+            this.$store.commit('MARK_NODE_ON', {
+                pID: (this.patents as Patent[])[this.selectedPatentIndex].id,
+                twice: false,
+            });
             // turn highlight on node on. Timeout so to have the component react to state change
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', {
-                    pID: (this.patents as Patent[])[this.selectedPatentIndex].id,
-                    twice: false,
-                });
+                this.$store.commit('HIGHLIGHT_NODE_ON', (this.patents as Patent[])[this.selectedPatentIndex].id);
             });
         },
         /**
@@ -337,14 +339,15 @@ export default defineComponent({
          * @param event
          */
         onShowMore(event: { patent: Patent; searchTerms: string[] }) {
-            //MARK_NODE_VIEWED_OFF
             this.$store.commit('HIGHLIGHT_NODE_OFF');
 
             this.$store.commit('SHOW_DIALOG_MASK');
             this.detailedPatent = event as ExtendedPatent;
             //set mark twice on viewed node
+            this.$store.commit('MARK_NODE_ON', { pID: this.detailedPatent?.patent.id, twice: true });
+            // highlight node
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: this.detailedPatent?.patent.id, twice: true });
+                this.$store.commit('HIGHLIGHT_NODE_ON', this.detailedPatent?.patent.id);
             });
         },
 

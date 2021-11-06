@@ -94,10 +94,11 @@ export default defineComponent({
 
             this.selectedPatent = patent;
             this.$store.commit('SHOW_DIALOG_MASK');
-
+            //set mark twice on viewed node
+            this.$store.commit('MARK_NODE_ON', { pID: patent.patent.id, twice: true });
             //set mark twice on viewed node
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: patent.patent.id, twice: true });
+                this.$store.commit('HIGHLIGHT_NODE_ON', patent.patent.id);
             });
         },
     },

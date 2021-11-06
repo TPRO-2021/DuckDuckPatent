@@ -241,7 +241,24 @@ export default createStore({
          * @param pID - ID of patent being previewed
          * @param twice - boolean: if true, mark twice
          */
-        HIGHLIGHT_NODE_ON(state, obj: { pID: string; twice: boolean }) {
+        HIGHLIGHT_NODE_ON(state, pID: string) {
+            if (pID === null || pID.length < 0 || pID === 'undefined') {
+                return;
+            }
+
+            state.patentID = pID;
+
+            state.highlightNode = true;
+        },
+        /**
+         * Switches highlight for node off
+         *
+         */
+        HIGHLIGHT_NODE_OFF(state) {
+            state.patentID = '';
+            state.highlightNode = false;
+        },
+        MARK_NODE_ON(state, obj: { pID: string; twice: boolean }) {
             if (obj.pID === null || obj.pID.length < 0 || obj.pID === 'undefined') {
                 return;
             }
@@ -256,16 +273,6 @@ export default createStore({
 
             // remove matching ids from markedOnce
             state.markedOnce = state.markedOnce.filter((e) => state.markedTwice.indexOf(e) < 0);
-
-            state.highlightNode = true;
-        },
-        /**
-         * Switches highlight for node off
-         *
-         */
-        HIGHLIGHT_NODE_OFF(state) {
-            state.patentID = '';
-            state.highlightNode = false;
         },
 
         /**
