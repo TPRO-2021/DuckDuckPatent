@@ -123,19 +123,21 @@ export class PatentsService {
     }
 
     /**
-     *
+     * Returns available images for a patent
      * @param patentId
      */
-    public async queryImages(patentId: string): Promise<DocumentInformation[]> {
-        if (!this.authData) {
-            this.authData = await this.getAccessToken();
-        }
-
+    public async queryDocuments(patentId: string): Promise<DocumentInformation[]> {
         const queryUrl = `${process.env.PATENT_API_URL}${PatentsService.imageQueryEndpoint}${patentId}/images`;
 
         const opsResponse = await this.sendOpsRequest<OpsImageQueryResponse>(queryUrl, {}, 'get');
 
         return this.processImageQuery(opsResponse);
+    }
+
+    public async getDocument(url: string, contentType: string) {
+        const queryUrl = `${process.env.PATENT_API_URL}/rest-services/${url}`;
+
+        return this.sendOpsRequest(queryUrl, {}, 'get', false, contentType);
     }
 
     /**
@@ -395,6 +397,7 @@ export class PatentsService {
      * @param config
      * @param requestType
      * @param isSecondAttempt
+     * @param accept
      * @private
      */
     private async sendOpsRequest<T>(
@@ -402,6 +405,7 @@ export class PatentsService {
         config: { headers? },
         requestType: 'get',
         isSecondAttempt = false,
+        accept = 'application/json',
     ): Promise<T> {
         try {
             // if no auth data is present we need to generate an access token
@@ -413,8 +417,10 @@ export class PatentsService {
             config.headers = {
                 ...(config.headers || {}),
                 Authorization: `Bearer ${this.authData.access_token}`,
-                Accept: 'application/json',
+                Accept: accept,
             };
+
+            console.log('endpoint', endpoint);
 
             const response = await lastValueFrom(this.httpService[requestType]<T>(endpoint, config));
 

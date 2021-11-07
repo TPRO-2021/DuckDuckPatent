@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Param, Query, Response } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Query, Response, Headers } from '@nestjs/common';
 import { Response as Res } from 'express';
 import { PatentsService } from './patents.service';
 import { DocumentInformation, Patent, PatentSearchQuery } from './models';
@@ -43,8 +43,22 @@ export class PatentsController {
         return res.set({ 'X-Total-Count': total }).json(patents);
     }
 
-    @Get('/:patentId/images')
-    async queryImages(@Param('patentId') patentId): Promise<DocumentInformation[]> {
-        return this.patentService.queryImages(patentId);
+    @Get('/:patentId/documents')
+    async queryDocuments(@Param('patentId') patentId): Promise<DocumentInformation[]> {
+        return this.patentService.queryDocuments(patentId);
+    }
+
+    @Get('/:patentId/documents/:docUrl')
+    async getDocument(@Param('docUrl') docUrl: string, @Headers() headers, @Response() res: Res) {
+        const contentType = headers.accept;
+
+        if (!contentType) {
+            throw new BadRequestException('Please specify a content type');
+        }
+
+        const decodedUrl = Buffer.from(docUrl, 'base64').toString('ascii');
+        const data = await this.patentService.getDocument(decodedUrl, contentType);
+
+        return res.contentType(contentType).send(data);
     }
 }
