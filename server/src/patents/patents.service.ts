@@ -126,7 +126,7 @@ export class PatentsService {
      *
      * @param patentId
      */
-    public async queryImages(patentId: string): Promise<any> {
+    public async queryImages(patentId: string): Promise<DocumentInformation[]> {
         if (!this.authData) {
             this.authData = await this.getAccessToken();
         }
