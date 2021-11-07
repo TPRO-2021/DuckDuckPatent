@@ -91,6 +91,7 @@ export default defineComponent({
         onSelectPatent(patent: ExtendedPatent): void {
             //highlight and mark off
             // this.$store.commit('HIGHLIGHT_NODE_OFF');
+            //mark twice the patent view details from saved items
             this.$store.commit('ADD_MARKED_TWICE', patent.patent);
             this.selectedPatent = patent;
             this.$store.commit('SHOW_DIALOG_MASK');

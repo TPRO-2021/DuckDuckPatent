@@ -309,9 +309,7 @@ export default createStore({
             console.log('In twice clicked', node);
             Object.keys(state.markedVisited).forEach((patentId) => {
                 if (patentId === node.id) {
-                    console.log('In twice clicked', state.markedVisited);
                     state.markedVisited = { ...state.markedVisited, [node.id]: 'twice' };
-                    console.log('In twice-double clicked', state.markedVisited);
                 } else {
                     return;
                 }

@@ -172,7 +172,6 @@ export default defineComponent({
             return Object.keys(this.$store.state.savedPatents).length.toString();
         },
         markedVisited() {
-            console.log('I am in ResultView', this.$store.state.markedVisited);
             return this.$store.state.markedVisited;
         },
     },
