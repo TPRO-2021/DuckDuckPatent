@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Get, Param, Query, Response } from '@nestjs/common';
 import { Response as Res } from 'express';
 import { PatentsService } from './patents.service';
-import { Patent, PatentSearchQuery } from './models';
+import { DocumentInformation, Patent, PatentSearchQuery } from './models';
 
 @Controller('patents')
 export class PatentsController {
@@ -44,7 +44,7 @@ export class PatentsController {
     }
 
     @Get('/:patentId/images')
-    async queryImages(@Param('patentId') patentId) {
+    async queryImages(@Param('patentId') patentId): Promise<DocumentInformation[]> {
         return this.patentService.queryImages(patentId);
     }
 }

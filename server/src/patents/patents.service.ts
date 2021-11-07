@@ -1,4 +1,14 @@
-import { AuthResponse, OpsExchangeDocument, Patent, PatentAPIResponse, QueryResult } from './models';
+import {
+    AuthResponse,
+    DocumentInformation,
+    OpsDocumentInstance,
+    OpsExchangeDocument,
+    OpsImageQueryResponse,
+    OpsStringData,
+    Patent,
+    PatentQueryResponse,
+    QueryResult,
+} from './models';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
@@ -9,7 +19,7 @@ import * as _ from 'lodash';
 @Injectable()
 export class PatentsService {
     private authData: AuthResponse;
-    private data: PatentAPIResponse;
+    private data: PatentQueryResponse;
 
     private static patentQueryEndpoint = '/rest-services/published-data/search/biblio';
     private static imageQueryEndpoint = '/rest-services/published-data/publication/epodoc/';
@@ -52,7 +62,7 @@ export class PatentsService {
     }
 
     // to query for a single patent
-    async get(patentNum: string): Promise<AxiosResponse<PatentAPIResponse>> {
+    async get(patentNum: string): Promise<AxiosResponse<PatentQueryResponse>> {
         const config = {
             params: {
                 q: JSON.stringify({ _eq: { patent_number: patentNum } }),
@@ -68,12 +78,12 @@ export class PatentsService {
         };
 
         return lastValueFrom(
-            this.httpService.get<PatentAPIResponse>(`${process.env.PATENT_API_URL}/patents/query`, config),
+            this.httpService.get<PatentQueryResponse>(`${process.env.PATENT_API_URL}/patents/query`, config),
         );
     }
 
     // to query for cited patents for provided source
-    async getCitedPatents(patentNum: string): Promise<AxiosResponse<PatentAPIResponse>> {
+    async getCitedPatents(patentNum: string): Promise<AxiosResponse<PatentQueryResponse>> {
         const patentID = patentNum;
         if (!this.authData) {
             this.authData = await this.getAccessToken();
@@ -83,7 +93,7 @@ export class PatentsService {
             Accept: 'application/json',
         };
         return await lastValueFrom(
-            this.httpService.get<PatentAPIResponse>(
+            this.httpService.get<PatentQueryResponse>(
                 `${process.env.PATENT_API_URL}rest-services/published-data/publication/epodoc/${patentID}/biblio`,
                 { headers: headers },
             ),
@@ -108,18 +118,24 @@ export class PatentsService {
         );
         console.log(queryString);
 
-        const data = await this.sendOpsRequest<PatentAPIResponse>(queryString, {}, 'get');
+        const data = await this.sendOpsRequest<PatentQueryResponse>(queryString, {}, 'get');
         return this.processQuery(data, languages);
     }
 
-    public async queryImages(patentId: string) {
+    /**
+     *
+     * @param patentId
+     */
+    public async queryImages(patentId: string): Promise<any> {
         if (!this.authData) {
             this.authData = await this.getAccessToken();
         }
 
         const queryUrl = `${process.env.PATENT_API_URL}${PatentsService.imageQueryEndpoint}${patentId}/images`;
 
-        return this.sendOpsRequest(queryUrl, {}, 'get');
+        const opsResponse = await this.sendOpsRequest<OpsImageQueryResponse>(queryUrl, {}, 'get');
+
+        return this.processImageQuery(opsResponse);
     }
 
     /**
@@ -127,7 +143,7 @@ export class PatentsService {
      * @param data
      * @param languages
      */
-    private processQuery(data: PatentAPIResponse, languages?: string): QueryResult {
+    private processQuery(data: PatentQueryResponse, languages?: string): QueryResult {
         const searchResult = data['ops:world-patent-data']['ops:biblio-search'];
 
         const totalResults = Number(searchResult['@total-result-count']);
@@ -304,7 +320,7 @@ export class PatentsService {
      * @param defaultValue  The default value which should be applied when no data was found
      * @private
      */
-    private static getNestedArray<T>(doc: OpsExchangeDocument, path: string, processingFn, defaultValue: T): T {
+    private static getNestedArray<T>(doc: any, path: string, processingFn, defaultValue: T): T {
         let instanceArr = _.get(doc, path);
 
         if (!instanceArr) {
@@ -341,6 +357,36 @@ export class PatentsService {
         }
 
         return queryString.concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+    }
+
+    /**
+     * Restructures an image query to the desired format
+     * @param data
+     * @private
+     */
+    private async processImageQuery(data: OpsImageQueryResponse): Promise<DocumentInformation[]> {
+        return PatentsService.getNestedArray<OpsDocumentInstance[]>(
+            data,
+            'ops:world-patent-data.ops:document-inquiry.ops:inquiry-result.ops:document-instance',
+            (imageInformation) => imageInformation,
+            [],
+        ).map((document) => ({
+            formats: PatentsService.getNestedArray(
+                document,
+                'ops:document-format-options.ops:document-format',
+                (format: OpsStringData[]) => format.map((format) => format.$),
+                [],
+            ),
+            type: (document['@desc'] || 'unknown').toLowerCase(),
+            url: document['@link'],
+            sections: PatentsService.getNestedArray(
+                document,
+                'ops:document-section',
+                (sections: { '@name': string; '@start-page': string }[]) =>
+                    sections.map((section) => ({ name: section['@name'], startPage: section['@start-page'] })),
+                [],
+            ),
+        }));
     }
 
     /**
@@ -381,6 +427,7 @@ export class PatentsService {
                     throw error;
                 }
 
+                console.log('Authentication error. Attempting to refresh the token');
                 this.authData = await this.getAccessToken();
                 return this.sendOpsRequest<T>(endpoint, config, requestType, true);
             }
