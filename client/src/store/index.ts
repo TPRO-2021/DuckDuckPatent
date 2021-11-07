@@ -5,6 +5,7 @@ import { saveStatePlugin } from './SaveStatePlugin';
 import { AppState } from './AppState';
 import { SavedAppState } from './SavedAppState';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
+import { VisualPatentNode } from '@/models/VisualPatentNode';
 
 /**
  * The entire application views will have global containers to share data between components which is the state
@@ -241,32 +242,32 @@ export default createStore({
          * @param pID - ID of patent being previewed
          * @param twice - boolean: if true, mark twice
          */
-        HIGHLIGHT_NODE_ON(state, obj: { pID: string; twice: boolean }) {
-            if (obj.pID === null || obj.pID.length < 0 || obj.pID === 'undefined') {
-                return;
-            }
-
-            state.patentID = obj.pID;
-            state.markTwice = obj.twice; //if true mark twice
-            state.markTwice ? state.markedTwice.push(obj.pID) : state.markedOnce.push(obj.pID);
-
-            //filter duplicates out
-            state.markedOnce = state.markedOnce.filter((e, i) => i === state.markedOnce.indexOf(e));
-            state.markedTwice = state.markedTwice.filter((e, i) => i === state.markedTwice.indexOf(e));
-
-            // remove matching ids from markedOnce
-            state.markedOnce = state.markedOnce.filter((e) => state.markedTwice.indexOf(e) < 0);
-
-            state.highlightNode = true;
-        },
-        /**
-         * Switches highlight for node off
-         *
-         */
-        HIGHLIGHT_NODE_OFF(state) {
-            state.patentID = '';
-            state.highlightNode = false;
-        },
+        // HIGHLIGHT_NODE_ON(state, obj: { pID: string; twice: boolean }) {
+        //     if (obj.pID === null || obj.pID.length < 0 || obj.pID === 'undefined') {
+        //         return;
+        //     }
+        //
+        //     state.patentID = obj.pID;
+        //     state.markTwice = obj.twice; //if true mark twice
+        //     state.markTwice ? state.markedTwice.push(obj.pID) : state.markedOnce.push(obj.pID);
+        //
+        //     //filter duplicates out
+        //     state.markedOnce = state.markedOnce.filter((e, i) => i === state.markedOnce.indexOf(e));
+        //     state.markedTwice = state.markedTwice.filter((e, i) => i === state.markedTwice.indexOf(e));
+        //
+        //     // remove matching ids from markedOnce
+        //     state.markedOnce = state.markedOnce.filter((e) => state.markedTwice.indexOf(e) < 0);
+        //
+        //     state.highlightNode = true;
+        // },
+        // /**
+        //  * Switches highlight for node off
+        //  *
+        //  */
+        // HIGHLIGHT_NODE_OFF(state) {
+        //     state.patentID = '';
+        //     state.highlightNode = false;
+        // },
 
         /**
          * Load State
@@ -298,6 +299,23 @@ export default createStore({
          */
         HIDE_DIALOG_MASK(state) {
             state.showDialogMask = false;
+        },
+
+        ADD_MARKED_ONCE(state, node: VisualPatentNode): void {
+            state.markedVisited = { ...state.markedVisited, [node.patent.id]: 'once' };
+        },
+
+        ADD_MARKED_TWICE(state, node: Patent): void {
+            console.log('In twice clicked', node);
+            Object.keys(state.markedVisited).forEach((patentId) => {
+                if (patentId === node.id) {
+                    console.log('In twice clicked', state.markedVisited);
+                    state.markedVisited = { ...state.markedVisited, [node.id]: 'twice' };
+                    console.log('In twice-double clicked', state.markedVisited);
+                } else {
+                    return;
+                }
+            });
         },
     },
 
@@ -350,8 +368,8 @@ export default createStore({
                 const state = JSON.parse(stateAsString) as SavedAppState;
                 saveState.savedPatents = state.savedPatents;
                 // save the checkmarks too
-                saveState.markedOnce = state.markedOnce;
-                saveState.markedTwice = state.markedTwice;
+                saveState.markedVisited = state.markedVisited;
+                // saveState.markedTwice = state.markedTwice;
             }
 
             // set state to the previously created empty saved app state

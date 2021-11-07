@@ -36,7 +36,7 @@
                 </pattern>
             </defs>
         </svg>
-        <div class="tooltip card box-shadow no-select">{{ this.currentNode?.patent.title }}</div>
+        <div class="tooltip card box-shadow no-select">{{ tooltipOnNodes }}</div>
     </div>
 </template>
 
@@ -48,6 +48,7 @@ import {
     D3DragEvent,
     D3ZoomEvent,
     drag,
+    filter,
     forceCenter,
     forceCollide,
     forceLink,
@@ -55,6 +56,7 @@ import {
     forceSimulation,
     forceX,
     forceY,
+    index,
     select,
     Selection,
     Simulation,
@@ -66,6 +68,7 @@ import {
 import { VisualPatentNode } from '@/models/VisualPatentNode';
 import VisualizationHelperService from '@/services/visualization-helper.service';
 import { VisualPatentLink } from '@/models/VisualPatentLink';
+import { RelationMap } from '@/models/RelationMap';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
@@ -87,6 +90,10 @@ export default defineComponent({
             required: true,
             type: Array,
         },
+        markedVisited: {
+            required: true,
+            type: Object,
+        },
     },
     emits: {
         onPatentSelected: (e: { patent?: Patent; index: number }) => e,
@@ -105,7 +112,6 @@ export default defineComponent({
             } as d3Graph,
             resizeEvent: -1,
             simulation: null as d3ForceSim | null,
-
             width: 0,
             height: 0,
             selections: {} as d3Selection,
@@ -117,6 +123,21 @@ export default defineComponent({
         };
     },
     computed: {
+        /**
+         * Tooltip on patent, author and company nodes
+         * When the results from DB is empty a tooltip with no data is displayed
+         */
+        tooltipOnNodes(): string | undefined {
+            switch (this.currentNode?.type) {
+                case 'patent':
+                    return this.currentNode?.patent.title;
+                case 'author':
+                    return this.currentNode?.id;
+                case 'company':
+                    return this.currentNode?.id;
+            }
+            return 'No Data';
+        },
         onClickSave(): boolean {
             return this.$store.state.onClickSave;
         },
@@ -125,9 +146,6 @@ export default defineComponent({
         },
         links(): SimulationLinkDatum<VisualPatentNode>[] {
             return this.graph.links;
-        },
-        highlightNode(): boolean {
-            return this.$store.state.highlightNode;
         },
     },
     watch: {
@@ -160,11 +178,10 @@ export default defineComponent({
 
         /**
          * Call highlight once previewing node's card is true
+         *
          */
-        highlightNode(newVal) {
-            if (newVal) {
-                this.highlightAndMarkNodes();
-            }
+        markedVisited() {
+            this.updateGraph(0.01);
         },
     },
     created() {
@@ -254,7 +271,6 @@ export default defineComponent({
             graph.selectAll<SVGCircleElement, VisualPatentNode>('circle').attr('transform', (d: VisualPatentNode) => {
                 return 'translate(' + d.x + ',' + d.y + ')';
             });
-            this.updateMarks();
         },
 
         /**
@@ -283,7 +299,18 @@ export default defineComponent({
                 .enter()
                 .append('circle')
                 .attr('r', (d) => d.size)
-                .attr('class', (d: VisualPatentNode) => d.type)
+                .attr('class', (d: VisualPatentNode) => {
+                    let markedClass = '';
+                    if (d.type === 'patent') {
+                        if (this.markedVisited[d.id] === 'once') {
+                            markedClass = ' markedOnce ';
+                        }
+                        if (this.markedVisited[d.id] === 'twice') {
+                            markedClass = ' markedTwice';
+                        }
+                    }
+                    return d.type + markedClass;
+                })
                 .call(
                     drag<SVGCircleElement, VisualPatentNode>()
                         .on('start', this.dragStart)
@@ -304,6 +331,12 @@ export default defineComponent({
                     if (d.source && d.target && d.source.index === d.target.index) return 'url(#end-self)';
                     else return 'url(#end)';
                 });
+            this.selections.graph
+                .selectAll('circle')
+                .classed('selected', false)
+                .filter((td) => td === this.selectedNode)
+                //highlight border
+                .classed('selected', true);
 
             // Update caption every time data changes
             this.simulation?.alpha(alpha).restart();
@@ -316,16 +349,33 @@ export default defineComponent({
             const patents = this.patents as Patent[];
             const citationMap = VisualizationHelperService.getCitationMap(patents);
 
+            let authorsMap = {} as RelationMap;
+            if (this.visualizationOptions.includes('authors')) {
+                authorsMap = VisualizationHelperService.getCreatorMap(patents, 'inventors');
+            }
+
+            let companyMap = {} as RelationMap;
+            if (this.visualizationOptions.includes('companies')) {
+                companyMap = VisualizationHelperService.getCreatorMap(patents, 'applicants');
+            }
+
             const nextNodes = VisualizationHelperService.getNodes(
                 patents,
                 citationMap,
                 this.visualizationOptions as string[],
                 this.selectedNode,
+                authorsMap,
+                companyMap,
             );
             const newNodes = nextNodes.filter((t) => !this.graph.nodes.some((k) => k.id === t.id));
             this.graph.nodes = this.graph.nodes.filter((t) => nextNodes.some((k) => k.id === t.id)).concat(newNodes);
 
-            this.graph.links = VisualizationHelperService.getLinks(this.graph.nodes, citationMap);
+            this.graph.links = VisualizationHelperService.getLinks(
+                this.graph.nodes,
+                citationMap,
+                authorsMap,
+                companyMap,
+            );
         },
 
         /**
@@ -354,7 +404,7 @@ export default defineComponent({
             this.updateGraph(0.01);
             this.$emit('onPatentSelected', { index: -1 });
             //turn highlight of node border off
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
+            // this.$store.commit('HIGHLIGHT_NODE_OFF');
             this.selections.graph.selectAll('circle').classed('selected', false);
         },
 
@@ -516,22 +566,11 @@ export default defineComponent({
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.selectedNode = node;
             this.nodeSelected = true;
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
+            // this.$store.commit('HIGHLIGHT_NODE_OFF');
             this.updateData();
             this.updateGraph(0.01);
-
-            this.selections.graph
-                .selectAll('circle')
-                .classed('selected', false)
-                .filter((td) => td === node)
-                //highlight border
-                .classed('selected', true);
-
-            // turn highlight on node on. Timeout so to have the component react to state change
-            // highlight node also set the mark once on
-            setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: node.patent.id, twice: false });
-            });
+            //mark the pattent node mark as visited once
+            this.markVisited(event, node);
         },
 
         /**
@@ -583,81 +622,67 @@ export default defineComponent({
             // restarts the simulation (important if simulation has already slowed down)
             simulation?.alpha(2).restart();
         },
+
         /**
          * Highlights border color of a node, once node or preview cards are viewed.
          * Node is marked once when the small preview card is displayed.
          * It's marked twice when the extended panel is accessed on results or saved pages.
          *
          */
-        highlightAndMarkNodes(): void {
-            // reset highlight
-            if (!this.selections.graph) {
-                return;
+        markVisited(event: PointerEvent, node: VisualPatentNode): void {
+            if (node.type === 'patent') {
+                if (this.markedVisited[node.id] === undefined) {
+                    this.selectedNode = node;
+                    this.$store.commit('ADD_MARKED_ONCE', node);
+                }
             }
-            this.selections.graph.selectAll('circle').classed('selected', false);
-
-            // find patentIndex
-            const patentID = this.$store.state.patentID as string;
-            const patentIndex = (this.patents as Patent[]).findIndex((e) => e.id === patentID);
-
-            // if patent index not found, no highlight/mark
-            if (patentIndex < 0) return;
-
-            //find node and highlight it
-            const target = this.selections.graph
-                .selectAll('circle')
-                .filter(function (d, i) {
-                    return i === patentIndex;
-                })
-                .classed('selected', true);
-
-            this.$store.state.markTwice ? target.classed('markedTwice', true) : target.classed('markedOnce', true);
         },
-        /**
-         * Once the visualization changes, the marks need to be set again
-         *
-         */
-        updateMarks(): void {
-            // set marks for viewed once
-            if (!this.selections.graph) {
-                return;
-            }
-            const markedOnce = this.$store.state.markedOnce;
 
-            markedOnce.forEach((element: string) => {
-                //find node and highlight it
-                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
-                // if patent index not found, no highlight/mark
-                if (nodeIndex < 0) return;
-
-                this.selections.graph
-                    .selectAll('circle')
-                    .filter(function (d, i) {
-                        return i === nodeIndex;
-                    })
-                    // add a mark to indicate it has been viewed
-                    .classed('markedOnce', true);
-            });
-
-            //set marks for viewed twice
-            const markedTwice = this.$store.state.markedTwice;
-
-            markedTwice.forEach((element: string) => {
-                //find node and highlight it
-                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
-                // if patent index not found, no highlight/mark
-                if (nodeIndex < 0) return;
-                this.selections.graph
-                    .selectAll('circle')
-                    .filter(function (d, i) {
-                        return i === nodeIndex;
-                    })
-                    //remove the old mark if any
-                    .classed('markedOnce', false)
-                    // add a mark to indicate it has been viewed
-                    .classed('markedTwice', true);
-            });
-        },
+        // /**
+        //  * Once the visualization changes, the marks need to be set again
+        //  *
+        //  */
+        // updateMarks(): void {
+        //     // set marks for viewed once
+        //     if (!this.selections.graph) {
+        //         return;
+        //     }
+        //     const markedOnce = this.$store.state.markedOnce;
+        //
+        //     markedOnce.forEach((element: string) => {
+        //         //find node and highlight it
+        //         const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
+        //         // if patent index not found, no highlight/mark
+        //         if (nodeIndex < 0) return;
+        //
+        //         this.selections.graph
+        //             .selectAll('circle')
+        //             .filter(function (d, i) {
+        //                 return i === nodeIndex;
+        //             })
+        //             // add a mark to indicate it has been viewed
+        //             .classed('markedOnce', true);
+        //     });
+        //
+        //     //set marks for viewed twice
+        //     const markedTwice = this.$store.state.markedTwice;
+        //
+        //     markedTwice.forEach((element: string) => {
+        //         //find node and highlight it
+        //         const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
+        //         // if patent index not found, no highlight/mark
+        //         if (nodeIndex < 0) return;
+        //         this.selections.graph
+        //             .selectAll('circle')
+        //             .filter(function (d, i) {
+        //                 return i === nodeIndex;
+        //             })
+        //             //remove the old mark if any
+        //             .classed('markedOnce', false)
+        //             // add a mark to indicate it has been viewed
+        //             .classed('markedTwice', true);
+        //     });
+        // },
     },
 });
 </script>

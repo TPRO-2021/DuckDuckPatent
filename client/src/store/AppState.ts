@@ -1,5 +1,6 @@
 import { Patent } from '@/models/Patent';
 import { SavedAppState } from './SavedAppState';
+import { VisualPatentNode } from '@/models/VisualPatentNode';
 
 /**
  * The entire application views will have global containers to share data between components which is the state
@@ -58,13 +59,13 @@ export class AppState extends SavedAppState {
     /**
      * One checkmark will be added to all saved node indices
      */
-    public markedOnce = [] as string[];
+    // public markedNode = {} as {[id: string]: ('one' | 'twice')};
     /**
      * Two checkmarks will be added to all saved node indices
      */
-    public markedTwice = [] as string[];
+    // public markedTwice = [] as string[];
     /**
      * Controls one/two checkmark assignment
      */
-    public markTwice = false;
+    //public markTwice = false;
 }

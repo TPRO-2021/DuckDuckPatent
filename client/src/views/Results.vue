@@ -35,6 +35,7 @@
                 :visualization-options="visualizationOptions"
                 :patents="patents"
                 v-on:on-patent-selected="onPatentSelected"
+                :marked-visited="markedVisited"
             />
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
@@ -170,6 +171,10 @@ export default defineComponent({
 
             return Object.keys(this.$store.state.savedPatents).length.toString();
         },
+        markedVisited() {
+            console.log('I am in ResultView', this.$store.state.markedVisited);
+            return this.$store.state.markedVisited;
+        },
     },
     async created() {
         this.$store.commit('showLoadingScreen');
@@ -302,7 +307,7 @@ export default defineComponent({
          */
         onChangePatent(e: { direction: string }): void {
             // reset highlight on node
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
+            // this.$store.commit('HIGHLIGHT_NODE_OFF');
 
             switch (e.direction) {
                 case 'next':
@@ -324,12 +329,12 @@ export default defineComponent({
             }
 
             // turn highlight on node on. Timeout so to have the component react to state change
-            setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', {
-                    pID: (this.patents as Patent[])[this.selectedPatentIndex].id,
-                    twice: false,
-                });
-            });
+            // setTimeout(() => {
+            //     this.$store.commit('HIGHLIGHT_NODE_ON', {
+            //         pID: (this.patents as Patent[])[this.selectedPatentIndex].id,
+            //         twice: false,
+            //     });
+            // });
         },
         /**
          * Shows the detailed patent view
@@ -338,14 +343,11 @@ export default defineComponent({
          */
         onShowMore(event: { patent: Patent; searchTerms: string[] }) {
             //MARK_NODE_VIEWED_OFF
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
-
+            // this.$store.commit('HIGHLIGHT_NODE_OFF');
+            this.$store.commit('ADD_MARKED_TWICE', event.patent);
             this.$store.commit('SHOW_DIALOG_MASK');
             this.detailedPatent = event as ExtendedPatent;
             //set mark twice on viewed node
-            setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: this.detailedPatent?.patent.id, twice: true });
-            });
         },
 
         /**

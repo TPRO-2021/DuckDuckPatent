@@ -11,8 +11,8 @@ export function saveStatePlugin(store: Store<AppState>): void {
             visualizationOptions: state.visualizationOptions,
             savedPatents: state.savedPatents,
             filters: state.filters,
-            markedOnce: state.markedOnce,
-            markedTwice: state.markedTwice,
+            markedVisited: state.markedVisited,
+            // markedTwice: state.markedTwice,
         };
 
         const stateAsString = JSON.stringify(saveState);
