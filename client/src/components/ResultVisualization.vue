@@ -36,7 +36,7 @@
                 </pattern>
             </defs>
         </svg>
-        <div class="tooltip card box-shadow no-select">{{ this.currentNode?.patent.title }}</div>
+        <div class="tooltip card box-shadow no-select">{{ tooltipOnNodes }}</div>
     </div>
 </template>
 
@@ -66,6 +66,7 @@ import {
 import { VisualPatentNode } from '@/models/VisualPatentNode';
 import VisualizationHelperService from '@/services/visualization-helper.service';
 import { VisualPatentLink } from '@/models/VisualPatentLink';
+import { RelationMap } from '@/models/RelationMap';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
@@ -117,6 +118,21 @@ export default defineComponent({
         };
     },
     computed: {
+        /**
+         * Tooltip on patent, author and company nodes
+         * When the results from DB is empty a tooltip with no data is displayed
+         */
+        tooltipOnNodes(): string | undefined {
+            switch (this.currentNode?.type) {
+                case 'patent':
+                    return this.currentNode?.patent.title;
+                case 'author':
+                    return this.currentNode?.id;
+                case 'company':
+                    return this.currentNode?.id;
+            }
+            return 'No Data';
+        },
         onClickSave(): boolean {
             return this.$store.state.onClickSave;
         },
@@ -316,16 +332,33 @@ export default defineComponent({
             const patents = this.patents as Patent[];
             const citationMap = VisualizationHelperService.getCitationMap(patents);
 
+            let authorsMap = {} as RelationMap;
+            if (this.visualizationOptions.includes('authors')) {
+                authorsMap = VisualizationHelperService.getCreatorMap(patents, 'inventors');
+            }
+
+            let companyMap = {} as RelationMap;
+            if (this.visualizationOptions.includes('companies')) {
+                companyMap = VisualizationHelperService.getCreatorMap(patents, 'applicants');
+            }
+
             const nextNodes = VisualizationHelperService.getNodes(
                 patents,
                 citationMap,
                 this.visualizationOptions as string[],
                 this.selectedNode,
+                authorsMap,
+                companyMap,
             );
             const newNodes = nextNodes.filter((t) => !this.graph.nodes.some((k) => k.id === t.id));
             this.graph.nodes = this.graph.nodes.filter((t) => nextNodes.some((k) => k.id === t.id)).concat(newNodes);
 
-            this.graph.links = VisualizationHelperService.getLinks(this.graph.nodes, citationMap);
+            this.graph.links = VisualizationHelperService.getLinks(
+                this.graph.nodes,
+                citationMap,
+                authorsMap,
+                companyMap,
+            );
         },
 
         /**
@@ -583,6 +616,7 @@ export default defineComponent({
             // restarts the simulation (important if simulation has already slowed down)
             simulation?.alpha(2).restart();
         },
+
         /**
          * Highlights border color of a node, once node or preview cards are viewed.
          * Node is marked once when the small preview card is displayed.
@@ -613,6 +647,7 @@ export default defineComponent({
 
             this.$store.state.markTwice ? target.classed('markedTwice', true) : target.classed('markedOnce', true);
         },
+
         /**
          * Once the visualization changes, the marks need to be set again
          *
