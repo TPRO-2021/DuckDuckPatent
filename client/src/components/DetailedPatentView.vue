@@ -195,15 +195,21 @@ export default defineComponent({
             });
         },
 
+        /**
+         * Opens the document view and passes the document as a query parameter
+         * @param document
+         */
         openDocument(document: DocumentInformation) {
-            this.$store.commit('SHOW_LOADING_BAR');
-            try {
-                this.documentService.get((this.extendedPatent as ExtendedPatent)?.patent?.id, document);
-            } catch (err) {
-                console.error(err);
-            }
+            const routeData = this.$router.resolve({
+                name: 'Document',
+                query: {
+                    document: btoa(JSON.stringify(document)),
+                    patentId: (this.extendedPatent as ExtendedPatent).patent.id,
+                    page: 1,
+                },
+            });
 
-            this.$store.commit('HIDE_LOADING_BAR');
+            window.open(routeData.href, '_blank');
         },
     },
 });

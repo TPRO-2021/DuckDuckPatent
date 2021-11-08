@@ -3,7 +3,11 @@
         type="button"
         class="round-button box-shadow no-select"
         @click="onClick"
-        :class="{ 'button-active': isToggle && isClicked, 'button-light': !isToggle && type === 'light' }"
+        :class="{
+            'button-active': isToggle && isClicked,
+            'button-light': !isToggle && type === 'light',
+            'button-disabled': disabled,
+        }"
     >
         <span class="btn-icon material-icons">{{ this.iconKey }}</span>
     </button>
@@ -30,6 +34,10 @@ export default defineComponent({
         type: {
             type: String,
             default: 'dark',
+        },
+        disabled: {
+            type: Boolean,
+            default: false,
         },
     },
     emits: ['onClicked'],
@@ -82,6 +90,11 @@ export default defineComponent({
     .btn-icon {
         color: black;
     }
+}
+
+.button-disabled {
+    cursor: not-allowed;
+    background: #545454;
 }
 
 .btn-icon {
