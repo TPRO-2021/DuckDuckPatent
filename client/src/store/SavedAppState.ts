@@ -19,7 +19,7 @@ export class SavedAppState {
     /**
      * Node visualization options
      */
-    public visualizationOptions = ['patents'];
+    public visualizationOptions = ['patents', 'families'];
 
     /**
      * Contains the saved patents
