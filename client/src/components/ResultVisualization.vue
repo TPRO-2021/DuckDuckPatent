@@ -305,6 +305,13 @@ export default defineComponent({
                     else return 'url(#end)';
                 });
 
+            //highlight nodes when clicked (credits to Ion Cicala for this change)
+            this.selections.graph
+                .selectAll('circle')
+                .classed('selected', false)
+                .filter((td) => td === this.selectedNode)
+                .classed('selected', true);
+
             // Update caption every time data changes
             this.simulation?.alpha(alpha).restart();
         },
@@ -353,8 +360,7 @@ export default defineComponent({
             this.updateData();
             this.updateGraph(0.01);
             this.$emit('onPatentSelected', { index: -1 });
-            //turn highlight of node border off
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
+
             this.selections.graph.selectAll('circle').classed('selected', false);
         },
 
@@ -519,7 +525,7 @@ export default defineComponent({
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.selectedNode = node;
             this.nodeSelected = true;
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
+
             this.updateData();
             this.updateGraph(0.01);
 
@@ -529,13 +535,6 @@ export default defineComponent({
                 .filter((td) => td === node)
                 //highlight border
                 .classed('selected', true);
-
-            // turn highlight on node on. Timeout so to have the component react to state change
-            // highlight node also set the mark once on
-            setTimeout(() => {
-                //   console.log('node clicked, ', node); //TODO: revisit after Ion's branch merged
-                this.$store.commit('HIGHLIGHT_NODE_ON', node.patent.id);
-            });
         },
 
         /**
