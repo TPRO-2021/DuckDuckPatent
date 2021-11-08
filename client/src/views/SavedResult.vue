@@ -6,10 +6,10 @@
                 class="saved-btn"
                 v-if="Object.keys(this.savedPatents).length === 1"
                 iconKey="bookmark"
-                btnText="saved item"
+                btnText="Saved item"
                 >Saved</Button
             >
-            <Button class="saved-btn" v-else iconKey="bookmark" btnText="saved items">Saved</Button>
+            <Button class="saved-btn" v-else iconKey="bookmark" btnText="Saved items">Saved</Button>
         </div>
         <div class="saved-list">
             <savedPatent
