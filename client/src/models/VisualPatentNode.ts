@@ -4,7 +4,6 @@ import { Patent } from '@/models/Patent';
 export interface VisualPatentNode extends SimulationNodeDatum {
     id: string;
     patent: Patent;
-    type: 'patent' | 'author' | 'citation' | 'company';
-    color: string;
+    type: 'patent' | 'author' | 'citation' | 'company' | 'family';
     size: number;
 }
