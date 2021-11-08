@@ -47,7 +47,9 @@ export default defineComponent({
         this.page = Number(this.$route.query.page || 1);
     },
     async mounted() {
+        this.$store.commit('showLoadingScreen');
         await this.retrieveDocumentPage(this.page);
+        this.$store.commit('hideLoadingScreen');
     },
     methods: {
         async retrieveDocumentPage(page: number) {
