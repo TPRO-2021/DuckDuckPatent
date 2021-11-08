@@ -76,7 +76,13 @@ export default defineComponent({
         return {
             openMenu: false,
             timer: 0,
-            nodes: [{ type: 'patents' }, { type: 'authors' }, { type: 'companies' }, { type: 'citations' }],
+            nodes: [
+                { type: 'patents' },
+                { type: 'families' },
+                { type: 'authors' },
+                { type: 'companies' },
+                { type: 'citations' },
+            ],
         };
     },
     props: {

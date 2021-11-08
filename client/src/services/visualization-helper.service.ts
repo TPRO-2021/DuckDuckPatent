@@ -54,7 +54,6 @@ export default class VisualizationHelperService {
             nodes = [...nodes, ...companyNodes];
         }
 
-
         // If the user has selected to view citations
         if (vizOptions.includes('citations')) {
             const citationNodes = Object.keys(citationMap) // Get the keys (citation ids) from the citationMap.
