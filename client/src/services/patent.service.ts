@@ -36,10 +36,16 @@ export default class PatentService {
         if (!response.ok) {
             PatentService.throwError(response.status);
         }
+
         // accessing x-total-count header which indicates how many results are available
         const totalCount = parseInt(response.headers.get('x-total-count') || '99');
         const json = (await response.json()) as Patent[];
         this.requestPending = false;
+
+        //temporary approach to handle no results meeting filters
+        if (json.length === 0) {
+            PatentService.throwError(404);
+        }
         return { patents: json, totalCount };
     }
 

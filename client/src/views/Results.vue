@@ -45,7 +45,7 @@
                 icon-key="check"
                 btn-text="Load more"
             ></Button>
-            <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" />
+            <!--            <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" /> TODO: remove if not further worked on-->
         </div>
         <!-- This div contains the top right controls (saved button) -->
         <div class="top-controls">
@@ -97,7 +97,6 @@ export default defineComponent({
         Searchbar,
         PatentPreview,
         KeywordSuggestions,
-        RoundButton,
         OptionsMenu,
         ResultsVisualization,
         Button,
