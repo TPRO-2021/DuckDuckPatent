@@ -2,7 +2,14 @@
     <div class="saved-page">
         <div class="saved-controls">
             <RoundButton class="back-btn" icon-key="reply" @click="goBack"></RoundButton>
-            <Button class="saved-btn" iconKey="bookmark" btnText="saved item">Saved</Button>
+            <Button
+                class="saved-btn"
+                v-if="Object.keys(this.savedPatents).length === 1"
+                iconKey="bookmark"
+                btnText="saved item"
+                >Saved</Button
+            >
+            <Button class="saved-btn" v-else iconKey="bookmark" btnText="saved items">Saved</Button>
         </div>
         <div class="saved-list">
             <savedPatent
@@ -127,11 +134,11 @@ export default defineComponent({
     width: 40px;
 }
 .saved-list {
-    padding-left: 0 !important;
+    padding-left: 20px;
     gap: 65px;
     flex-grow: 5;
     display: flex;
-    justify-content: center;
+    justify-content: left;
     flex-direction: row;
     flex-wrap: wrap;
     padding-bottom: 65px;
