@@ -79,6 +79,7 @@
                 detailedPatent = null;
                 this.$store.commit('HIDE_DIALOG_MASK');
             "
+            v-on:on-save-patent-detailed="onSavePatentDetailed($event)"
         />
     </div>
 </template>
@@ -479,6 +480,12 @@ export default defineComponent({
             const patent = this.patents.find((t) => t.id === event.id);
             this.$store.commit('ADD_SAVED_PATENT', { patent, searchTerms: this.terms });
             this.selectedNode = null;
+        },
+        onSavePatentDetailed(event: { patent: ExtendedPatent }): void {
+            this.$store.commit('ADD_SAVED_PATENT', {
+                patent: event.patent.patent,
+                searchTerms: event.patent.searchTerms,
+            });
         },
     },
 });

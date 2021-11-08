@@ -20,7 +20,12 @@
                     icon-key="delete_forever"
                     v-on:on-clicked="onRemove"
                 />
-                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="bookmark"></RoundButton>
+                <RoundButton
+                    v-if="!isSavedPage && !isSaved"
+                    class="round-btn"
+                    icon-key="bookmark"
+                    @click="this.savePatent"
+                ></RoundButton>
                 <RoundButton class="round-btn" icon-key="open_in_new" />
                 <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="visibility_off" />
                 <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="done" />
@@ -108,6 +113,7 @@ import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import Button from '@/components/Button.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
+import { Patent } from '@/models/Patent';
 import DocumentService from '@/services/document.service';
 import { DocumentInformation } from '@/models/DocumentInformation';
 import Chip from '@/components/Chip.vue';
@@ -136,7 +142,12 @@ export default defineComponent({
             default: true,
         },
     },
-    emits: ['onClose', 'removeFromSaved', 'onOpenExploration'],
+    emits: {
+        onClose: null,
+        onOpenExploration: null,
+        onSavePatentDetailed: (event: { patent: ExtendedPatent }) => event,
+        removeFromSaved: null,
+    },
     data() {
         return {
             documents: null as DocumentInformation[] | null,
@@ -171,6 +182,11 @@ export default defineComponent({
     created() {
         this.loadFamily();
     },
+    computed: {
+        isSaved(): boolean {
+            return (this.$store.state.savedPatents || {})[this.extendedPatent?.patent?.id];
+        },
+    },
     methods: {
         /**
          * Handles closing of the preview and also resets the "state" values
@@ -180,6 +196,10 @@ export default defineComponent({
             this.documents = null;
             this.noDocuments = false;
             this.$emit('onClose');
+        },
+        savePatent(): void {
+            this.$emit('onSavePatentDetailed', { patent: this.extendedPatent as ExtendedPatent });
+            this.isSubMenuOpen = false;
         },
 
         /**
