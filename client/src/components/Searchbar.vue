@@ -169,6 +169,7 @@ export default defineComponent({
     overflow-wrap: break-word;
     .chip {
         float: left;
+        //vertical-align: middle;
     }
 }
 
@@ -195,7 +196,7 @@ export default defineComponent({
     right: 20px;
     width: 30px;
     height: 100%;
-    padding: 10px;
+    padding: 13px;
     background: none;
     color: black;
     cursor: pointer;
@@ -206,6 +207,7 @@ export default defineComponent({
 
 .search-icon {
     font-size: 30px !important;
+    vertical-align: middle;
 }
 
 .search-input {
