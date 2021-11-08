@@ -9,9 +9,10 @@ export default class HttpService {
     /**
      * Makes a request and also aborts previous pending requests
      * @param url
+     * @param accept
      * @protected
      */
-    protected async makeRequest(url: string): Promise<Response> {
+    protected async makeRequest(url: string, accept = 'application/json'): Promise<Response> {
         // if request pending, abort it.
         if (this.requestPending && this.controller) {
             HttpService.abortRequest(this.controller);
@@ -22,6 +23,9 @@ export default class HttpService {
 
         const response = await fetch(url, {
             signal: this.controller.signal,
+            headers: {
+                Accept: accept,
+            },
         });
 
         if (!response.ok) {

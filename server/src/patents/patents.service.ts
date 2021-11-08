@@ -11,7 +11,7 @@ import {
 } from './models';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import { AxiosResponse } from 'axios';
+import { AxiosResponse, ResponseType } from 'axios';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 
 import * as _ from 'lodash';
@@ -118,8 +118,8 @@ export class PatentsService {
         );
         console.log(queryString);
 
-        const data = await this.sendOpsRequest<PatentQueryResponse>(queryString, {}, 'get');
-        return this.processQuery(data, languages);
+        const response = await this.sendOpsRequest<PatentQueryResponse>(queryString, {}, 'get');
+        return this.processQuery(response.data, languages);
     }
 
     /**
@@ -131,13 +131,25 @@ export class PatentsService {
 
         const opsResponse = await this.sendOpsRequest<OpsImageQueryResponse>(queryUrl, {}, 'get');
 
-        return this.processImageQuery(opsResponse);
+        return this.processImageQuery(opsResponse.data);
     }
 
-    public async getDocument(url: string, contentType: string) {
+    public async getDocument(url: string, contentType: string, range: number) {
         const queryUrl = `${process.env.PATENT_API_URL}/rest-services/${url}`;
 
-        return this.sendOpsRequest(queryUrl, {}, 'get', false, contentType);
+        return this.sendOpsRequest(
+            queryUrl,
+            {
+                headers: {
+                    'X-OPS-Range': range,
+                },
+                responseType: 'arraybuffer',
+                responseEncoding: 'binary',
+            },
+            'get',
+            false,
+            contentType,
+        );
     }
 
     /**
@@ -388,6 +400,7 @@ export class PatentsService {
                     sections.map((section) => ({ name: section['@name'], startPage: section['@start-page'] })),
                 [],
             ),
+            pages: Number(document['@number-of-pages'] || 0),
         }));
     }
 
@@ -398,15 +411,17 @@ export class PatentsService {
      * @param requestType
      * @param isSecondAttempt
      * @param accept
+     * @param acceptEncoding
      * @private
      */
     private async sendOpsRequest<T>(
         endpoint: string,
-        config: { headers? },
+        config: { headers?; responseType?: ResponseType; responseEncoding?: string },
         requestType: 'get',
         isSecondAttempt = false,
         accept = 'application/json',
-    ): Promise<T> {
+        acceptEncoding = 'gzip, deflate, br',
+    ): Promise<{ data: T; headers: Record<string, string> }> {
         try {
             // if no auth data is present we need to generate an access token
             if (!this.authData) {
@@ -418,13 +433,13 @@ export class PatentsService {
                 ...(config.headers || {}),
                 Authorization: `Bearer ${this.authData.access_token}`,
                 Accept: accept,
+                'Accept-Encoding': acceptEncoding,
             };
 
             console.log('endpoint', endpoint);
 
             const response = await lastValueFrom(this.httpService[requestType]<T>(endpoint, config));
-
-            return response.data as T;
+            return { data: response.data as T, headers: response.headers };
         } catch (error) {
             // if access token is expired we will attempt to renew it and send the request again
             if ((error?.response?.data as string)?.toLowerCase().includes('access token has expired')) {

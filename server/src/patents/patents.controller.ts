@@ -49,7 +49,7 @@ export class PatentsController {
     }
 
     @Get('/:patentId/documents/:docUrl')
-    async getDocument(@Param('docUrl') docUrl: string, @Headers() headers, @Response() res: Res) {
+    async getDocument(@Param('docUrl') docUrl: string, @Headers() headers, @Response() res: Res, @Query() query) {
         const contentType = headers.accept;
 
         if (!contentType) {
@@ -57,8 +57,13 @@ export class PatentsController {
         }
 
         const decodedUrl = Buffer.from(docUrl, 'base64').toString('ascii');
-        const data = await this.patentService.getDocument(decodedUrl, contentType);
+        const data = await this.patentService.getDocument(decodedUrl, contentType, Number(query.range || 0));
 
-        return res.contentType(contentType).send(data);
+        let response: Res;
+        for (const headersKey in data.headers) {
+            response = res.setHeader(headersKey, data.headers[headersKey]);
+        }
+
+        return response.send(data.data);
     }
 }
