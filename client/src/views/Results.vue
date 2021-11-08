@@ -281,7 +281,11 @@ export default defineComponent({
 
             this.$store.commit('SHOW_LOADING_BAR');
             const { patents, totalCount } = await this.patentService.get(this.terms, this.filters, newPage);
-            this.$store.dispatch('addPatents', { patents: this.patents.concat(patents), totalCount, page: newPage });
+            this.$store.dispatch('addPatents', {
+                patents: this.patents.concat(patents),
+                totalCount,
+                page: newPage,
+            });
 
             this.checkResult();
             this.$store.commit('HIDE_LOADING_BAR');
@@ -400,7 +404,8 @@ export default defineComponent({
          * Checks if there need to be any additional actions done for the result
          */
         checkResult(): void {
-            this.moreDataAvailable = this.totalCount > 99 && this.currentPage < this.availablePages;
+            this.moreDataAvailable =
+                this.totalCount > 99 && this.currentPage < this.availablePages && this.currentPage <= 18;
         },
 
         /**
