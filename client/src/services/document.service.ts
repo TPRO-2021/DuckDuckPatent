@@ -7,19 +7,32 @@ export default class DocumentService extends HttpService {
      * @param patentId
      */
     async query(patentId: string): Promise<DocumentInformation[] | null> {
-        // if request pending, abort it.
-        if (this.requestPending && this.controller) {
-            DocumentService.abortRequest(this.controller);
-        }
-
-        //generate signal for new request
-        this.controller = new AbortController();
-        this.requestPending = true;
-
-        const response = await this.makeRequest(`/api/patents/${patentId}/images`);
+        const response = await this.makeRequest(`/api/patents/${patentId}/documents`);
         const json = (await response.json()) as DocumentInformation[];
 
         this.requestPending = false;
         return json;
+    }
+
+    /**
+     * Gets a page of the document
+     * @param patentId
+     * @param document
+     */
+    async get(patentId: string, document: DocumentInformation): Promise<void> {
+        const url = `/api/patents/${patentId}/documents/${btoa(document.url)}?range=${1}`;
+
+        // preferable we want to get a pdf document back
+        let type = document.formats.filter((format) => format === 'image/tiff')[0];
+        if (!type) {
+            type = document.formats[0];
+        }
+
+        const response = await this.makeRequest(url, type);
+
+        const doc = await response.blob();
+        const docUrl = URL.createObjectURL(new Blob([doc], { type: type }));
+
+        window.open(docUrl, '_blank');
     }
 }

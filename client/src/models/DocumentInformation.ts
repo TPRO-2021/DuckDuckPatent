@@ -3,4 +3,5 @@ export interface DocumentInformation {
     type: string;
     url: string;
     sections: { name: string; startPage: string }[];
+    pages: number;
 }

@@ -84,7 +84,7 @@
                                 v-for="(attachment, index) in documents"
                                 :key="index"
                                 :type="attachment.type"
-                                v-on:on-open="openDocument(attachment.url)"
+                                v-on:on-open="openDocument(attachment)"
                             ></Attachment>
                         </div>
                         <!-- Display skeleton to indicate loading -->
@@ -195,8 +195,15 @@ export default defineComponent({
             });
         },
 
-        openDocument(url: string) {
-            console.log(url);
+        openDocument(document: DocumentInformation) {
+            this.$store.commit('SHOW_LOADING_BAR');
+            try {
+                this.documentService.get((this.extendedPatent as ExtendedPatent)?.patent?.id, document);
+            } catch (err) {
+                console.error(err);
+            }
+
+            this.$store.commit('HIDE_LOADING_BAR');
         },
     },
 });
