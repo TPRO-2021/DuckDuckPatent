@@ -2,14 +2,7 @@
     <div class="saved-page">
         <div class="saved-controls">
             <RoundButton class="back-btn" icon-key="reply" @click="goBack"></RoundButton>
-            <Button
-                class="saved-btn"
-                v-if="Object.keys(this.savedPatents).length === 1"
-                iconKey="bookmark"
-                btnText="Saved item"
-                >Saved</Button
-            >
-            <Button class="saved-btn" v-else iconKey="bookmark" btnText="Saved items">Saved</Button>
+            <Button class="saved-btn" iconKey="bookmark" :btnText="btnText">Saved</Button>
         </div>
         <div class="saved-list">
             <savedPatent
@@ -67,6 +60,9 @@ export default defineComponent({
         },
         searchTerms(): string[] {
             return this.$store.state.searchTerms;
+        },
+        btnText(): string {
+            return Object.keys(this.savedPatents).length === 1 ? 'Saved item' : 'Saved items';
         },
     },
     methods: {
