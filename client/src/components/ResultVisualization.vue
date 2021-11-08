@@ -64,6 +64,7 @@ import {
 } from 'd3';
 
 import { VisualPatentNode } from '@/models/VisualPatentNode';
+import { NodeInfo } from '@/models/NodeInfo';
 import VisualizationHelperService from '@/services/visualization-helper.service';
 import { VisualPatentLink } from '@/models/VisualPatentLink';
 import { RelationMap } from '@/models/RelationMap';
@@ -90,7 +91,8 @@ export default defineComponent({
         },
     },
     emits: {
-        onPatentSelected: (e: { patent?: Patent; index: number }) => e,
+        onNodeSelected: (e: { node: NodeInfo }) => e,
+        onClearNodeSelected: null,
     },
     data() {
         return {
@@ -395,8 +397,7 @@ export default defineComponent({
             this.selectedNode = null;
             this.updateData();
             this.updateGraph(0.01);
-            this.$emit('onPatentSelected', { index: -1 });
-
+            this.$emit('onClearNodeSelected');
             this.selections.graph.selectAll('circle').classed('selected', false);
         },
 
@@ -550,13 +551,10 @@ export default defineComponent({
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
             if (node.type === 'patent') {
-                // show preview card
-                this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
                 //only patents have preview, hence checkmark them
                 this.$store.commit('MARK_NODE_ON', { pID: node.patent.id, twice: false });
-            } else {
-                this.$emit('onPatentSelected', { index: -1 });
             }
+            this.$emit('onNodeSelected', { node: node });
 
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.selectedNode = node;

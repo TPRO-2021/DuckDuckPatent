@@ -34,7 +34,8 @@
             <ResultsVisualization
                 :visualization-options="visualizationOptions"
                 :patents="patents"
-                v-on:on-patent-selected="onPatentSelected"
+                v-on:on-node-selected="onNodeSelected"
+                v-on:on-clear-node-selected="onClearNodeSelected"
             />
         </div>
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
@@ -57,12 +58,20 @@
             />
         </div>
 
-        <div class="patent-preview" v-if="selectedPatentIndex > -1">
-            <PatentPreview
-                :patent="patents[selectedPatentIndex]"
-                v-on:on-change-patent="onChangePatent($event)"
+        <div class="patent-preview" v-if="isPreviewActive">
+            <PatentPreviewComponent
+                v-if="currentPatentPreview"
+                :current="currentPatentPreview"
+                :terms="terms"
+                v-on:on-change-patent="onChangeNode($event, allPatentIds, 'patent')"
                 v-on:on-save-patent="onSavePatent($event)"
                 v-on:on-show-more="onShowMore($event)"
+            />
+            <NodePreviewComponent
+                v-if="currentNodePreview"
+                :current="currentNodePreview"
+                v-on:on-control-change="onChangeNode($event, allCitationIds, 'citation')"
+                v-on:on-select-patent="selectPatent($event)"
             />
         </div>
         <DetailedPatentView
@@ -78,10 +87,16 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import PatentService from '@/services/patent.service';
+import PreviewHelperService from '@/services/preview-helper.service';
 import { Patent } from '@/models/Patent';
 import { Filter } from '@/models/Filter';
+import { PatentPreview } from '@/models/PatentPreview';
+import { NodePreview } from '@/models/NodePreview';
+import { NodeInfo } from '@/models/NodeInfo';
+import { NodeType } from '@/models/NodeType';
 import Searchbar from '@/components/Searchbar.vue';
-import PatentPreview from '@/components/PatentPreview.vue';
+import PatentPreviewComponent from '@/components/PatentPreview.vue';
+import NodePreviewComponent from '@/components/NodePreview.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
 import OptionsMenu from '@/components/OptionsMenu.vue';
@@ -95,7 +110,8 @@ export default defineComponent({
     name: 'Results',
     components: {
         Searchbar,
-        PatentPreview,
+        PatentPreviewComponent,
+        NodePreviewComponent,
         KeywordSuggestions,
         OptionsMenu,
         ResultsVisualization,
@@ -110,7 +126,7 @@ export default defineComponent({
             patentService: new PatentService(),
             keywordService: new KeywordService(),
             showTimeline: false,
-            selectedPatentIndex: -1,
+            selectedNode: null as NodeInfo | null,
             inputFieldWaiting: false,
             moreDataAvailable: false,
             lastFilterString: '',
@@ -166,6 +182,33 @@ export default defineComponent({
 
             return Object.keys(this.$store.state.savedPatents).length.toString();
         },
+        currentPatentPreview(): PatentPreview | null {
+            if (this.selectedNode == null || this.selectedNode.type !== 'patent') {
+                return null;
+            }
+            const patent = this.patents.find((t) => t.id === this.selectedNode!.id);
+            if (patent == null) {
+                return null;
+            }
+            const savedPatents = this.$store.state.savedPatents;
+            return PreviewHelperService.getPatentPreview(patent, savedPatents);
+        },
+        currentNodePreview(): NodePreview | null {
+            switch (this.selectedNode?.type) {
+                case 'citation':
+                    return PreviewHelperService.getCitationPreview(this.selectedNode, this.$store.state.patents);
+            }
+            return null;
+        },
+        isPreviewActive(): boolean {
+            return this.selectedNode != null;
+        },
+        allPatentIds(): string[] {
+            return this.patents.map((t) => t.id);
+        },
+        allCitationIds(): string[] {
+            return this.patents.reduce((list, p) => [...list, ...(p.citations || [])], [] as Patent[]).map((t) => t.id);
+        },
     },
     async created() {
         this.$store.commit('showLoadingScreen');
@@ -207,7 +250,7 @@ export default defineComponent({
             this.debounceHandler = setTimeout(async () => {
                 await this.refreshResults();
                 this.inputFieldWaiting = false;
-                this.selectedPatentIndex = -1; //to reset the patent preview if it was active before
+                this.selectedNode = null; //to reset the patent preview if it was active before
             }, debounceTime);
         },
         /**
@@ -292,36 +335,39 @@ export default defineComponent({
          * Event handler which sets the current index to the passed
          * @param e
          */
-        onPatentSelected(e: { patent: Patent; index: number }) {
-            this.selectedPatentIndex = e.index;
+        onNodeSelected(e: { node: NodeInfo }) {
+            this.selectedNode = e.node;
         },
 
         /**
-         * Event handler which processes a change of patent
+         * Event handler which resets the current node index
          * @param e
          */
-        onChangePatent(e: { direction: string }): void {
+        onClearNodeSelected() {
+            this.selectedNode = null;
+        },
+
+        /**
+         * Handle the controls in the node preview being clicked
+         */
+        onChangeNode(e: { direction: string }, collection: string[], type: NodeType): void {
             // reset highlight on node
             this.$store.commit('HIGHLIGHT_NODE_OFF');
 
+            let selectedIndex = collection.findIndex((t) => t === this.selectedNode?.id);
             switch (e.direction) {
                 case 'next':
-                    if (this.selectedPatentIndex >= this.patents.length - 1) {
-                        this.selectedPatentIndex = 0;
-                        break;
-                    }
-
-                    this.selectedPatentIndex++;
+                    selectedIndex = (selectedIndex + 1) % collection.length;
                     break;
                 case 'previous':
-                    if (this.selectedPatentIndex === 0) {
-                        this.selectedPatentIndex = this.patents.length - 1;
-                        break;
-                    }
-
-                    this.selectedPatentIndex--;
+                    selectedIndex = selectedIndex - 1;
+                    selectedIndex = selectedIndex < 0 ? collection.length - 1 : selectedIndex;
                     break;
             }
+            this.selectedNode = {
+                id: collection[selectedIndex],
+                type,
+            };
 
             //set mark once on viewed node
             this.$store.commit('MARK_NODE_ON', {
@@ -330,19 +376,31 @@ export default defineComponent({
             });
             // turn highlight on node on. Timeout so to have the component react to state change
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', (this.patents as Patent[])[this.selectedPatentIndex].id);
+                this.$store.commit('HIGHLIGHT_NODE_ON', {
+                    pID: this.selectedNode!.id,
+                    twice: false,
+                });
             });
         },
+
+        /**
+        * Handle selecting a patent
+        */
+        selectPatent(event: { id: string }) {
+            this.selectedNode = { id: event.id, type: 'patent' };
+        },
+
         /**
          * Shows the detailed patent view
          * Is called when the user clicks on the show-more button of a patent
          * @param event
          */
-        onShowMore(event: { patent: Patent; searchTerms: string[] }) {
+        onShowMore(event: { id: string; searchTerms: string[] }) {
+            const patent = this.patents.find((t) => t.id === event.id);
             this.$store.commit('HIGHLIGHT_NODE_OFF');
 
             this.$store.commit('SHOW_DIALOG_MASK');
-            this.detailedPatent = event as ExtendedPatent;
+            this.detailedPatent = { patent, searchTerms: event.searchTerms } as ExtendedPatent;
             //set mark twice on viewed node
             this.$store.commit('MARK_NODE_ON', { pID: this.detailedPatent?.patent.id, twice: true });
             // highlight node
@@ -358,7 +416,7 @@ export default defineComponent({
          */
         reset(): void {
             this.$store.dispatch('addPatents', { patents: [] as Patent[], totalCount: 0 });
-            this.selectedPatentIndex = -1;
+            this.selectedNode = null;
             this.resetWaiting = true;
             this.resetHandler = setTimeout(async () => {
                 this.$store.commit('HIDE_NORESULT_TOAST');
@@ -419,9 +477,10 @@ export default defineComponent({
          * Adds a patent to the saved list
          * @param event
          */
-        onSavePatent(event: { patent: Patent }): void {
-            this.$store.commit('ADD_SAVED_PATENT', { patent: event.patent, searchTerms: this.terms });
-            this.selectedPatentIndex = -1;
+        onSavePatent(event: { id: string }): void {
+            const patent = this.patents.find((t) => t.id === event.id);
+            this.$store.commit('ADD_SAVED_PATENT', { patent, searchTerms: this.terms });
+            this.selectedNode = null;
         },
     },
 });
