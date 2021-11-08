@@ -759,7 +759,7 @@ circle.citation {
 }
 
 circle.family {
-    fill: $yellow;
+    fill: $purple;
     stroke: none;
 }
 

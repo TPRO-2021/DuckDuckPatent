@@ -29,7 +29,7 @@
                 ></ToggleSwitch>
                 <ToggleSwitch
                     :default-state="isFamiliesOn"
-                    custom-color="#ddb906"
+                    custom-color="#896978"
                     v-on:on-clicked="onClicked($event, 'families')"
                 ></ToggleSwitch>
                 <ToggleSwitch
