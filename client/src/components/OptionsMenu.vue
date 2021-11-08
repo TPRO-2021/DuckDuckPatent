@@ -25,22 +25,27 @@
                 <ToggleSwitch
                     :default-state="isPatentsOn"
                     custom-color="#a88529"
-                    v-on:on-clicked="onClicked($event, nodes[0].type)"
+                    v-on:on-clicked="onClicked($event, 'patents')"
+                ></ToggleSwitch>
+                <ToggleSwitch
+                    :default-state="isFamiliesOn"
+                    custom-color="#ddb906"
+                    v-on:on-clicked="onClicked($event, 'families')"
                 ></ToggleSwitch>
                 <ToggleSwitch
                     :default-state="isAuthorsOn"
                     custom-color="#A82929"
-                    v-on:on-clicked="onClicked($event, nodes[1].type)"
+                    v-on:on-clicked="onClicked($event, 'authors')"
                 ></ToggleSwitch>
                 <ToggleSwitch
                     :default-state="isCompaniesOn"
                     custom-color="#2973A8"
-                    v-on:on-clicked="onClicked($event, nodes[2].type)"
+                    v-on:on-clicked="onClicked($event, 'companies')"
                 ></ToggleSwitch>
                 <ToggleSwitch
                     :default-state="isCitationsOn"
                     custom-color="#487909"
-                    v-on:on-clicked="onClicked($event, nodes[3].type)"
+                    v-on:on-clicked="onClicked($event, 'citations')"
                 ></ToggleSwitch>
             </div>
         </div>
@@ -89,6 +94,9 @@ export default defineComponent({
     computed: {
         isPatentsOn(): boolean {
             return this.$props.options.includes('patents');
+        },
+        isFamiliesOn(): boolean {
+            return this.$props.options.includes('families');
         },
         isAuthorsOn(): boolean {
             return this.$props.options.includes('authors');

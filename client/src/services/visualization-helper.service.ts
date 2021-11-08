@@ -90,19 +90,20 @@ export default class VisualizationHelperService {
 
             nodes = [...nodes, ...citationNodes]; // Extend the nodes array with the citation nodes
         }
-
-        const familyNodes = Object.keys(familyMap)
-            .filter((t) => familyMap[t].length > 1)
-            .map((id) => {
-                const patentsInFamily = familyMap[id];
-                return {
-                    id, // Set the id to be the family Id
-                    patent: patentMap[patentsInFamily[0]], // used for tooltip ect. - this should change
-                    type: 'family', // Set the type of the node to 'family'
-                    size: patentsInFamily.length * 3 + 5, // Use dynamic sizing to show relative importance
-                } as VisualPatentNode;
-            });
-        nodes = [...nodes, ...familyNodes];
+        if (vizOptions.includes('families')) {
+            const familyNodes = Object.keys(familyMap)
+                .filter((t) => familyMap[t].length > 1)
+                .map((id) => {
+                    const patentsInFamily = familyMap[id];
+                    return {
+                        id, // Set the id to be the family Id
+                        patent: patentMap[patentsInFamily[0]], // used for tooltip ect. - this should change
+                        type: 'family', // Set the type of the node to 'family'
+                        size: patentsInFamily.length * 3 + 5, // Use dynamic sizing to show relative importance
+                    } as VisualPatentNode;
+                });
+            nodes = [...nodes, ...familyNodes];
+        }
 
         return nodes;
     }
