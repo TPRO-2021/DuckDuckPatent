@@ -107,9 +107,9 @@ export default createStore({
                     }
                     let value = args.value;
                     if (filter.type === 'date' && args.prop === 'value') {
-                        const [year1, year2] = (value as string).split('-')
+                        const [year1, year2] = (value as string).split('-');
 
-                        value = `${parseInt(year1, 10) || ''}-${parseInt(year2, 10) || ''}` as Filter[K]
+                        value = `${parseInt(year1, 10) || ''}-${parseInt(year2, 10) || ''}` as Filter[K];
                     }
                     return {
                         ...filter, // Extend the current filter

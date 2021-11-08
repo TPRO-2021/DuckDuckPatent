@@ -20,14 +20,13 @@ export default defineComponent({
     props: {
         name: String,
         value: String,
-        filter: { required: true, type: Object }
+        filter: { required: true, type: Object },
     },
     emits: ['edit', 'delete'],
     computed: {
-      isValid() {
-          return FilterHelperService.isValid(this.$props.filter as Filter);
-
-      }
+        isValid() {
+            return FilterHelperService.isValid(this.$props.filter as Filter);
+        },
     },
     methods: {
         /**
@@ -65,11 +64,11 @@ export default defineComponent({
 }
 .filter.is-invalid > div {
     background-color: #800000;
-    border-color:  #800000;
+    border-color: #800000;
 }
 .filter.is-invalid > .head {
     background-color: white;
-    color:  #800000;
+    color: #800000;
 }
 .filter > .head {
     border: 1px solid black;
