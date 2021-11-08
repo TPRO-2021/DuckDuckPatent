@@ -331,6 +331,7 @@ export default defineComponent({
         updateData(): void {
             const patents = this.patents as Patent[];
             const citationMap = VisualizationHelperService.getCitationMap(patents);
+            const familyMap = VisualizationHelperService.getFamilyMap(patents);
 
             let authorsMap = {} as RelationMap;
             if (this.visualizationOptions.includes('authors')) {
@@ -345,6 +346,7 @@ export default defineComponent({
             const nextNodes = VisualizationHelperService.getNodes(
                 patents,
                 citationMap,
+                familyMap,
                 this.visualizationOptions as string[],
                 this.selectedNode,
                 authorsMap,
@@ -356,6 +358,7 @@ export default defineComponent({
             this.graph.links = VisualizationHelperService.getLinks(
                 this.graph.nodes,
                 citationMap,
+                familyMap,
                 authorsMap,
                 companyMap,
             );
@@ -698,6 +701,8 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
+@import '../styles/colors';
+
 .d3-container {
     width: 100vw;
     height: 100vh;
@@ -744,22 +749,27 @@ circle {
 }
 
 circle.patent {
-    fill: rgb(168, 133, 41);
+    fill: $brown;
     stroke: none;
 }
 
 circle.citation {
-    fill: green;
+    fill: $green;
+    stroke: none;
+}
+
+circle.family {
+    fill: $purple;
     stroke: none;
 }
 
 circle.author {
-    fill: brown;
+    fill: $red;
     stroke: none;
 }
 
 circle.company {
-    fill: rgb(41, 115, 168);
+    fill: $blue;
     stroke: none;
 }
 
