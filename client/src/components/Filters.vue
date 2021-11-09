@@ -78,6 +78,7 @@
             <FilterComponent
                 name="date"
                 :value="filter.value"
+                :filter="filter"
                 v-on:edit="onEditClicked(filter.id)"
                 v-on:delete="onRemoveClicked(filter.id)"
             />
@@ -86,6 +87,7 @@
             <FilterComponent
                 name="language"
                 :value="displayValue(languageList, filter.value)"
+                :filter="filter"
                 v-on:edit="onEditClicked(filter.id)"
                 v-on:delete="onRemoveClicked(filter.id)"
             />
@@ -94,6 +96,7 @@
             <FilterComponent
                 name="country"
                 :value="displayValue(countryList, filter.value)"
+                :filter="filter"
                 v-on:edit="onEditClicked(filter.id)"
                 v-on:delete="onRemoveClicked(filter.id)"
             />

@@ -66,29 +66,33 @@
             <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
             <div class="footer-container">
                 <div class="patent-additional-info">
-                    <div class="attachments">
+                    <div class="keywords">
+                        <div class="label-keywords">Searched keywords:</div>
+                        <span class="keyword-chips">
+                            <Chip
+                                v-for="(keyword, index) in extendedPatent.searchTerms"
+                                :key="index"
+                                :has-action="false"
+                                :text="keyword"
+                            ></Chip>
+                        </span>
+                    </div>
+                    <div class="attachments" v-if="!noDocuments">
                         <div class="label-attachment">Attachments</div>
-                        <div class="attachment">
-                            <iframe class="pdf-doc" src="" title="info.pdf" />
-
-                            <div class="name-doc">
-                                info.pdf
-                                <div>
-                                    <span class="material-icons"> open_in_new </span>
-                                    <span class="material-icons"> file_download</span>
-                                </div>
+                        <div class="attachment-items" v-if="documents">
+                            <Attachment
+                                v-for="(attachment, index) in documents"
+                                :key="index"
+                                :type="attachment.type"
+                                v-on:on-open="openDocument(attachment)"
+                            ></Attachment>
+                        </div>
+                        <!-- Display skeleton to indicate loading -->
+                        <div class="attachment-items" v-if="!documents">
+                            <div class="card box-shadow" v-for="(_item, index) in [1, 2, 3]" :key="index">
+                                <Skeleton width="60px" height="30px"></Skeleton>
                             </div>
                         </div>
-                    </div>
-                    <div class="keywords">
-                        <span class="keywords label-keywords">Searched keywords:</span>
-                        <span class="keywords">
-                            <span v-for="(keyword, index) in extendedPatent.searchTerms" :key="index">
-                                <span>{{ keyword }}</span>
-                                <span v-if="index !== extendedPatent.searchTerms.length - 1">, </span>
-                                <span v-if="index <= extendedPatent.searchTerms.length - 1"> </span>
-                            </span>
-                        </span>
                     </div>
                 </div>
                 <div class="column btn-exploration">
@@ -104,6 +108,10 @@ import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import Button from '@/components/Button.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
+import DocumentService from '@/services/document.service';
+import { DocumentInformation } from '@/models/DocumentInformation';
+import Chip from '@/components/Chip.vue';
+import Attachment from '@/components/Attachment.vue';
 
 /**
  * This component previews the content of a patent
@@ -111,8 +119,10 @@ import { ExtendedPatent } from '@/models/ExtendedPatent';
 export default defineComponent({
     name: 'DetailedPatentView',
     components: {
-        RoundButton,
+        Attachment,
         Button,
+        Chip,
+        RoundButton,
     },
     props: {
         extendedPatent: { type: Object },
@@ -128,28 +138,48 @@ export default defineComponent({
             isSubMenuOpen: false,
             index: 0,
             saved: true,
-            /**
-             * Holds the submenu buttons
-             */
+            // Holds the submenu buttons
             optionButtons: [
                 { iconKey: 'push_pin', action: 'save' },
                 { iconKey: 'visibility_off', action: 'dontLike' },
                 { iconKey: 'done', action: 'like' },
             ],
             patentAvailable: false,
+            noDocuments: false,
+            documentService: new DocumentService(),
+            documents: null as DocumentInformation[] | null,
         };
     },
-
     watch: {
-        extendedPatent(newVal: ExtendedPatent): void {
+        async extendedPatent(newVal: ExtendedPatent): Promise<void> {
             this.patentAvailable = !!newVal;
+
+            if (!this.patentAvailable) {
+                return;
+            }
+
+            // if a new patent is available load the documents for it
+            this.$store.commit('SHOW_LOADING_BAR');
+            try {
+                this.documents = await this.documentService.query((this.extendedPatent as ExtendedPatent)?.patent?.id);
+            } catch (err) {
+                this.noDocuments = true;
+                console.error(err);
+            }
+            this.$store.commit('HIDE_LOADING_BAR');
         },
     },
     methods: {
+        /**
+         * Handles closing of the preview and also resets the "state" values
+         */
         handleClose(): void {
             this.patentAvailable = false;
+            this.documents = null;
+            this.noDocuments = false;
             this.$emit('onClose');
         },
+
         /**
          * Closes the modal and emits the removeFromSave event
          */
@@ -157,17 +187,36 @@ export default defineComponent({
             this.patentAvailable = false;
             this.$emit('removeFromSaved');
         },
+
         highlightTitle(title: string, keywords: string[]) {
             const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
             return title.replace(pattern, (match) => {
                 return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
             });
         },
+
         highlightAbstract(abstract: string, keywords: string[]) {
             const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
             return abstract.replace(pattern, (match) => {
                 return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
             });
+        },
+
+        /**
+         * Opens the document view and passes the document as a query parameter
+         * @param document
+         */
+        openDocument(document: DocumentInformation) {
+            const routeData = this.$router.resolve({
+                name: 'Document',
+                query: {
+                    document: btoa(JSON.stringify(document)),
+                    patentId: (this.extendedPatent as ExtendedPatent).patent.id,
+                    page: 1,
+                },
+            });
+
+            window.open(routeData.href, '_blank');
         },
     },
 });
@@ -227,12 +276,17 @@ export default defineComponent({
 
 .label-attachment {
     text-align: left;
-    margin: 15px 0;
+    transform: translateX(10px);
 }
 
 .attachments {
     display: flex;
     flex-direction: column;
+    margin: 10px;
+}
+
+.attachment-items {
+    display: flex;
 }
 
 .attachment {
@@ -266,12 +320,19 @@ export default defineComponent({
 }
 
 .keywords {
-    display: block;
-    text-align: left;
-    padding-left: 124px;
+    display: flex;
+    flex-direction: column;
+    margin: 10px;
 }
+
+.keyword-chips {
+    display: flex;
+    margin: 6px 10px 6px 0;
+}
+
 .label-keywords {
-    padding-top: 15px;
+    display: flex;
+    align-items: flex-start;
 }
 
 .btn-exploration {
@@ -284,12 +345,14 @@ export default defineComponent({
     width: 100%;
     height: 100%;
     display: flex;
+    gap: 40px;
     justify-content: space-between;
 }
 
 .patent-additional-info {
     display: flex;
     flex-grow: 1;
+    gap: 40px;
 }
 
 .patent-info {

@@ -89,6 +89,7 @@ import ResultsVisualization from '@/components/ResultVisualization.vue';
 import Button from '@/components/Button.vue';
 import DetailedPatentView from '@/components/DetailedPatentView.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
+import FilterHelperService from '@/services/filter-helper.service';
 
 export default defineComponent({
     name: 'Results',
@@ -120,11 +121,7 @@ export default defineComponent({
         filters(filters: Filter[]): void {
             // On every change of the filters we need to check if we should update the results
             // Create a filter string that we can compare to recently sent ones (this could be refactored)
-
-            const newFilterString = filters
-                .filter((filter) => filter.type !== 'empty' && filter.value) // Remove empty or malformed filters TODO: check if works
-                .map((filter) => `${filter.type}=${filter.value}`)
-                .join('&'); // Convert to "key=value&key2=value2" string
+            const newFilterString = FilterHelperService.getParameterList(filters).join('&'); // Convert to "key=value&key2=value2" string
 
             console.log('results page, watch. new filter val: ', newFilterString);
 
@@ -160,7 +157,7 @@ export default defineComponent({
             return this.$store.state.totalCount;
         },
         availablePages(): number {
-            return this.totalCount / 99;
+            return this.totalCount / 100;
         },
         currentPage(): number {
             return this.$store.state.pageCount;
@@ -258,7 +255,7 @@ export default defineComponent({
             this.$store.commit('SHOW_LOADING_BAR');
             await this.$router.push({ query: { terms: this.terms } });
             try {
-                const { patents, totalCount } = await this.patentService.get(this.terms, this.filters);
+                const { patents, totalCount } = await this.patentService.query(this.terms, this.filters);
                 this.$store.dispatch('addPatents', { patents, totalCount });
                 // eslint-disable-next-line
             } catch (e: any) {
@@ -283,8 +280,12 @@ export default defineComponent({
             const newPage = this.currentPage + 1;
 
             this.$store.commit('SHOW_LOADING_BAR');
-            const { patents, totalCount } = await this.patentService.get(this.terms, this.filters, newPage);
-            this.$store.dispatch('addPatents', { patents: this.patents.concat(patents), totalCount, page: newPage });
+            const { patents, totalCount } = await this.patentService.query(this.terms, this.filters, newPage);
+            this.$store.dispatch('addPatents', {
+                patents: this.patents.concat(patents),
+                totalCount,
+                page: newPage,
+            });
 
             this.checkResult();
             this.$store.commit('HIDE_LOADING_BAR');
@@ -325,12 +326,14 @@ export default defineComponent({
                     break;
             }
 
+            //set mark once on viewed node
+            this.$store.commit('MARK_NODE_ON', {
+                pID: (this.patents as Patent[])[this.selectedPatentIndex].id,
+                twice: false,
+            });
             // turn highlight on node on. Timeout so to have the component react to state change
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', {
-                    pID: (this.patents as Patent[])[this.selectedPatentIndex].id,
-                    twice: false,
-                });
+                this.$store.commit('HIGHLIGHT_NODE_ON', (this.patents as Patent[])[this.selectedPatentIndex].id);
             });
         },
         /**
@@ -339,14 +342,15 @@ export default defineComponent({
          * @param event
          */
         onShowMore(event: { patent: Patent; searchTerms: string[] }) {
-            //MARK_NODE_VIEWED_OFF
             this.$store.commit('HIGHLIGHT_NODE_OFF');
 
             this.$store.commit('SHOW_DIALOG_MASK');
             this.detailedPatent = event as ExtendedPatent;
             //set mark twice on viewed node
+            this.$store.commit('MARK_NODE_ON', { pID: this.detailedPatent?.patent.id, twice: true });
+            // highlight node
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: this.detailedPatent?.patent.id, twice: true });
+                this.$store.commit('HIGHLIGHT_NODE_ON', this.detailedPatent?.patent.id);
             });
         },
 
@@ -403,7 +407,8 @@ export default defineComponent({
          * Checks if there need to be any additional actions done for the result
          */
         checkResult(): void {
-            this.moreDataAvailable = this.totalCount > 99 && this.currentPage < this.availablePages;
+            this.moreDataAvailable =
+                this.totalCount > 99 && this.currentPage < this.availablePages - 1 && this.currentPage <= 18;
         },
 
         /**
