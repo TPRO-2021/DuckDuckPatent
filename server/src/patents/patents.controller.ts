@@ -66,4 +66,9 @@ export class PatentsController {
 
         return response.send(data.data);
     }
+
+    @Get('/:patentId/family')
+    async queryFamily(@Param('patentId') patentId) {
+        return this.patentService.queryFamily(patentId);
+    }
 }

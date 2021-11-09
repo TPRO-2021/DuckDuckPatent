@@ -6,6 +6,7 @@ import {
     OpsImageQueryResponse,
     OpsStringData,
     Patent,
+    PatentFamilyResponse,
     PatentQueryResponse,
     QueryResult,
 } from './models';
@@ -21,8 +22,9 @@ export class PatentsService {
     private authData: AuthResponse;
     private data: PatentQueryResponse;
 
-    private static patentQueryEndpoint = '/rest-services/published-data/search/biblio';
-    private static imageQueryEndpoint = '/rest-services/published-data/publication/epodoc/';
+    private static patentEndpoint = '/rest-services/published-data/search/biblio';
+    private static imageEndpoint = '/rest-services/published-data/publication/epodoc/';
+    private static familyEndpoint = '/rest-services/family/publication/docdb/';
 
     constructor(private readonly httpService: HttpService) {}
 
@@ -109,13 +111,7 @@ export class PatentsService {
      * @param date
      */
     public async query(terms: string[], page: number, languages = '', country = '', date = ''): Promise<QueryResult> {
-        const queryString = PatentsService.getQueryString(
-            terms,
-            PatentsService.patentQueryEndpoint,
-            page,
-            country,
-            date,
-        );
+        const queryString = PatentsService.getQueryString(terms, PatentsService.patentEndpoint, page, country, date);
         console.log(queryString);
 
         const response = await this.sendOpsRequest<PatentQueryResponse>(queryString, {}, 'get');
@@ -123,17 +119,50 @@ export class PatentsService {
     }
 
     /**
+     * Queries the patent family of a patent
+     * @param patentId
+     */
+    public async queryFamily(patentId: string) {
+        const queryString = process.env.PATENT_API_URL.concat(PatentsService.familyEndpoint)
+            .concat(patentId)
+            .concat('/biblio');
+
+        const opsResponse = await this.sendOpsRequest<PatentFamilyResponse>(queryString, {}, 'get');
+
+        const converted = {
+            'ops:world-patent-data': {
+                'ops:biblio-search': {
+                    '@total-result-count':
+                        opsResponse.data['ops:world-patent-data']['ops:patent-family']['@total-result-count'],
+                    'ops:search-result': {
+                        'exchange-documents':
+                            opsResponse.data['ops:world-patent-data']['ops:patent-family']['ops:family-member'],
+                    },
+                },
+            },
+        } as PatentQueryResponse;
+
+        return this.processQuery(converted);
+    }
+
+    /**
      * Returns available images for a patent
      * @param patentId
      */
     public async queryDocuments(patentId: string): Promise<DocumentInformation[]> {
-        const queryUrl = `${process.env.PATENT_API_URL}${PatentsService.imageQueryEndpoint}${patentId}/images`;
+        const queryUrl = `${process.env.PATENT_API_URL}${PatentsService.imageEndpoint}${patentId}/images`;
 
         const opsResponse = await this.sendOpsRequest<OpsImageQueryResponse>(queryUrl, {}, 'get');
 
         return this.processImageQuery(opsResponse.data);
     }
 
+    /**
+     * Gets a document from the OPS rest services
+     * @param url
+     * @param contentType
+     * @param range
+     */
     public async getDocument(url: string, contentType: string, range: number) {
         const queryUrl = `${process.env.PATENT_API_URL}/rest-services/${url}`;
 
@@ -160,80 +189,84 @@ export class PatentsService {
     private processQuery(data: PatentQueryResponse, languages?: string): QueryResult {
         const searchResult = data['ops:world-patent-data']['ops:biblio-search'];
 
-        const totalResults = Number(searchResult['@total-result-count']);
         let queryData = searchResult['ops:search-result']['exchange-documents'];
         if (!(queryData instanceof Array)) {
             queryData = [queryData];
         }
 
-        const processed = queryData
+        let processed: OpsExchangeDocument[] | Patent[] = queryData
             .map((item) => ({
                 ...item['exchange-document'],
             }))
+            // some patents don't have the property 'exchange-document' so we want to filter them out
+            .filter((item) => Object.keys(item).length > 0);
+
+        // if no language filter is specified we don't need to filter
+        if (languages) {
             // filter for only the existing languages for the title and by default if no filter applied it is English
-            .filter((item) => {
+            processed = processed.filter((item) => {
                 let title = item['bibliographic-data']['invention-title'];
                 if (!(title instanceof Array)) {
                     title = [title];
                 }
                 const patentLanguages = title.filter((t) => t).map((translation) => translation['@lang']);
                 return patentLanguages.some((lang) => languages.includes(lang));
-            })
-            .map((item) => ({
-                id: `${item['@country']}${item['@doc-number']}.${item['@kind']}`,
-                title: PatentsService.getTitle(item, languages),
-                citations: PatentsService.getCitations(item),
-                abstract: PatentsService.getAbstract(item, languages),
-                familyId: item['@family-id'] || null,
-                inventors: PatentsService.getNestedArray<string[]>(
-                    item,
-                    'bibliographic-data.parties.inventors.inventor',
-                    (inventors) => {
-                        const inventorMap = inventors.reduce((map, inventor) => {
-                            const item = map[inventor['@sequence']];
+            });
+        }
 
-                            if (!item) {
-                                map[inventor['@sequence']] = [inventor];
-                                return map;
-                            }
+        processed = processed.map((item) => ({
+            id: `${item['@country']}${item['@doc-number']}.${item['@kind']}`,
+            title: PatentsService.getTitle(item, languages),
+            citations: PatentsService.getCitations(item),
+            abstract: PatentsService.getAbstract(item, languages),
+            familyId: item['@family-id'] || null,
+            inventors: PatentsService.getNestedArray<string[]>(
+                item,
+                'bibliographic-data.parties.inventors.inventor',
+                (inventors) => {
+                    const inventorMap = inventors.reduce((map, inventor) => {
+                        const item = map[inventor['@sequence']];
 
-                            item.push(inventor);
+                        if (!item) {
+                            map[inventor['@sequence']] = [inventor];
                             return map;
-                        }, {});
+                        }
 
-                        return Object.keys(inventorMap).map(
-                            (sequence) => inventorMap[sequence][0]['inventor-name'].name.$,
-                        );
-                    },
-                    [] as string[],
-                ),
-                applicants: PatentsService.getNestedArray<string[]>(
-                    item,
-                    'bibliographic-data.parties.applicants.applicant',
-                    (applicants) => {
-                        const applicantMap = applicants.reduce((map, applicant) => {
-                            const item = map[applicant['@sequence']];
+                        item.push(inventor);
+                        return map;
+                    }, {});
 
-                            if (!item) {
-                                map[applicant['@sequence']] = [applicant];
-                                return map;
-                            }
+                    return Object.keys(inventorMap).map((sequence) => inventorMap[sequence][0]['inventor-name'].name.$);
+                },
+                [] as string[],
+            ),
+            applicants: PatentsService.getNestedArray<string[]>(
+                item,
+                'bibliographic-data.parties.applicants.applicant',
+                (applicants) => {
+                    const applicantMap = applicants.reduce((map, applicant) => {
+                        const item = map[applicant['@sequence']];
 
-                            item.push(applicant);
+                        if (!item) {
+                            map[applicant['@sequence']] = [applicant];
                             return map;
-                        }, {});
+                        }
 
-                        return Object.keys(applicantMap).map(
-                            (sequence) => applicantMap[sequence][0]['applicant-name'].name.$,
-                        );
-                    },
-                    [] as string[],
-                ),
-            }));
+                        item.push(applicant);
+                        return map;
+                    }, {});
+
+                    return Object.keys(applicantMap).map(
+                        (sequence) => applicantMap[sequence][0]['applicant-name'].name.$,
+                    );
+                },
+                [] as string[],
+            ),
+        }));
 
         return {
             patents: processed,
-            total: totalResults,
+            total: processed.length,
         };
     }
 
@@ -255,7 +288,7 @@ export class PatentsService {
             titles = [titles];
         }
         // filtering for the provided languages
-        const titleSupported = titles.find((title) => languages.includes(title['@lang']));
+        const titleSupported = titles.find((title) => (languages || '').includes(title['@lang']));
         //if the Title is not existing by default in english or one of the filtered languages return this message
         if (!titleSupported) {
             return titles[0].$;
@@ -317,7 +350,7 @@ export class PatentsService {
         }
 
         // filtering for the provided languages
-        const abstractSupported = abstracts.find((abstract) => languages.includes(abstract['@lang']));
+        const abstractSupported = abstracts.find((abstract) => (languages || '').includes(abstract['@lang']));
         //if the abstract is not existing by default in english or one of the filtered languages return this message
         if (!abstractSupported) {
             return abstracts[0].p.$;
