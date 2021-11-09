@@ -300,6 +300,11 @@ export default defineComponent({
             } // If there isn't a currently focused element then forget about it
             // Emit update that changes isSelectionOpen (edit mode) to false
             this.$emit('updateFilter', { prop: 'isSelectionOpen', value: false, id: this.currentFilter.id });
+
+            // if filter is really empty, i.e. user didn't enter any values, then we should not display it
+            if (this.currentFilter.value === '') {
+                this.$emit('removeFilter', this.currentFilter.id);
+            }
             console.log('filters page, lostFocus.emit to close selection is sent.');
             // Set the current filter to null, it's no longer current
             this.currentFilter = null;
