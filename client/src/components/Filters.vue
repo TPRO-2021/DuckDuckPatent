@@ -1,9 +1,41 @@
 <template>
     <div v-for="filter in filters" :key="filter.id" class="filter-container">
-        <div v-if="filter.type === 'empty' || filter.isSelectionOpen" class="type-selection">
+        <div v-if="filter.type === 'date' && filter.value.length > 7">
+            <FilterComponent
+                name="date"
+                :value="filter.value"
+                :filter="filter"
+                v-on:edit="onEditClicked(filter.id)"
+                v-on:delete="onRemoveClicked(filter.id)"
+            />
+        </div>
+        <div v-if="filter.type === 'language' && filter.value !== ''">
+            <FilterComponent
+                name="language"
+                :value="displayValue(languageList, filter.value)"
+                :filter="filter"
+                v-on:edit="onEditClicked(filter.id)"
+                v-on:delete="onRemoveClicked(filter.id)"
+            />
+        </div>
+        <div v-if="filter.type === 'country' && filter.value !== ''">
+            <FilterComponent
+                name="country"
+                :value="displayValue(countryList, filter.value)"
+                :filter="filter"
+                v-on:edit="onEditClicked(filter.id)"
+                v-on:delete="onRemoveClicked(filter.id)"
+            />
+        </div>
+        <div v-if="filter.type === 'empty' || filter.isSelectionOpen" class="type-selection" @mouseleave="updateFocus">
             <div>
                 <ChipButton
-                    :class="{ invisible: filter.type === 'date' || hasDate }"
+                    :class="{
+                        invisible:
+                            filter.type === 'date' ||
+                            hasDate ||
+                            (this.showOnEdit.status && this.showOnEdit.filterType !== 'date'),
+                    }"
                     icon-key="add"
                     text="Date"
                     v-on:on-select="onUpdateFilter('type', 'date', filter.id)"
@@ -11,7 +43,7 @@
                 <div
                     :class="{ invisible: filter.type !== 'date', 'year-selector-target': true, 'value-selector': true }"
                 >
-                    <div class="year-selector" @mouseleave="updateFocus">
+                    <div class="year-selector">
                         <div>
                             <label for="dateFrom">from</label>
                             <label for="dateTo">to</label>
@@ -42,7 +74,12 @@
 
             <div>
                 <ChipButton
-                    :class="{ invisible: filter.type === 'language' || hasLanguage }"
+                    :class="{
+                        invisible:
+                            filter.type === 'language' ||
+                            hasLanguage ||
+                            (this.showOnEdit.status && this.showOnEdit.filterType !== 'language'),
+                    }"
                     icon-key="add"
                     text="Language"
                     v-on:on-select="onUpdateFilter('type', 'language', filter.id)"
@@ -53,13 +90,17 @@
                     :list="languageList"
                     v-on:select="onListItemSelected(filter, $event.key)"
                     v-on:scroll="updateFocus"
-                    @mouseleave="updateFocus"
                 />
             </div>
 
             <div>
                 <ChipButton
-                    :class="{ invisible: filter.type === 'country' || hasCountry }"
+                    :class="{
+                        invisible:
+                            filter.type === 'country' ||
+                            hasCountry ||
+                            (this.showOnEdit.status && this.showOnEdit.filterType !== 'country'),
+                    }"
                     icon-key="add"
                     text="Country"
                     v-on:on-select="onUpdateFilter('type', 'country', filter.id)"
@@ -70,36 +111,8 @@
                     :list="countryList"
                     v-on:select="onListItemSelected(filter, $event.key)"
                     v-on:scroll="updateFocus"
-                    @mouseleave="updateFocus"
                 />
             </div>
-        </div>
-        <div v-else-if="filter.type === 'date'">
-            <FilterComponent
-                name="date"
-                :value="filter.value"
-                :filter="filter"
-                v-on:edit="onEditClicked(filter.id)"
-                v-on:delete="onRemoveClicked(filter.id)"
-            />
-        </div>
-        <div v-else-if="filter.type === 'language'">
-            <FilterComponent
-                name="language"
-                :value="displayValue(languageList, filter.value)"
-                :filter="filter"
-                v-on:edit="onEditClicked(filter.id)"
-                v-on:delete="onRemoveClicked(filter.id)"
-            />
-        </div>
-        <div v-else-if="filter.type === 'country'">
-            <FilterComponent
-                name="country"
-                :value="displayValue(countryList, filter.value)"
-                :filter="filter"
-                v-on:edit="onEditClicked(filter.id)"
-                v-on:delete="onRemoveClicked(filter.id)"
-            />
         </div>
     </div>
     <ChipButton
@@ -170,7 +183,7 @@ export default defineComponent({
                 { key: 'lt', value: 'Lithuania' },
                 { key: 'lu', value: 'Luxembourg' },
                 { key: 'mc', value: 'Monaco' },
-                { key: 'md', value: 'Republic of Moldovia' },
+                { key: 'md', value: 'Republic of Moldova' },
                 { key: 'me', value: 'Montenegro' },
                 { key: 'no', value: 'Norway' },
                 { key: 'pl', value: 'Poland' },
@@ -181,6 +194,10 @@ export default defineComponent({
                 { key: 'se', value: 'Sweden' },
                 { key: 'sk', value: 'Slovakia' },
             ],
+            showOnEdit: {
+                status: false,
+                filterType: 'none',
+            },
         };
     },
     watch: {
@@ -244,6 +261,7 @@ export default defineComponent({
          */
         onEditClicked(id: number): void {
             // Emit update filter that shifts a filter into edit mode
+            this.showOnEdit = { status: true, filterType: this.$store.state.filters[id].type };
             this.$emit('updateFilter', { prop: 'isSelectionOpen', value: true, id });
             this.updateFocus(); // Update the focus so the user doesn't have to make a change if they don't want
         },
@@ -284,7 +302,6 @@ export default defineComponent({
         updateFocus() {
             // This timeout might be null
             if (this.focusTimeout != null) {
-                console.log('filters page, updateFocus.timeout not null. clearing..');
                 clearTimeout(this.focusTimeout); // Stop the scheduled timeout
             }
             this.focusTimeout = setTimeout(() => {
@@ -298,12 +315,11 @@ export default defineComponent({
          */
         onLostFocus() {
             if (this.currentFilter == null) {
-                console.log('filters page, lostFocus.currFilter null, user doesnt want to add anything.');
                 return;
             } // If there isn't a currently focused element then forget about it
             // Emit update that changes isSelectionOpen (edit mode) to false
             this.$emit('updateFilter', { prop: 'isSelectionOpen', value: false, id: this.currentFilter.id });
-
+            this.showOnEdit = { status: false, filterType: 'none' };
             // if filter is really empty, i.e. user didn't enter any values, then we should not display it
             if (this.currentFilter.value === '') {
                 this.$emit('removeFilter', this.currentFilter.id);
