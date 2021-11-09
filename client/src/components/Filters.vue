@@ -11,7 +11,7 @@
                 <div
                     :class="{ invisible: filter.type !== 'date', 'year-selector-target': true, 'value-selector': true }"
                 >
-                    <div class="year-selector">
+                    <div class="year-selector" @mouseleave="updateFocus">
                         <div>
                             <label for="dateFrom">from</label>
                             <label for="dateTo">to</label>
@@ -53,6 +53,7 @@
                     :list="languageList"
                     v-on:select="onListItemSelected(filter, $event.key)"
                     v-on:scroll="updateFocus"
+                    @mouseleave="updateFocus"
                 />
             </div>
 
@@ -69,6 +70,7 @@
                     :list="countryList"
                     v-on:select="onListItemSelected(filter, $event.key)"
                     v-on:scroll="updateFocus"
+                    @mouseleave="updateFocus"
                 />
             </div>
         </div>
@@ -183,6 +185,8 @@ export default defineComponent({
             if (value == null) {
                 return;
             }
+            console.log('filters page, watch. new filter val: ', value);
+
             const filters = value as Filter[];
             this.hasDate = filters.some((t) => t.type === 'date');
             this.hasLanguage = filters.some((t) => t.type === 'language');
@@ -191,8 +195,12 @@ export default defineComponent({
 
             this.currentFilter = filters.find((t) => t.type === 'empty' || t.isSelectionOpen) ?? null;
             if (this.currentFilter == null) {
+                console.log('null found ');
                 return;
             }
+
+            console.log('filters .... current filter val: ', this.currentFilter);
+
             const yearParts = this.currentFilter.value.split('-');
             this.dateFilterFrom = `${yearParts[0] ?? ''}`;
             this.dateFilterTo = `${yearParts[1] ?? ''}`;
@@ -273,6 +281,7 @@ export default defineComponent({
         updateFocus() {
             // This timeout might be null
             if (this.focusTimeout != null) {
+                console.log('filters page, updateFocus.timeout not null. clearing..');
                 clearTimeout(this.focusTimeout); // Stop the scheduled timeout
             }
             this.focusTimeout = setTimeout(() => {
@@ -286,10 +295,12 @@ export default defineComponent({
          */
         onLostFocus() {
             if (this.currentFilter == null) {
+                console.log('filters page, lostFocus.currFilter null, user doesnt want to add anything.');
                 return;
             } // If there isn't a currently focused element then forget about it
             // Emit update that changes isSelectionOpen (edit mode) to false
             this.$emit('updateFilter', { prop: 'isSelectionOpen', value: false, id: this.currentFilter.id });
+            console.log('filters page, lostFocus.emit to close selection is sent.');
             // Set the current filter to null, it's no longer current
             this.currentFilter = null;
         },

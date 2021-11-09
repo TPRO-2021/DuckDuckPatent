@@ -84,7 +84,6 @@ import Searchbar from '@/components/Searchbar.vue';
 import PatentPreview from '@/components/PatentPreview.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
-import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
 import ResultsVisualization from '@/components/ResultVisualization.vue';
 import Button from '@/components/Button.vue';
@@ -120,17 +119,21 @@ export default defineComponent({
     watch: {
         filters(filters: Filter[]): void {
             // On every change of the filters we need to check if we should update the results
-            // Creata a filter string that we can compare to recently sent ones (this could be refactored)
+            // Create a filter string that we can compare to recently sent ones (this could be refactored)
+
             const newFilterString = filters
-                .filter((filter) => filter.type !== 'empty' && filter.value) // Remove empty or malformed filters
+                .filter((filter) => filter.type !== 'empty' && filter.value) // Remove empty or malformed filters TODO: check if works
                 .map((filter) => `${filter.type}=${filter.value}`)
                 .join('&'); // Convert to "key=value&key2=value2" string
 
+            console.log('results page, watch. new filter val: ', newFilterString);
+
             // Compare the string with the last sent, if they're different, refresh the results
             if (newFilterString !== this.lastFilterString) {
-                this.lastFilterString = newFilterString; // Update the last observered filter string for next time
+                this.lastFilterString = newFilterString; // Update the last observed filter string for next time
                 this.debounce(4000); // Refresh the results after 3 seconds
             }
+            console.log('results .... last filter val: ', this.lastFilterString);
         },
     },
     /**
