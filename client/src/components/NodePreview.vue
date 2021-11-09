@@ -19,7 +19,7 @@
             <div
                 v-for="rel in current.relatedPatents"
                 :key="rel.id"
-                class="node-preview-related"
+                class="node-preview-related box-shadow"
                 @click="$emit('onSelectPatent', { id: rel.id })"
             >
                 <span class="node-preview-related-id">{{ rel.id }}</span> {{ rel.title }}
@@ -115,7 +115,6 @@ export default defineComponent({
 
 .node-preview-related {
     font-weight: bold;
-    box-shadow: 0 0 10px grey;
     border-radius: 10px;
     padding: 10px;
     margin-top: 10px;
