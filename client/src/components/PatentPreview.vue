@@ -45,6 +45,7 @@
                     v-if="documentAvailable || noDocument"
                     @click="loadMainDocument"
                     class="document-placeholder card box-shadow"
+                    :class="{ 'document-btn': documentAvailable }"
                 >
                     {{ displayText }}
                 </div>
@@ -351,6 +352,17 @@ export default defineComponent({
     min-height: 150px;
     max-height: 200px;
 }
+
+.document-btn {
+    cursor: pointer;
+}
+
+.document-btn:hover {
+    transition: 0.5s all ease;
+    background: black;
+    color: white;
+}
+
 .document-placeholder {
     height: 100%;
     width: 100%;
