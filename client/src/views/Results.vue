@@ -123,14 +123,11 @@ export default defineComponent({
             // Create a filter string that we can compare to recently sent ones (this could be refactored)
             const newFilterString = FilterHelperService.getParameterList(filters).join('&'); // Convert to "key=value&key2=value2" string
 
-            console.log('results page, watch. new filter val: ', newFilterString);
-
             // Compare the string with the last sent, if they're different, refresh the results
             if (newFilterString !== this.lastFilterString) {
                 this.lastFilterString = newFilterString; // Update the last observed filter string for next time
                 this.debounce(4000); // Refresh the results after 3 seconds
             }
-            console.log('results .... last filter val: ', this.lastFilterString);
         },
     },
     /**

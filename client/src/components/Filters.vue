@@ -1,6 +1,6 @@
 <template>
     <div v-for="filter in filters" :key="filter.id" class="filter-container">
-        <div v-if="filter.type === 'date' && filter.value.length > 7">
+        <div v-if="filter.type === 'date' && (filter.value.length > 7 || filter.isSelectionOpen)">
             <FilterComponent
                 name="date"
                 :value="filter.value"
@@ -9,7 +9,7 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
-        <div v-if="filter.type === 'language' && filter.value !== ''">
+        <div v-if="filter.type === 'language' && (filter.value !== '' || filter.isSelectionOpen)">
             <FilterComponent
                 name="language"
                 :value="displayValue(languageList, filter.value)"
@@ -18,7 +18,7 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
-        <div v-if="filter.type === 'country' && filter.value !== ''">
+        <div v-if="filter.type === 'country' && (filter.value !== '' || filter.isSelectionOpen)">
             <FilterComponent
                 name="country"
                 :value="displayValue(countryList, filter.value)"
@@ -205,7 +205,6 @@ export default defineComponent({
             if (value == null) {
                 return;
             }
-            console.log('filters page, watch. new filter val: ', value);
 
             const filters = value as Filter[];
             this.hasDate = filters.some((t) => t.type === 'date');
@@ -215,11 +214,8 @@ export default defineComponent({
 
             this.currentFilter = filters.find((t) => t.type === 'empty' || t.isSelectionOpen) ?? null;
             if (this.currentFilter == null) {
-                console.log('null found ');
                 return;
             }
-
-            console.log('filters .... current filter val: ', this.currentFilter);
 
             const yearParts = this.currentFilter.value.split('-');
             this.dateFilterFrom = `${yearParts[0] ?? ''}`;
@@ -244,6 +240,8 @@ export default defineComponent({
          *  @function onAddClicked emits an event to add an empty filter
          */
         onAddClicked(): void {
+            //reset Edit
+            this.showOnEdit = { status: false, filterType: 'none' };
             // Emit add filter
             this.$emit('addFilter');
         },
@@ -260,8 +258,9 @@ export default defineComponent({
          *  @param id: number, the client id of the filter being shifted into edit mode
          */
         onEditClicked(id: number): void {
-            // Emit update filter that shifts a filter into edit mode
+            // if editing a filter, other options should not show
             this.showOnEdit = { status: true, filterType: this.$store.state.filters[id].type };
+            // Emit update filter that shifts a filter into edit mode
             this.$emit('updateFilter', { prop: 'isSelectionOpen', value: true, id });
             this.updateFocus(); // Update the focus so the user doesn't have to make a change if they don't want
         },
@@ -324,7 +323,6 @@ export default defineComponent({
             if (this.currentFilter.value === '') {
                 this.$emit('removeFilter', this.currentFilter.id);
             }
-            console.log('filters page, lostFocus.emit to close selection is sent.');
             // Set the current filter to null, it's no longer current
             this.currentFilter = null;
         },
@@ -339,6 +337,7 @@ export default defineComponent({
                 // If it has been already selected, we need to remove not add
                 newCodes = codes.filter((t) => t !== key); // Remove key from new list
             }
+
             this.onUpdateFilter('value', newCodes.join(','), filter.id); // Join new list together with commas and update the value
             this.updateFocus(); // Update focus so the user doesn't just randomly get knocked out of edit mode
         },
