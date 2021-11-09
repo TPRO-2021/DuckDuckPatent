@@ -276,7 +276,6 @@ export default defineComponent({
          */
         async extendSearch() {
             const newPage = this.currentPage + 1;
-            console.log(this.totalCount);
             this.$store.commit('SHOW_LOADING_BAR');
             const { patents, totalCount } = await this.patentService.get(this.terms, this.filters, newPage);
             this.$store.dispatch('addPatents', {
@@ -405,7 +404,6 @@ export default defineComponent({
          * Checks if there need to be any additional actions done for the result
          */
         checkResult(): void {
-            console.log(this.availablePages);
             this.moreDataAvailable =
                 this.totalCount > 99 && this.currentPage < this.availablePages - 1 && this.currentPage <= 18;
         },
