@@ -9,7 +9,8 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
-        <div v-if="filter.type === 'language' && (filter.value !== '' || filter.isSelectionOpen)">
+        <div v-if="filter.type === 'language' && filter.value !== ''">
+            <!--    add isSelectionOpen if that behavior is more intuitive for disselect-->
             <FilterComponent
                 name="language"
                 :value="displayValue(languageList, filter.value)"
