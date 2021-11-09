@@ -84,7 +84,6 @@ import Searchbar from '@/components/Searchbar.vue';
 import PatentPreview from '@/components/PatentPreview.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 import KeywordService from '@/services/keyword.service';
-import RoundButton from '@/components/RoundButton.vue';
 import OptionsMenu from '@/components/OptionsMenu.vue';
 import ResultsVisualization from '@/components/ResultVisualization.vue';
 import Button from '@/components/Button.vue';
@@ -253,7 +252,7 @@ export default defineComponent({
             this.$store.commit('SHOW_LOADING_BAR');
             await this.$router.push({ query: { terms: this.terms } });
             try {
-                const { patents, totalCount } = await this.patentService.get(this.terms, this.filters);
+                const { patents, totalCount } = await this.patentService.query(this.terms, this.filters);
                 this.$store.dispatch('addPatents', { patents, totalCount });
                 // eslint-disable-next-line
             } catch (e: any) {
@@ -276,8 +275,9 @@ export default defineComponent({
          */
         async extendSearch() {
             const newPage = this.currentPage + 1;
+
             this.$store.commit('SHOW_LOADING_BAR');
-            const { patents, totalCount } = await this.patentService.get(this.terms, this.filters, newPage);
+            const { patents, totalCount } = await this.patentService.query(this.terms, this.filters, newPage);
             this.$store.dispatch('addPatents', {
                 patents: this.patents.concat(patents),
                 totalCount,

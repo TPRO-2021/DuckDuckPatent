@@ -23,16 +23,16 @@
         <template #header>
             <div>
                 <div class="patent-title">{{ patent?.title }}</div>
-
-                <!-- TODO: Add applicant/owner of the patent -->
                 <div class="patent-owner">
                     {{ patent.applicants[0] }}
                     <span v-if="patent.applicants.length > 1">, ...</span>
                 </div>
             </div>
         </template>
-        <div class="patent-abstract">
-            <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
+        <div class="preview-content">
+            <div class="patent-abstract">
+                <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
+            </div>
         </div>
         <div class="patent-navigation no-select">
             <!-- Navigation buttons -->
@@ -80,7 +80,7 @@ export default defineComponent({
     },
     watch: {
         patent() {
-            this.settingsMenu = false;
+            this.resetState();
         },
     },
     computed: {
@@ -100,8 +100,9 @@ export default defineComponent({
          */
         displayNextPatent(): void {
             this.$emit('onChangePatent', { direction: 'next' });
-            this.settingsMenu = false;
+            this.resetState();
         },
+
         /**
          * Method to check if back button is clicked then emit an event to ask the parent to send previous patent
          */
@@ -109,6 +110,7 @@ export default defineComponent({
             this.$emit('onChangePatent', { direction: 'previous' });
             this.settingsMenu = false;
         },
+
         /**
          * Adds a patent to the saved items list
          */
@@ -116,17 +118,27 @@ export default defineComponent({
             this.$emit('onSavePatent', { patent: this.patent as Patent });
             this.settingsMenu = false;
         },
+
         /**
          * Hides a patent from the results page
          */
         hidePatent(): void {
             // TODO: Implement hide patent functionality
         },
+
         /**
          * Display the DetailedPatentView on Click Show more
          */
         showMore(): void {
             this.$emit('onShowMore', { patent: this.patent as Patent, searchTerms: this.terms });
+            this.settingsMenu = false;
+        },
+
+        /**
+         * Resets all state variables to their default value
+         */
+        resetState() {
+            // reset preview values
             this.settingsMenu = false;
         },
     },
@@ -172,23 +184,23 @@ export default defineComponent({
 
 .patent-title {
     text-align: left;
-    padding-right: 42px;
+    padding-right: 70px;
     font-style: normal;
     font-weight: normal;
     font-size: 20px;
 }
 .patent-abstract {
     text-align: left;
-    padding-right: 60px;
     font-style: normal;
     font-weight: normal;
     font-size: 16px;
     margin-bottom: 32px;
+    flex-grow: 1;
 }
 
 .patent-navigation {
     position: absolute;
-    bottom: 32px;
+    bottom: 22px;
     right: 32px;
 
     display: flex;
@@ -211,9 +223,38 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     gap: 8px;
+    z-index: 100;
 }
 
 .settings-btn {
     margin-bottom: 14px;
+}
+
+.preview-content {
+    display: flex;
+    gap: 10px;
+}
+.document-preview {
+    min-width: 300px;
+    min-height: 150px;
+    max-height: 200px;
+}
+
+.document-btn {
+    cursor: pointer;
+}
+
+.document-btn:hover {
+    transition: 0.5s all ease;
+    background: black;
+    color: white;
+}
+
+.document-placeholder {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 </style>
