@@ -1,5 +1,5 @@
 <template>
-    <div class="filter">
+    <div :class="{ filter: true, 'is-invalid': !isValid }">
         <div class="head">{{ name }}</div>
         <div class="middle">{{ value }}</div>
         <div class="tail">
@@ -13,14 +13,21 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-
+import FilterHelperService from '@/services/filter-helper.service';
+import { Filter } from '@/models/Filter';
 export default defineComponent({
     name: 'Filter',
     props: {
         name: String,
         value: String,
+        filter: { required: true, type: Object },
     },
     emits: ['edit', 'delete'],
+    computed: {
+        isValid() {
+            return FilterHelperService.isValid(this.$props.filter as Filter);
+        },
+    },
     methods: {
         /**
          *  @function emits an event remove a filter
@@ -54,6 +61,14 @@ export default defineComponent({
     flex-direction: column;
     justify-content: center;
     padding: 2px 5px;
+}
+.filter.is-invalid > div {
+    background-color: #800000;
+    border-color: #800000;
+}
+.filter.is-invalid > .head {
+    background-color: white;
+    color: #800000;
 }
 .filter > .head {
     border: 1px solid black;

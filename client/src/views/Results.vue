@@ -90,6 +90,7 @@ import ResultsVisualization from '@/components/ResultVisualization.vue';
 import Button from '@/components/Button.vue';
 import DetailedPatentView from '@/components/DetailedPatentView.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
+import FilterHelperService from '@/services/filter-helper.service';
 
 export default defineComponent({
     name: 'Results',
@@ -121,10 +122,7 @@ export default defineComponent({
         filters(filters: Filter[]): void {
             // On every change of the filters we need to check if we should update the results
             // Creata a filter string that we can compare to recently sent ones (this could be refactored)
-            const newFilterString = filters
-                .filter((filter) => filter.type !== 'empty' && filter.value) // Remove empty or malformed filters
-                .map((filter) => `${filter.type}=${filter.value}`)
-                .join('&'); // Convert to "key=value&key2=value2" string
+            const newFilterString = FilterHelperService.getParameterList(filters).join('&'); // Convert to "key=value&key2=value2" string
 
             // Compare the string with the last sent, if they're different, refresh the results
             if (newFilterString !== this.lastFilterString) {
