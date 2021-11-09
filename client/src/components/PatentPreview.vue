@@ -41,8 +41,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
-import { Patent } from '@/models/Patent';
-import { PatentMap } from '@/models/PatentMap';
 
 /**
  * This component previews the content of a patent

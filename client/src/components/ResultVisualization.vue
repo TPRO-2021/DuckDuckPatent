@@ -132,6 +132,10 @@ export default defineComponent({
                     return this.currentNode?.id;
                 case 'company':
                     return this.currentNode?.id;
+                case 'citation':
+                    return `CITATION: ${this.currentNode?.id}`;
+                case 'family':
+                    return `FAMILY: ${this.currentNode?.id}`;
             }
             return 'No Data';
         },
@@ -153,6 +157,7 @@ export default defineComponent({
          * Watches the patents value and updates the graph
          */
         patents(): void {
+            console.log('Patents', this.$props.patents);
             this.updateData();
             this.updateGraph();
         },

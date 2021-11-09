@@ -46,7 +46,6 @@
                 icon-key="check"
                 btn-text="Load more"
             ></Button>
-            <!--            <RoundButton icon-key="timeline" :is-toggle="true" v-on:on-clicked="toggleTimeline" /> TODO: remove if not further worked on-->
         </div>
         <!-- This div contains the top right controls (saved button) -->
         <div class="top-controls">
@@ -186,7 +185,7 @@ export default defineComponent({
             if (this.selectedNode == null || this.selectedNode.type !== 'patent') {
                 return null;
             }
-            const patent = this.patents.find((t) => t.id === this.selectedNode!.id);
+            const patent = this.patents.find((t) => t.id === this.selectedNode?.id);
             if (patent == null) {
                 return null;
             }
@@ -371,21 +370,21 @@ export default defineComponent({
 
             //set mark once on viewed node
             this.$store.commit('MARK_NODE_ON', {
-                pID: (this.patents as Patent[])[this.selectedPatentIndex].id,
+                pID: this.selectedNode?.id,
                 twice: false,
             });
             // turn highlight on node on. Timeout so to have the component react to state change
             setTimeout(() => {
                 this.$store.commit('HIGHLIGHT_NODE_ON', {
-                    pID: this.selectedNode!.id,
+                    pID: this.selectedNode?.id,
                     twice: false,
                 });
             });
         },
 
         /**
-        * Handle selecting a patent
-        */
+         * Handle selecting a patent
+         */
         selectPatent(event: { id: string }) {
             this.selectedNode = { id: event.id, type: 'patent' };
         },

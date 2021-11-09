@@ -12,14 +12,16 @@
             <div>
                 <div :class="{ 'node-preview-title': true, [current.type]: true }">{{ current.title }}</div>
 
-                <div class="node-preview-owner">{{ current.subTitle }}</div>
+                <div class="node-preview-subtitle">{{ current.subTitle }}</div>
             </div>
         </template>
         <div class="node-preview-body">
-            <div v-for="rel in current.relatedPatents" 
-                 :key="rel.id" 
-                 class="node-preview-related"
-                 @click="$emit('onSelectPatent', { id: rel.id })">
+            <div
+                v-for="rel in current.relatedPatents"
+                :key="rel.id"
+                class="node-preview-related"
+                @click="$emit('onSelectPatent', { id: rel.id })"
+            >
                 <span class="node-preview-related-id">{{ rel.id }}</span> {{ rel.title }}
             </div>
         </div>
@@ -33,8 +35,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { Patent } from '@/models/Patent';
-import { PatentMap } from '@/models/PatentMap';
 import { NodePreview } from '@/models/NodePreview';
 
 /**
@@ -94,11 +94,12 @@ export default defineComponent({
 
 .node-preview-title {
     text-align: left;
-    padding-right: 42px;
     font-style: normal;
     font-weight: normal;
     font-size: 20px;
+    margin-bottom: 10px;
 }
+
 .node-preview-title.citation {
     color: white;
     background-color: $green;
@@ -107,18 +108,17 @@ export default defineComponent({
 }
 .node-preview-body {
     text-align: left;
-    padding-right: 60px;
     font-style: normal;
     font-weight: normal;
     font-size: 16px;
-    margin-bottom: 32px;
 }
 
 .node-preview-related {
     font-weight: bold;
-    border: 1px solid grey;
+    box-shadow: 0 0 10px grey;
     border-radius: 10px;
     padding: 10px;
+    margin-top: 10px;
     margin-bottom: 10px;
     cursor: pointer;
 }
@@ -143,8 +143,8 @@ export default defineComponent({
     }
 }
 
-.node-preview-owner {
-    padding-bottom: 12px;
+.node-preview-subtitle {
+    padding-left: 12px;
     text-align: left;
     font-style: normal;
     font-weight: 200;
