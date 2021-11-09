@@ -105,11 +105,17 @@ export default createStore({
                         // Don't allow for the opening of more than one at a time - close if open
                         return filter.isSelectionOpen ? { ...filter, isSelectionOpen: false } : filter;
                     }
+                    let value = args.value;
+                    if (filter.type === 'date' && args.prop === 'value') {
+                        const [year1, year2] = (value as string).split('-');
+
+                        value = `${parseInt(year1, 10) || ''}-${parseInt(year2, 10) || ''}` as Filter[K];
+                    }
                     return {
                         ...filter, // Extend the current filter
                         value: args.prop === 'type' ? '' : filter.value, // Clear the value if we are asigning /changing type
                         isSelectionOpen: args.prop === 'type' || filter.isSelectionOpen, // If we just selected a type, we should show value selection
-                        [args.prop]: args.value, // Set value
+                        [args.prop]: value, // Set value
                     };
                 });
         },

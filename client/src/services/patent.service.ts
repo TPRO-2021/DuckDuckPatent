@@ -1,5 +1,6 @@
 import { Patent } from '@/models/Patent';
 import { Filter } from '@/models/Filter';
+import FilterHelperService from '@/services/filter-helper.service';
 
 export default class PatentService {
     requestPending = false;
@@ -10,10 +11,7 @@ export default class PatentService {
         filters: Filter[],
         page = 0,
     ): Promise<{ patents: Patent[]; totalCount: number }> {
-        // Prep the filter get parameters
-        const filterParams = filters
-            .filter((filter) => filter.type !== 'empty' && filter.value) // Remove unfinished or mal-formed filters
-            .map((filter) => `${filter.type}=${filter.value}`); // Convert to key=value strings
+        const filterParams = FilterHelperService.getParameterList(filters);
 
         const queryString = searchTerms
             .map((term) => `keywords=${term}`)
@@ -36,10 +34,16 @@ export default class PatentService {
         if (!response.ok) {
             PatentService.throwError(response.status);
         }
+
         // accessing x-total-count header which indicates how many results are available
         const totalCount = parseInt(response.headers.get('x-total-count') || '99');
         const json = (await response.json()) as Patent[];
         this.requestPending = false;
+
+        //temporary approach to handle no results meeting filters
+        if (json.length === 0) {
+            PatentService.throwError(404);
+        }
         return { patents: json, totalCount };
     }
 
