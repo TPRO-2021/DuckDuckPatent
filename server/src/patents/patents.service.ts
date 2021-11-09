@@ -436,8 +436,6 @@ export class PatentsService {
                 'Accept-Encoding': acceptEncoding,
             };
 
-            console.log('endpoint', endpoint);
-
             const response = await lastValueFrom(this.httpService[requestType]<T>(endpoint, config));
             return { data: response.data as T, headers: response.headers };
         } catch (error) {

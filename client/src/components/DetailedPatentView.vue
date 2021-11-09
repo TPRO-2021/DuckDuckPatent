@@ -77,7 +77,7 @@
                             ></Chip>
                         </span>
                     </div>
-                    <div class="attachments">
+                    <div class="attachments" v-if="!noDocuments">
                         <div class="label-attachment">Attachments</div>
                         <div class="attachment-items" v-if="documents">
                             <Attachment
@@ -138,15 +138,14 @@ export default defineComponent({
             isSubMenuOpen: false,
             index: 0,
             saved: true,
-            /**
-             * Holds the submenu buttons
-             */
+            // Holds the submenu buttons
             optionButtons: [
                 { iconKey: 'push_pin', action: 'save' },
                 { iconKey: 'visibility_off', action: 'dontLike' },
                 { iconKey: 'done', action: 'like' },
             ],
             patentAvailable: false,
+            noDocuments: false,
             documentService: new DocumentService(),
             documents: null as DocumentInformation[] | null,
         };
@@ -155,26 +154,32 @@ export default defineComponent({
         async extendedPatent(newVal: ExtendedPatent): Promise<void> {
             this.patentAvailable = !!newVal;
 
-            // if a new patent is available load the documents for it
-            if (this.patentAvailable) {
-                this.$store.commit('SHOW_LOADING_BAR');
-                try {
-                    this.documents = await this.documentService.query(
-                        (this.extendedPatent as ExtendedPatent)?.patent?.id,
-                    );
-                } catch (err) {
-                    console.error(err);
-                }
-                this.$store.commit('HIDE_LOADING_BAR');
+            if (!this.patentAvailable) {
+                return;
             }
+
+            // if a new patent is available load the documents for it
+            this.$store.commit('SHOW_LOADING_BAR');
+            try {
+                this.documents = await this.documentService.query((this.extendedPatent as ExtendedPatent)?.patent?.id);
+            } catch (err) {
+                this.noDocuments = true;
+                console.error(err);
+            }
+            this.$store.commit('HIDE_LOADING_BAR');
         },
     },
     methods: {
+        /**
+         * Handles closing of the preview and also resets the "state" values
+         */
         handleClose(): void {
             this.patentAvailable = false;
             this.documents = null;
+            this.noDocuments = false;
             this.$emit('onClose');
         },
+
         /**
          * Closes the modal and emits the removeFromSave event
          */
@@ -182,12 +187,14 @@ export default defineComponent({
             this.patentAvailable = false;
             this.$emit('removeFromSaved');
         },
+
         highlightTitle(title: string, keywords: string[]) {
             const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
             return title.replace(pattern, (match) => {
                 return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
             });
         },
+
         highlightAbstract(abstract: string, keywords: string[]) {
             const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
             return abstract.replace(pattern, (match) => {

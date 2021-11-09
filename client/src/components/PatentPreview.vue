@@ -1,7 +1,7 @@
 <template>
     <Dialog
         id="main-dialog"
-        style="height: 350px; width: 650px"
+        style="height: 400px; width: 650px"
         v-model:visible="previewAvailable"
         :close-on-escape="true"
         :dismissable-mask="true"
@@ -31,8 +31,33 @@
                 </div>
             </div>
         </template>
-        <div class="patent-abstract">
-            <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
+        <div class="preview-content">
+            <div class="patent-abstract">
+                <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
+            </div>
+            <div class="document-preview">
+                <Skeleton
+                    width="100%"
+                    height="100%"
+                    v-if="!documentAvailable && !noDocument && !documentLoaded"
+                ></Skeleton>
+                <div
+                    v-if="documentAvailable || noDocument"
+                    @click="loadMainDocument"
+                    class="document-placeholder card box-shadow"
+                >
+                    {{ displayText }}
+                </div>
+                <iframe
+                    v-if="documentLoaded"
+                    src=""
+                    :type="this.contentType"
+                    width="100%"
+                    height="100%"
+                    style="overflow: auto"
+                >
+                </iframe>
+            </div>
         </div>
         <div class="patent-navigation no-select">
             <!-- Navigation buttons -->
@@ -47,7 +72,10 @@ import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import { Patent } from '@/models/Patent';
 import { PatentMap } from '@/models/PatentMap';
+import { DocumentInformation } from '@/models/DocumentInformation';
+import DocumentService from '@/services/document.service';
 
+const BTN_TXT = 'Load document';
 /**
  * This component previews the content of a patent
  */
@@ -76,11 +104,24 @@ export default defineComponent({
                 { iconKey: 'read_more', action: this.showMore },
             ],
             previewAvailable: true,
+            documentService: new DocumentService(),
+            documentAvailable: false,
+            documentLoaded: false,
+            documentInformation: null as DocumentInformation | null,
+            contentType: '',
+            noDocument: false,
         };
     },
+    created() {
+        this.preloadMainDocument();
+    },
     watch: {
-        patent() {
-            this.settingsMenu = false;
+        patent(newVal: Patent) {
+            this.resetState();
+
+            if (newVal) {
+                this.preloadMainDocument();
+            }
         },
     },
     computed: {
@@ -93,6 +134,13 @@ export default defineComponent({
         terms(): string[] {
             return this.$store.state.searchTerms;
         },
+        displayText(): string {
+            if (this.noDocument) {
+                return 'No document available';
+            }
+
+            return BTN_TXT;
+        },
     },
     methods: {
         /**
@@ -100,8 +148,9 @@ export default defineComponent({
          */
         displayNextPatent(): void {
             this.$emit('onChangePatent', { direction: 'next' });
-            this.settingsMenu = false;
+            this.resetState();
         },
+
         /**
          * Method to check if back button is clicked then emit an event to ask the parent to send previous patent
          */
@@ -109,6 +158,7 @@ export default defineComponent({
             this.$emit('onChangePatent', { direction: 'previous' });
             this.settingsMenu = false;
         },
+
         /**
          * Adds a patent to the saved items list
          */
@@ -116,18 +166,92 @@ export default defineComponent({
             this.$emit('onSavePatent', { patent: this.patent as Patent });
             this.settingsMenu = false;
         },
+
         /**
          * Hides a patent from the results page
          */
         hidePatent(): void {
             // TODO: Implement hide patent functionality
         },
+
         /**
          * Display the DetailedPatentView on Click Show more
          */
         showMore(): void {
             this.$emit('onShowMore', { patent: this.patent as Patent, searchTerms: this.terms });
             this.settingsMenu = false;
+        },
+
+        /**
+         * Checks with the backend if there are any documents available
+         */
+        async preloadMainDocument() {
+            this.$store.commit('SHOW_LOADING_BAR');
+
+            let docInfo: DocumentInformation;
+            try {
+                const documents = await this.documentService.query((this.patent as Patent).id);
+
+                if (!documents || documents.length === 0) {
+                    return;
+                }
+
+                docInfo = documents.filter((info) => info.type === 'Drawing')[0];
+
+                if (!docInfo) {
+                    docInfo = documents[0];
+                }
+
+                this.documentAvailable = true;
+                this.documentInformation = docInfo;
+                this.contentType = DocumentService.getFormat(docInfo);
+            } catch (err) {
+                this.resetState();
+                this.noDocument = true;
+                console.error(err);
+            }
+            this.$store.commit('HIDE_LOADING_BAR');
+        },
+
+        /**
+         * Attempts to load the main document of the patent
+         */
+        async loadMainDocument() {
+            if (!this.documentInformation) return;
+
+            this.$store.commit('SHOW_LOADING_BAR');
+
+            try {
+                // showing iframe and hiding the load more button
+                this.documentLoaded = true;
+                this.documentAvailable = false;
+                const doc = await this.documentService.get((this.patent as Patent).id, this.documentInformation, 1);
+                const file = window.URL.createObjectURL(doc);
+                const iframe = document.querySelector('iframe');
+
+                if (iframe) {
+                    iframe.src = `${file}#toolbar=0&navpanes=0`;
+                }
+            } catch (err) {
+                console.error(err);
+
+                this.documentLoaded = false;
+                this.documentAvailable = false;
+            }
+
+            this.$store.commit('HIDE_LOADING_BAR');
+        },
+
+        /**
+         * Resets all state variables to their default value
+         */
+        resetState() {
+            // reset preview values
+            this.settingsMenu = false;
+            this.documentAvailable = false;
+            this.documentLoaded = false;
+            this.documentInformation = null;
+            this.noDocument = false;
         },
     },
 });
@@ -179,16 +303,16 @@ export default defineComponent({
 }
 .patent-abstract {
     text-align: left;
-    padding-right: 60px;
     font-style: normal;
     font-weight: normal;
     font-size: 16px;
     margin-bottom: 32px;
+    flex-grow: 1;
 }
 
 .patent-navigation {
     position: absolute;
-    bottom: 32px;
+    bottom: 8px;
     right: 32px;
 
     display: flex;
@@ -211,9 +335,27 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     gap: 8px;
+    z-index: 100;
 }
 
 .settings-btn {
     margin-bottom: 14px;
+}
+
+.preview-content {
+    display: flex;
+    gap: 10px;
+}
+.document-preview {
+    min-width: 300px;
+    min-height: 150px;
+    max-height: 200px;
+}
+.document-placeholder {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 </style>
