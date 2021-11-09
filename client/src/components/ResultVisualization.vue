@@ -321,6 +321,13 @@ export default defineComponent({
                     else return 'url(#end)';
                 });
 
+            //highlight nodes when clicked (credits to Ion Cicala for this change)
+            this.selections.graph
+                .selectAll('circle')
+                .classed('selected', false)
+                .filter((td) => td === this.selectedNode)
+                .classed('selected', true);
+
             // Update caption every time data changes
             this.simulation?.alpha(alpha).restart();
         },
@@ -389,8 +396,7 @@ export default defineComponent({
             this.updateData();
             this.updateGraph(0.01);
             this.$emit('onPatentSelected', { index: -1 });
-            //turn highlight of node border off
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
+
             this.selections.graph.selectAll('circle').classed('selected', false);
         },
 
@@ -544,7 +550,10 @@ export default defineComponent({
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
             if (node.type === 'patent') {
+                // show preview card
                 this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
+                //only patents have preview, hence checkmark them
+                this.$store.commit('MARK_NODE_ON', { pID: node.patent.id, twice: false });
             } else {
                 this.$emit('onPatentSelected', { index: -1 });
             }
@@ -552,7 +561,7 @@ export default defineComponent({
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.selectedNode = node;
             this.nodeSelected = true;
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
+
             this.updateData();
             this.updateGraph(0.01);
 
@@ -562,12 +571,6 @@ export default defineComponent({
                 .filter((td) => td === node)
                 //highlight border
                 .classed('selected', true);
-
-            // turn highlight on node on. Timeout so to have the component react to state change
-            // highlight node also set the mark once on
-            setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: node.patent.id, twice: false });
-            });
         },
 
         /**
@@ -621,7 +624,7 @@ export default defineComponent({
         },
 
         /**
-         * Highlights border color of a node, once node or preview cards are viewed.
+         * Highlights border color of a node, once node or preview cards are viewed. Some preview is shown without node click
          * Node is marked once when the small preview card is displayed.
          * It's marked twice when the extended panel is accessed on results or saved pages.
          *
@@ -648,6 +651,7 @@ export default defineComponent({
                 })
                 .classed('selected', true);
 
+            // show mark
             this.$store.state.markTwice ? target.classed('markedTwice', true) : target.classed('markedOnce', true);
         },
 
@@ -685,13 +689,12 @@ export default defineComponent({
                 const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
                 // if patent index not found, no highlight/mark
                 if (nodeIndex < 0) return;
+
                 this.selections.graph
                     .selectAll('circle')
                     .filter(function (d, i) {
                         return i === nodeIndex;
                     })
-                    //remove the old mark if any
-                    .classed('markedOnce', false)
                     // add a mark to indicate it has been viewed
                     .classed('markedTwice', true);
             });
