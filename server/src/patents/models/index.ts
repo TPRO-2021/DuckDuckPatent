@@ -12,9 +12,24 @@ export interface OpsStringData {
 }
 
 /**
+ * Interface which describes the OPS response for an image query
+ */
+export interface OpsImageQueryResponse {
+    'ops:world-patent-data': {
+        'ops:document-inquiry': {
+            'ops:publication-reference': OpsPublicationReference;
+            'ops:inquiry-result': {
+                'publication-reference': OpsPublicationReference;
+                'ops:document-instance': OpsDocumentInstance[];
+            };
+        };
+    };
+}
+
+/**
  * This interface describes the structure of the OPS response
  */
-export interface PatentAPIResponse {
+export interface PatentQueryResponse {
     'ops:world-patent-data': {
         'ops:biblio-search': {
             '@total-result-count': string;
@@ -158,6 +173,28 @@ export interface OpsApplicant {
     'applicant-name': { name: { $: string } };
 }
 
+export interface OpsPublicationReference {
+    'document-id': {
+        '@document-id-type': 'epodoc' | 'docdb';
+        'doc-number': OpsStringData;
+        kind: OpsStringData;
+        country?: string;
+    };
+}
+
+export interface OpsDocumentInstance {
+    '@system': string;
+    '@number-of-pages': string;
+    '@desc': 'FullDocument' | 'Drawing' | 'FirstPageClipping';
+    '@link': string;
+    'ops:document-format-options': OpsDocumentFormatOptions;
+    'ops:document-section': { '@name': string; '@start-page': string }[];
+}
+
+export interface OpsDocumentFormatOptions {
+    'ops:document-format': OpsStringData[];
+}
+
 /**
  * DuckDuckPatent related models
  */
@@ -173,6 +210,17 @@ export interface Patent {
     familyId?: string;
     inventors?: string[];
     applicants?: string[];
+}
+
+/**
+ * Interface which represents a document information object
+ */
+export interface DocumentInformation {
+    formats: string[];
+    type: string;
+    url: string;
+    sections: { name: string; startPage: string }[];
+    pages: number;
 }
 
 /**

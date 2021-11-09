@@ -1,7 +1,17 @@
-import { AuthResponse, OpsExchangeDocument, Patent, PatentAPIResponse, QueryResult } from './models';
+import {
+    AuthResponse,
+    DocumentInformation,
+    OpsDocumentInstance,
+    OpsExchangeDocument,
+    OpsImageQueryResponse,
+    OpsStringData,
+    Patent,
+    PatentQueryResponse,
+    QueryResult,
+} from './models';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import { AxiosResponse } from 'axios';
+import { AxiosResponse, ResponseType } from 'axios';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 
 import * as _ from 'lodash';
@@ -9,9 +19,10 @@ import * as _ from 'lodash';
 @Injectable()
 export class PatentsService {
     private authData: AuthResponse;
-    private data: PatentAPIResponse;
+    private data: PatentQueryResponse;
 
-    private static queryEndpoint = '/rest-services/published-data/search/biblio';
+    private static patentQueryEndpoint = '/rest-services/published-data/search/biblio';
+    private static imageQueryEndpoint = '/rest-services/published-data/publication/epodoc/';
 
     constructor(private readonly httpService: HttpService) {}
 
@@ -51,7 +62,7 @@ export class PatentsService {
     }
 
     // to query for a single patent
-    async get(patentNum: string): Promise<AxiosResponse<PatentAPIResponse>> {
+    async get(patentNum: string): Promise<AxiosResponse<PatentQueryResponse>> {
         const config = {
             params: {
                 q: JSON.stringify({ _eq: { patent_number: patentNum } }),
@@ -67,12 +78,12 @@ export class PatentsService {
         };
 
         return lastValueFrom(
-            this.httpService.get<PatentAPIResponse>(`${process.env.PATENT_API_URL}/patents/query`, config),
+            this.httpService.get<PatentQueryResponse>(`${process.env.PATENT_API_URL}/patents/query`, config),
         );
     }
 
     // to query for cited patents for provided source
-    async getCitedPatents(patentNum: string): Promise<AxiosResponse<PatentAPIResponse>> {
+    async getCitedPatents(patentNum: string): Promise<AxiosResponse<PatentQueryResponse>> {
         const patentID = patentNum;
         if (!this.authData) {
             this.authData = await this.getAccessToken();
@@ -82,7 +93,7 @@ export class PatentsService {
             Accept: 'application/json',
         };
         return await lastValueFrom(
-            this.httpService.get<PatentAPIResponse>(
+            this.httpService.get<PatentQueryResponse>(
                 `${process.env.PATENT_API_URL}rest-services/published-data/publication/epodoc/${patentID}/biblio`,
                 { headers: headers },
             ),
@@ -93,51 +104,52 @@ export class PatentsService {
      * Queries the patent API with the provided search terms
      * @param terms The terms which will be used for querying
      * @param page The page that should be queried
-     * @param isSecondAttempt Specifies if this is the second attempt (auth)
      * @param languages
      * @param country
      * @param date
      */
-    public async query(
-        terms: string[],
-        page: number,
-        isSecondAttempt = false,
-        languages = '',
-        country = '',
-        date = '',
-    ): Promise<QueryResult> {
-        // if no auth data is present we need to generate an access token
-        if (!this.authData) {
-            this.authData = await this.getAccessToken();
-        }
-
-        const queryString = PatentsService.getQueryString(terms, PatentsService.queryEndpoint, page, country, date);
+    public async query(terms: string[], page: number, languages = '', country = '', date = ''): Promise<QueryResult> {
+        const queryString = PatentsService.getQueryString(
+            terms,
+            PatentsService.patentQueryEndpoint,
+            page,
+            country,
+            date,
+        );
         console.log(queryString);
 
-        try {
-            const response = await lastValueFrom(
-                this.httpService.get<PatentAPIResponse>(queryString, {
-                    headers: {
-                        Authorization: `Bearer ${this.authData.access_token}`,
-                        Accept: 'application/json',
-                    },
-                }),
-            );
+        const response = await this.sendOpsRequest<PatentQueryResponse>(queryString, {}, 'get');
+        return this.processQuery(response.data, languages);
+    }
 
-            return this.processQuery(response.data, languages);
-        } catch (error) {
-            // if access token is expired we will attempt to renew it and send the request again
-            if ((error?.response?.data as string)?.toLowerCase().includes('access token has expired')) {
-                // after a second attempt there should be no access expired error therefore we can stop here to prevent a stackoverflow
-                if (isSecondAttempt) {
-                    throw error;
-                }
+    /**
+     * Returns available images for a patent
+     * @param patentId
+     */
+    public async queryDocuments(patentId: string): Promise<DocumentInformation[]> {
+        const queryUrl = `${process.env.PATENT_API_URL}${PatentsService.imageQueryEndpoint}${patentId}/images`;
 
-                this.authData = await this.getAccessToken();
-                return this.query(terms, page, true);
-            }
-            throw error;
-        }
+        const opsResponse = await this.sendOpsRequest<OpsImageQueryResponse>(queryUrl, {}, 'get');
+
+        return this.processImageQuery(opsResponse.data);
+    }
+
+    public async getDocument(url: string, contentType: string, range: number) {
+        const queryUrl = `${process.env.PATENT_API_URL}/rest-services/${url}`;
+
+        return this.sendOpsRequest(
+            queryUrl,
+            {
+                headers: {
+                    'X-OPS-Range': range,
+                },
+                responseType: 'arraybuffer',
+                responseEncoding: 'binary',
+            },
+            'get',
+            false,
+            contentType,
+        );
     }
 
     /**
@@ -145,7 +157,7 @@ export class PatentsService {
      * @param data
      * @param languages
      */
-    private processQuery(data: PatentAPIResponse, languages?: string): QueryResult {
+    private processQuery(data: PatentQueryResponse, languages?: string): QueryResult {
         const searchResult = data['ops:world-patent-data']['ops:biblio-search'];
 
         const totalResults = Number(searchResult['@total-result-count']);
@@ -322,7 +334,7 @@ export class PatentsService {
      * @param defaultValue  The default value which should be applied when no data was found
      * @private
      */
-    private static getNestedArray<T>(doc: OpsExchangeDocument, path: string, processingFn, defaultValue: T): T {
+    private static getNestedArray<T>(doc: any, path: string, processingFn, defaultValue: T): T {
         let instanceArr = _.get(doc, path);
 
         if (!instanceArr) {
@@ -359,5 +371,86 @@ export class PatentsService {
         }
 
         return queryString.concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+    }
+
+    /**
+     * Restructures an image query to the desired format
+     * @param data
+     * @private
+     */
+    private async processImageQuery(data: OpsImageQueryResponse): Promise<DocumentInformation[]> {
+        return PatentsService.getNestedArray<OpsDocumentInstance[]>(
+            data,
+            'ops:world-patent-data.ops:document-inquiry.ops:inquiry-result.ops:document-instance',
+            (imageInformation) => imageInformation,
+            [],
+        ).map((document) => ({
+            formats: PatentsService.getNestedArray(
+                document,
+                'ops:document-format-options.ops:document-format',
+                (format: OpsStringData[]) => format.map((format) => format.$),
+                [],
+            ),
+            type: (document['@desc'] || 'unknown').toLowerCase(),
+            url: document['@link'],
+            sections: PatentsService.getNestedArray(
+                document,
+                'ops:document-section',
+                (sections: { '@name': string; '@start-page': string }[]) =>
+                    sections.map((section) => ({ name: section['@name'], startPage: section['@start-page'] })),
+                [],
+            ),
+            pages: Number(document['@number-of-pages'] || 0),
+        }));
+    }
+
+    /**
+     * Sends an ops request. It will also attempt to renew the access token once expired
+     * @param endpoint
+     * @param config
+     * @param requestType
+     * @param isSecondAttempt
+     * @param accept
+     * @param acceptEncoding
+     * @private
+     */
+    private async sendOpsRequest<T>(
+        endpoint: string,
+        config: { headers?; responseType?: ResponseType; responseEncoding?: string },
+        requestType: 'get',
+        isSecondAttempt = false,
+        accept = 'application/json',
+        acceptEncoding = 'gzip, deflate, br',
+    ): Promise<{ data: T; headers: Record<string, string> }> {
+        try {
+            // if no auth data is present we need to generate an access token
+            if (!this.authData) {
+                this.authData = await this.getAccessToken();
+            }
+
+            // extend the provided config object with the auth info
+            config.headers = {
+                ...(config.headers || {}),
+                Authorization: `Bearer ${this.authData.access_token}`,
+                Accept: accept,
+                'Accept-Encoding': acceptEncoding,
+            };
+
+            const response = await lastValueFrom(this.httpService[requestType]<T>(endpoint, config));
+            return { data: response.data as T, headers: response.headers };
+        } catch (error) {
+            // if access token is expired we will attempt to renew it and send the request again
+            if ((error?.response?.data as string)?.toLowerCase().includes('access token has expired')) {
+                // after a second attempt there should be no access expired error therefore we can stop here to prevent a stackoverflow
+                if (isSecondAttempt) {
+                    throw error;
+                }
+
+                console.log('Authentication error. Attempting to refresh the token');
+                this.authData = await this.getAccessToken();
+                return this.sendOpsRequest<T>(endpoint, config, requestType, true);
+            }
+            throw error;
+        }
     }
 }
