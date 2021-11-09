@@ -66,6 +66,7 @@ export default defineComponent({
     padding: 6px 16px;
     display: flex;
     justify-content: center;
+    height: 40px;
 }
 
 .button-container {
