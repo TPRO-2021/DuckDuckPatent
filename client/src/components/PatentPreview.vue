@@ -14,7 +14,8 @@
                 <RoundButton class="round-btn" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
             <div class="settings-menu" v-if="settingsMenu">
-                <RoundButton v-if="current.showSave" class="round-btn" icon-key="push_pin" @click="this.savePatent" />
+
+                <RoundButton v-if="!isSaved" class="round-btn" icon-key="bookmark" @click="this.savePatent" />         
                 <RoundButton class="round-btn" icon-key="visibility_off" @click="this.hidePatent" />
                 <RoundButton class="round-btn" icon-key="done" />
                 <RoundButton class="round-btn" icon-key="read_more" @click="this.showMore" />
@@ -65,7 +66,7 @@ export default defineComponent({
              * Holds the info about available buttons
              */
             optionButtons: [
-                { iconKey: 'push_pin', action: this.savePatent },
+                { iconKey: 'bookmark', action: this.savePatent },
                 { iconKey: 'visibility_off', action: this.hidePatent },
                 { iconKey: 'done', action: 'suggestMore' },
                 { iconKey: 'read_more', action: this.showMore },
