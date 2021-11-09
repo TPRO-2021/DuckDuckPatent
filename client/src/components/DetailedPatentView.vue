@@ -20,7 +20,7 @@
                     icon-key="delete_forever"
                     v-on:on-clicked="onRemove"
                 />
-                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="save"></RoundButton>
+                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="bookmark"></RoundButton>
                 <RoundButton class="round-btn" icon-key="open_in_new" />
                 <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="visibility_off" />
                 <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="done" />
@@ -132,7 +132,7 @@ export default defineComponent({
              * Holds the submenu buttons
              */
             optionButtons: [
-                { iconKey: 'save', action: 'save' },
+                { iconKey: 'bookmark', action: 'save' },
                 { iconKey: 'visibility_off', action: 'dontLike' },
                 { iconKey: 'done', action: 'like' },
             ],
