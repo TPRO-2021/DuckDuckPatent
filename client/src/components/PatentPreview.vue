@@ -14,7 +14,7 @@
                 <RoundButton class="round-btn" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
             <div class="settings-menu" v-if="settingsMenu">
-                <RoundButton v-if="!isSaved" class="round-btn" icon-key="push_pin" @click="this.savePatent" />
+                <RoundButton v-if="current.showSave" class="round-btn" icon-key="push_pin" @click="this.savePatent" />
                 <RoundButton class="round-btn" icon-key="visibility_off" @click="this.hidePatent" />
                 <RoundButton class="round-btn" icon-key="done" />
                 <RoundButton class="round-btn" icon-key="read_more" @click="this.showMore" />
@@ -22,17 +22,13 @@
         </div>
         <template #header>
             <div>
-                <div class="patent-title">{{ patent?.title }}</div>
-                <div class="patent-owner">
-                    {{ patent.applicants[0] }}
-                    <span v-if="patent.applicants.length > 1">, ...</span>
-                </div>
+                <div class="patent-title">{{ current.title }}</div>
+
+                <div class="patent-owner">{{ current.subTitle }}</div>
             </div>
         </template>
-        <div class="preview-content">
-            <div class="patent-abstract">
-                <p>{{ patent?.abstract?.slice(0, 400) }}...</p>
-            </div>
+        <div class="patent-abstract">
+            <p>{{ current.mainText }}</p>
         </div>
         <div class="patent-navigation no-select">
             <!-- Navigation buttons -->
@@ -45,8 +41,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
-import { Patent } from '@/models/Patent';
-import { PatentMap } from '@/models/PatentMap';
 
 /**
  * This component previews the content of a patent
@@ -55,12 +49,13 @@ export default defineComponent({
     name: 'PatentPreview',
     components: { RoundButton },
     props: {
-        patent: { type: Object },
+        current: { type: Object },
+        terms: { type: Array },
     },
     emits: {
         onChangePatent: (event: { direction: string }) => event,
-        onSavePatent: (event: { patent: Patent }) => event,
-        onShowMore: (event: { patent: Patent; searchTerms: string[] }) => event,
+        onSavePatent: (event: { id: string }) => event,
+        onShowMore: (event: { id: string; searchTerms: string[] }) => event,
     },
     data() {
         return {
@@ -79,19 +74,8 @@ export default defineComponent({
         };
     },
     watch: {
-        patent() {
+        current() {
             this.resetState();
-        },
-    },
-    computed: {
-        savedPatents(): PatentMap {
-            return this.$store.state.savedPatents;
-        },
-        isSaved(): boolean {
-            return (this.$store.state.savedPatents || {})[this.patent?.id];
-        },
-        terms(): string[] {
-            return this.$store.state.searchTerms;
         },
     },
     methods: {
@@ -115,7 +99,8 @@ export default defineComponent({
          * Adds a patent to the saved items list
          */
         savePatent(): void {
-            this.$emit('onSavePatent', { patent: this.patent as Patent });
+            const id = this.current?.id as string;
+            this.$emit('onSavePatent', { id });
             this.settingsMenu = false;
         },
 
@@ -130,7 +115,9 @@ export default defineComponent({
          * Display the DetailedPatentView on Click Show more
          */
         showMore(): void {
-            this.$emit('onShowMore', { patent: this.patent as Patent, searchTerms: this.terms });
+            const id = this.current?.id as string;
+            const searchTerms = this.terms as string[];
+            this.$emit('onShowMore', { id, searchTerms });
             this.settingsMenu = false;
         },
 
