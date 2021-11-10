@@ -1,102 +1,40 @@
 import {
     AuthResponse,
     DocumentInformation,
-    OpsDocumentInstance,
-    OpsExchangeDocument,
     OpsImageQueryResponse,
-    OpsStringData,
-    Patent,
+    OpsPatent,
+    PatentFamilyResponse,
     PatentQueryResponse,
     QueryResult,
 } from './models';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import { AxiosResponse, ResponseType } from 'axios';
+import { ResponseType } from 'axios';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 
-import * as _ from 'lodash';
+import { PatentsServiceHelper } from './patents.service.helper';
 
 @Injectable()
 export class PatentsService {
     private authData: AuthResponse;
     private data: PatentQueryResponse;
 
-    private static patentQueryEndpoint = '/rest-services/published-data/search/biblio';
-    private static imageQueryEndpoint = '/rest-services/published-data/publication/epodoc/';
+    private static patentEndpoint = '/rest-services/published-data/search/biblio';
+    private static imageEndpoint = '/rest-services/published-data/publication/epodoc/';
+    private static familyEndpoint = '/rest-services/family/publication/docdb/';
 
     constructor(private readonly httpService: HttpService) {}
 
     /**
-     * Attempts to create a new access token for further usage. The credentials for the
-     * token are send via the Authorization header.
-     *
-     * For this to work consumer key and secret must be specified in the .env file!
+     * Queries the patent API for the patent belonging to the patentId
+     * @param patentId
      */
-    private async getAccessToken(): Promise<AuthResponse | null> {
-        // creating the base64 encoded authentication string
-        const authString = Buffer.from(`${process.env.OPS_CONSUMER_KEY}:${process.env.OPS_CONSUMER_SECRET}`).toString(
-            'base64',
-        );
+    async get(patentId: string): Promise<any> {
+        const url = process.env.PATENT_API_URL.concat(PatentsService.imageEndpoint).concat(patentId).concat('/biblio');
 
-        // creating the headers for axios
-        const headers = {
-            Authorization: `Basic ${authString}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-        };
-
-        try {
-            const response = await lastValueFrom(
-                this.httpService.post<AuthResponse>(
-                    `${process.env.PATENT_API_URL}/auth/accesstoken`,
-                    'grant_type=client_credentials',
-                    {
-                        headers: headers,
-                    },
-                ),
-            );
-            return response.data as AuthResponse;
-        } catch (error) {
-            console.error(`Error while authenticating with ${process.env.PATENT_API_URL}`);
-            throw new UnauthorizedException(error);
-        }
-    }
-
-    // to query for a single patent
-    async get(patentNum: string): Promise<AxiosResponse<PatentQueryResponse>> {
-        const config = {
-            params: {
-                q: JSON.stringify({ _eq: { patent_number: patentNum } }),
-                f: JSON.stringify([
-                    'patent_number',
-                    'patent_title',
-                    'patent_date',
-                    'patent_abstract',
-                    'cited_patent_number',
-                ]),
-                o: JSON.stringify({ page: 1, per_page: 1 }),
-            },
-        };
-
-        return lastValueFrom(
-            this.httpService.get<PatentQueryResponse>(`${process.env.PATENT_API_URL}/patents/query`, config),
-        );
-    }
-
-    // to query for cited patents for provided source
-    async getCitedPatents(patentNum: string): Promise<AxiosResponse<PatentQueryResponse>> {
-        const patentID = patentNum;
-        if (!this.authData) {
-            this.authData = await this.getAccessToken();
-        }
-        const headers = {
-            Authorization: `Bearer ${this.authData.access_token}`,
-            Accept: 'application/json',
-        };
-        return await lastValueFrom(
-            this.httpService.get<PatentQueryResponse>(
-                `${process.env.PATENT_API_URL}rest-services/published-data/publication/epodoc/${patentID}/biblio`,
-                { headers: headers },
-            ),
+        const patentResponse = await this.sendOpsRequest<OpsPatent>(url, {}, 'get');
+        return PatentsServiceHelper.processPatent(
+            patentResponse.data['ops:world-patent-data']['exchange-documents']['exchange-document'],
         );
     }
 
@@ -109,17 +47,45 @@ export class PatentsService {
      * @param date
      */
     public async query(terms: string[], page: number, languages = '', country = '', date = ''): Promise<QueryResult> {
-        const queryString = PatentsService.getQueryString(
+        const queryString = PatentsServiceHelper.getQueryString(
             terms,
-            PatentsService.patentQueryEndpoint,
+            PatentsService.patentEndpoint,
             page,
             country,
             date,
         );
+
         console.log(queryString);
 
         const response = await this.sendOpsRequest<PatentQueryResponse>(queryString, {}, 'get');
-        return this.processQuery(response.data, languages);
+        return PatentsServiceHelper.processQuery(response.data, languages);
+    }
+
+    /**
+     * Queries the patent family of a patent
+     * @param patentId
+     */
+    public async queryFamily(patentId: string) {
+        const queryString = process.env.PATENT_API_URL.concat(PatentsService.familyEndpoint)
+            .concat(patentId)
+            .concat('/biblio');
+
+        const opsResponse = await this.sendOpsRequest<PatentFamilyResponse>(queryString, {}, 'get');
+
+        const converted = {
+            'ops:world-patent-data': {
+                'ops:biblio-search': {
+                    '@total-result-count':
+                        opsResponse.data['ops:world-patent-data']['ops:patent-family']['@total-result-count'],
+                    'ops:search-result': {
+                        'exchange-documents':
+                            opsResponse.data['ops:world-patent-data']['ops:patent-family']['ops:family-member'],
+                    },
+                },
+            },
+        } as PatentQueryResponse;
+
+        return PatentsServiceHelper.processQuery(converted);
     }
 
     /**
@@ -127,13 +93,19 @@ export class PatentsService {
      * @param patentId
      */
     public async queryDocuments(patentId: string): Promise<DocumentInformation[]> {
-        const queryUrl = `${process.env.PATENT_API_URL}${PatentsService.imageQueryEndpoint}${patentId}/images`;
+        const queryUrl = `${process.env.PATENT_API_URL}${PatentsService.imageEndpoint}${patentId}/images`;
 
         const opsResponse = await this.sendOpsRequest<OpsImageQueryResponse>(queryUrl, {}, 'get');
 
-        return this.processImageQuery(opsResponse.data);
+        return PatentsServiceHelper.processImageQuery(opsResponse.data);
     }
 
+    /**
+     * Gets a document from the OPS rest services
+     * @param url
+     * @param contentType
+     * @param range
+     */
     public async getDocument(url: string, contentType: string, range: number) {
         const queryUrl = `${process.env.PATENT_API_URL}/rest-services/${url}`;
 
@@ -150,258 +122,6 @@ export class PatentsService {
             false,
             contentType,
         );
-    }
-
-    /**
-     * Processes an OPS query and returns a much cleaner structure with the needed data
-     * @param data
-     * @param languages
-     */
-    private processQuery(data: PatentQueryResponse, languages?: string): QueryResult {
-        const searchResult = data['ops:world-patent-data']['ops:biblio-search'];
-
-        const totalResults = Number(searchResult['@total-result-count']);
-        let queryData = searchResult['ops:search-result']['exchange-documents'];
-        if (!(queryData instanceof Array)) {
-            queryData = [queryData];
-        }
-
-        const processed = queryData
-            .map((item) => ({
-                ...item['exchange-document'],
-            }))
-            // filter for only the existing languages for the title and by default if no filter applied it is English
-            .filter((item) => {
-                let title = item['bibliographic-data']['invention-title'];
-                if (!(title instanceof Array)) {
-                    title = [title];
-                }
-                const patentLanguages = title.filter((t) => t).map((translation) => translation['@lang']);
-                return patentLanguages.some((lang) => languages.includes(lang));
-            })
-            .map((item) => ({
-                id: `${item['@country']}${item['@doc-number']}.${item['@kind']}`,
-                title: PatentsService.getTitle(item, languages),
-                citations: PatentsService.getCitations(item),
-                abstract: PatentsService.getAbstract(item, languages),
-                familyId: item['@family-id'] || null,
-                inventors: PatentsService.getNestedArray<string[]>(
-                    item,
-                    'bibliographic-data.parties.inventors.inventor',
-                    (inventors) => {
-                        const inventorMap = inventors.reduce((map, inventor) => {
-                            const item = map[inventor['@sequence']];
-
-                            if (!item) {
-                                map[inventor['@sequence']] = [inventor];
-                                return map;
-                            }
-
-                            item.push(inventor);
-                            return map;
-                        }, {});
-
-                        return Object.keys(inventorMap).map(
-                            (sequence) => inventorMap[sequence][0]['inventor-name'].name.$,
-                        );
-                    },
-                    [] as string[],
-                ),
-                applicants: PatentsService.getNestedArray<string[]>(
-                    item,
-                    'bibliographic-data.parties.applicants.applicant',
-                    (applicants) => {
-                        const applicantMap = applicants.reduce((map, applicant) => {
-                            const item = map[applicant['@sequence']];
-
-                            if (!item) {
-                                map[applicant['@sequence']] = [applicant];
-                                return map;
-                            }
-
-                            item.push(applicant);
-                            return map;
-                        }, {});
-
-                        return Object.keys(applicantMap).map(
-                            (sequence) => applicantMap[sequence][0]['applicant-name'].name.$,
-                        );
-                    },
-                    [] as string[],
-                ),
-            }));
-
-        return {
-            patents: processed,
-            total: totalResults,
-        };
-    }
-
-    /**
-     * Attempts to get the title of a patent from the provided data
-     * @param doc
-     * @param languages
-     * @private
-     */
-    private static getTitle(doc: OpsExchangeDocument, languages: string): string {
-        let titles = doc['bibliographic-data']['invention-title'];
-
-        if (!titles) {
-            return 'Unknown Title';
-        }
-
-        // In some edge cases it can happen that the title is an object
-        if (!(titles instanceof Array)) {
-            titles = [titles];
-        }
-        // filtering for the provided languages
-        const titleSupported = titles.find((title) => languages.includes(title['@lang']));
-        //if the Title is not existing by default in english or one of the filtered languages return this message
-        if (!titleSupported) {
-            return titles[0].$;
-        }
-
-        return titleSupported.$;
-    }
-
-    /**
-     * Gets citations from a provided OpsExchangeDocument
-     * @param doc
-     * @private
-     */
-    private static getCitations(doc: OpsExchangeDocument): Patent[] {
-        let citations = doc['bibliographic-data']['references-cited']?.citation;
-
-        if (!citations || citations.length === 0) {
-            return [] as Patent[];
-        }
-
-        if (!(citations instanceof Array)) {
-            citations = [citations];
-        }
-
-        return (
-            citations
-                // some patents have citations to non-patent sources. we have to filter those out
-                .filter((citation) => citation.patcit)
-                .map((citation) => {
-                    const docDbId = citation.patcit['document-id'].filter(
-                        (docId) => docId['@document-id-type'] === 'docdb',
-                    )[0];
-
-                    return {
-                        id: `${docDbId.country.$}${docDbId['doc-number'].$}.${docDbId.kind.$}`,
-                    };
-                }) as Patent[]
-        );
-    }
-
-    /**
-     * Gets the abstract from a provided OpsExchangeDocument
-     *
-     * @param doc
-     * @param languages
-     * @private
-     */
-    private static getAbstract(doc: OpsExchangeDocument, languages: string): string {
-        let abstracts = doc.abstract;
-
-        // if no abstract exists we can return unknown abstract
-        if (!abstracts) {
-            return 'No abstract available';
-        }
-
-        // In some edge cases it can happen that the abstract is an object
-        if (!(abstracts instanceof Array)) {
-            abstracts = [abstracts];
-        }
-
-        // filtering for the provided languages
-        const abstractSupported = abstracts.find((abstract) => languages.includes(abstract['@lang']));
-        //if the abstract is not existing by default in english or one of the filtered languages return this message
-        if (!abstractSupported) {
-            return abstracts[0].p.$;
-        }
-
-        return abstractSupported.p.$;
-    }
-
-    /**
-     * Attempts to process the passed document according to the passed parameters
-     * @param doc   The document
-     * @param path  The path where the array data is found
-     * @param processingFn  The function which should process the data
-     * @param defaultValue  The default value which should be applied when no data was found
-     * @private
-     */
-    private static getNestedArray<T>(doc: any, path: string, processingFn, defaultValue: T): T {
-        let instanceArr = _.get(doc, path);
-
-        if (!instanceArr) {
-            return defaultValue;
-        }
-
-        if (!(instanceArr instanceof Array)) {
-            instanceArr = [instanceArr];
-        }
-
-        return processingFn(instanceArr);
-    }
-
-    /**
-     * Compiles an OPS query string based on the provided data
-     * @param searchTerms   The search terms which need to be added to the URL
-     * @param endpoint      The target endpoint
-     * @param page          The page which should be retrieved
-     * @param country          The page which should be retrieved
-     * @param date          The page which should be retrieved
-     * @private
-     */
-    private static getQueryString(searchTerms: string[], endpoint: string, page = 0, country = '', date = ''): string {
-        let queryString = `${process.env.PATENT_API_URL}`
-            .concat(endpoint)
-            .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`);
-
-        if (country.trim().length > 0) {
-            queryString = queryString.concat(` and pn any "${country}"`);
-        }
-
-        if (date.trim().length > 0) {
-            queryString = queryString.concat(` and pd within "${date}"`);
-        }
-
-        return queryString.concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
-    }
-
-    /**
-     * Restructures an image query to the desired format
-     * @param data
-     * @private
-     */
-    private async processImageQuery(data: OpsImageQueryResponse): Promise<DocumentInformation[]> {
-        return PatentsService.getNestedArray<OpsDocumentInstance[]>(
-            data,
-            'ops:world-patent-data.ops:document-inquiry.ops:inquiry-result.ops:document-instance',
-            (imageInformation) => imageInformation,
-            [],
-        ).map((document) => ({
-            formats: PatentsService.getNestedArray(
-                document,
-                'ops:document-format-options.ops:document-format',
-                (format: OpsStringData[]) => format.map((format) => format.$),
-                [],
-            ),
-            type: (document['@desc'] || 'unknown').toLowerCase(),
-            url: document['@link'],
-            sections: PatentsService.getNestedArray(
-                document,
-                'ops:document-section',
-                (sections: { '@name': string; '@start-page': string }[]) =>
-                    sections.map((section) => ({ name: section['@name'], startPage: section['@start-page'] })),
-                [],
-            ),
-            pages: Number(document['@number-of-pages'] || 0),
-        }));
     }
 
     /**
@@ -451,6 +171,41 @@ export class PatentsService {
                 return this.sendOpsRequest<T>(endpoint, config, requestType, true);
             }
             throw error;
+        }
+    }
+
+    /**
+     * Attempts to create a new access token for further usage. The credentials for the
+     * token are send via the Authorization header.
+     *
+     * For this to work consumer key and secret must be specified in the .env file!
+     */
+    private async getAccessToken(): Promise<AuthResponse | null> {
+        // creating the base64 encoded authentication string
+        const authString = Buffer.from(`${process.env.OPS_CONSUMER_KEY}:${process.env.OPS_CONSUMER_SECRET}`).toString(
+            'base64',
+        );
+
+        // creating the headers for axios
+        const headers = {
+            Authorization: `Basic ${authString}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        };
+
+        try {
+            const response = await lastValueFrom(
+                this.httpService.post<AuthResponse>(
+                    `${process.env.PATENT_API_URL}/auth/accesstoken`,
+                    'grant_type=client_credentials',
+                    {
+                        headers: headers,
+                    },
+                ),
+            );
+            return response.data as AuthResponse;
+        } catch (error) {
+            console.error(`Error while authenticating with ${process.env.PATENT_API_URL}`);
+            throw new UnauthorizedException(error);
         }
     }
 }

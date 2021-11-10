@@ -1,9 +1,11 @@
 export default class HttpService {
-    requestPending: boolean;
-    controller?: AbortController;
+    protected requestPending: boolean;
+    protected controller?: AbortController;
+    protected baseUrl: string;
 
-    constructor() {
+    constructor(baseUrl = '') {
         this.requestPending = false;
+        this.baseUrl = baseUrl;
     }
 
     /**

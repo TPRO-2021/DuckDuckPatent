@@ -9,7 +9,7 @@
                 v-for="(savedPatent, index) in savedPatents"
                 :key="index"
                 :savedPatentTitle="savedPatent.patent.title"
-                :savedpatentAbstract="savedPatent.patent.abstract"
+                :savedPatentAbstract="savedPatent.patent.abstract"
                 @click="onSelectPatent(savedPatent)"
                 v-on:on-remove="this.removeFromSaved(savedPatent.patent)"
                 v-on:on-close="this.selectedPatent = null"
@@ -36,6 +36,7 @@ import RoundButton from '@/components/RoundButton.vue';
 import { Patent } from '@/models/Patent';
 import DetailedPatentView from '@/components/DetailedPatentView.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
+import { RouteLocationNormalized } from 'vue-router';
 
 export default defineComponent({
     name: 'SavedResult',
@@ -64,6 +65,15 @@ export default defineComponent({
         btnText(): string {
             return Object.keys(this.savedPatents).length === 1 ? 'Saved item' : 'Saved items';
         },
+        previousPage(): RouteLocationNormalized | null {
+            const previous = this.$route.query.previous as string;
+
+            if (!previous) {
+                return null;
+            }
+
+            return JSON.parse(atob(previous));
+        },
     },
     methods: {
         /**
@@ -76,7 +86,12 @@ export default defineComponent({
                 return;
             }
 
-            this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
+            // if (this.previousPage) {
+            //     return;
+            // }
+
+            this.$router.back();
+            // this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
         },
 
         /**

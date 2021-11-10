@@ -95,8 +95,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="column btn-exploration">
-                    <Button icon-key="travel_explore" btn-text="Start exploration" />
+                <div class="column btn-exploration" v-if="explorationAvailable && showExploreBtn">
+                    <Button icon-key="travel_explore" btn-text="Start exploration" @click="openExploration" />
                 </div>
             </div>
         </template>
@@ -112,6 +112,7 @@ import DocumentService from '@/services/document.service';
 import { DocumentInformation } from '@/models/DocumentInformation';
 import Chip from '@/components/Chip.vue';
 import Attachment from '@/components/Attachment.vue';
+import PatentService from '@/services/patent.service';
 
 /**
  * This component previews the content of a patent
@@ -130,14 +131,21 @@ export default defineComponent({
             type: Boolean,
             default: false,
         },
+        showExploreBtn: {
+            type: Boolean,
+            default: true,
+        },
     },
-    emits: ['onClose', 'removeFromSaved'],
+    emits: ['onClose', 'removeFromSaved', 'onOpenExploration'],
     data() {
         return {
-            pageDisplay: '',
-            isSubMenuOpen: false,
+            documents: null as DocumentInformation[] | null,
+            documentService: new DocumentService(),
+            explorationAvailable: false,
             index: 0,
-            saved: true,
+            isSubMenuOpen: false,
+            pageDisplay: '',
+            noDocuments: false,
             // Holds the submenu buttons
             optionButtons: [
                 { iconKey: 'bookmark', action: 'save' },
@@ -145,9 +153,8 @@ export default defineComponent({
                 { iconKey: 'done', action: 'like' },
             ],
             patentAvailable: false,
-            noDocuments: false,
-            documentService: new DocumentService(),
-            documents: null as DocumentInformation[] | null,
+            patentService: new PatentService(),
+            saved: true,
         };
     },
     watch: {
@@ -158,16 +165,11 @@ export default defineComponent({
                 return;
             }
 
-            // if a new patent is available load the documents for it
-            this.$store.commit('SHOW_LOADING_BAR');
-            try {
-                this.documents = await this.documentService.query((this.extendedPatent as ExtendedPatent)?.patent?.id);
-            } catch (err) {
-                this.noDocuments = true;
-                console.error(err);
-            }
-            this.$store.commit('HIDE_LOADING_BAR');
+            await Promise.all([this.loadDocuments(), this.loadFamily()]);
         },
+    },
+    created() {
+        this.loadFamily();
     },
     methods: {
         /**
@@ -217,6 +219,64 @@ export default defineComponent({
             });
 
             window.open(routeData.href, '_blank');
+        },
+
+        /**
+         * Loads the documents for the current patent
+         */
+        async loadDocuments() {
+            // if a new patent is available load the documents for it
+            this.$store.commit('SHOW_LOADING_BAR');
+            try {
+                this.documents = await this.documentService.query((this.extendedPatent as ExtendedPatent)?.patent?.id);
+            } catch (err) {
+                this.noDocuments = true;
+                console.error(err);
+            }
+            this.$store.commit('HIDE_LOADING_BAR');
+        },
+
+        /**
+         * Loads the patent family of the current patent
+         */
+        async loadFamily() {
+            // if no exploration button should be shown we don't need to load the data
+            if (!this.showExploreBtn) {
+                return;
+            }
+
+            const extPatent = this.extendedPatent as ExtendedPatent;
+
+            if (!extPatent) return;
+
+            try {
+                this.$store.commit('SHOW_LOADING_BAR');
+                const family = await this.patentService.queryFamily(extPatent.patent.id);
+
+                this.$store.commit('STORE_FAMILY', { patentId: extPatent.patent.id, family });
+                this.explorationAvailable = true;
+            } catch (err) {
+                console.error(err);
+                this.explorationAvailable = false;
+            }
+
+            this.$store.commit('HIDE_LOADING_BAR');
+        },
+
+        /**
+         * Opens the exploration page
+         */
+        openExploration() {
+            const patent = this.extendedPatent as ExtendedPatent;
+
+            //TODO: Save current state in vuex store
+            this.$store.commit('STORE_PATENT', patent);
+
+            this.$router.push({
+                path: '/explore',
+                query: { patentId: patent.patent.id, searchTerms: patent.searchTerms },
+            });
+            this.$store.commit('HIDE_DIALOG_MASK');
         },
     },
 });
