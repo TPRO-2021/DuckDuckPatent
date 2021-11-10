@@ -78,6 +78,14 @@ export interface AuthResponse {
     status: string;
 }
 
+export interface OpsPatent {
+    'ops:world-patent-data': {
+        'exchange-documents': {
+            'exchange-document': OpsExchangeDocument;
+        };
+    };
+}
+
 /**
  * Interface which describes the document id retrieved from OPS
  */
