@@ -4,6 +4,10 @@ import { Filter } from '@/models/Filter';
 import FilterHelperService from '@/services/filter-helper.service';
 
 export default class PatentService extends HttpService {
+    constructor() {
+        super('/api/patents');
+    }
+
     /**
      * Queries the backend for patents matching the search terms and filters
      * @param searchTerms
@@ -23,7 +27,7 @@ export default class PatentService extends HttpService {
             .concat(`page=${page}`)
             .join('&');
 
-        const response = await this.makeRequest(`/api/patents?${queryString}`);
+        const response = await this.makeRequest(`${this.baseUrl}?${queryString}`);
 
         // accessing x-total-count header which indicates how many results are available
         const totalCount = parseInt(response.headers.get('x-total-count') || '99');
@@ -31,7 +35,6 @@ export default class PatentService extends HttpService {
 
         // reset requestPending variable
         this.requestPending = false;
-
 
         //temporary approach to handle no results meeting filters
         if (json.length === 0) {
