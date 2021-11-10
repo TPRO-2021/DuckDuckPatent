@@ -68,11 +68,11 @@ export default class VisualizationHelperService {
                         return false;
                     }
                     // If a node is selected, only show if connected to it
-                    let patents = [selectedNode.patent.id];
+                    let connectedPatents = [selectedNode.patent.id];
                     if (selectedNode.type === 'citation') {
-                        patents = citationMap[selectedNode.id];
+                        connectedPatents = citationMap[selectedNode.id] || []; // TODO: citations should always have atleast one
                     }
-                    return patents.some((t) => citationMap[citationId].includes(t));
+                    return connectedPatents.some((t) => citationMap[citationId].includes(t));
                 })
                 .map((citationId) => {
                     const citingPatents = citationMap[citationId]; // With the citations of this patent

@@ -1,9 +1,10 @@
 import { SimulationNodeDatum } from 'd3';
 import { Patent } from '@/models/Patent';
+import { NodeType } from '@/models/NodeType';
 
 export interface VisualPatentNode extends SimulationNodeDatum {
     id: string;
     patent: Patent;
-    type: 'patent' | 'author' | 'citation' | 'company' | 'family';
+    type: NodeType;
     size: number;
 }

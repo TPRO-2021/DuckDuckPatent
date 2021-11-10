@@ -1,7 +1,9 @@
 <template>
     <div class="chip" :class="{ 'chip-suggestion': isSuggestion, 'box-shadow': hasShadow }">
         <span class="chip-text no-select">{{ text }}</span>
-        <span class="chip-icon material-icons no-select" @click="$emit('onSelect')">{{ iconKey || 'add_circle' }}</span>
+        <span class="chip-icon material-icons no-select" @click="$emit('onSelect')" v-if="hasAction">{{
+            iconKey || 'add_circle'
+        }}</span>
     </div>
 </template>
 
@@ -30,6 +32,10 @@ export default defineComponent({
             type: Boolean,
             default: true,
         },
+        hasAction: {
+            type: Boolean,
+            default: true,
+        },
     },
     emits: ['onSelect'],
 });
@@ -48,7 +54,7 @@ export default defineComponent({
     border: none;
     min-height: 26px;
     max-width: fit-content;
-    padding: 2px 6px 2px 10px;
+    padding: 2px 12px 2px 12px;
     margin: 5px 5px;
 }
 
@@ -59,14 +65,14 @@ export default defineComponent({
 .chip-icon {
     color: white;
     font-size: 22px;
+    transform: translateX(6px);
 }
 
-.chip:hover {
+.chip-icon:hover {
     cursor: pointer;
 }
 
 .chip-text {
-    padding-left: 2px;
     color: white;
 }
 

@@ -150,7 +150,7 @@ export default createStore({
          * @constructor
          */
         ADD_PATENTS(state, patents: Patent[]): void {
-            state.patents = patents;
+            state.patents = patents || [];
         },
 
         /**
