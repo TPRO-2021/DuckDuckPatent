@@ -9,8 +9,7 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
-        <div v-if="filter.type === 'language' && filter.value !== ''">
-            <!--    add isSelectionOpen if that behavior is more intuitive for disselect-->
+        <div v-if="filter.type === 'language' && (filter.value !== '' || filter.isSelectionOpen)">
             <FilterComponent
                 name="language"
                 :value="displayValue(languageList, filter.value)"
@@ -28,7 +27,7 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
-        <div v-if="filter.type === 'empty' || filter.isSelectionOpen" class="type-selection" @mouseleave="updateFocus">
+        <div v-if="filter.type === 'empty' || filter.isSelectionOpen" class="type-selection" v-click-away="onLostFocus">
             <div>
                 <ChipButton
                     :class="{
@@ -130,6 +129,7 @@ import ChipButton from '@/components/ChipButton.vue';
 import FilterComponent from '@/components/Filter.vue';
 import ListPicker from '@/components/ListPicker.vue';
 import { Filter } from '@/models/Filter';
+import { directive } from 'vue3-click-away';
 
 const FOCUS_TIMEOUT_MS = 4000; // four seconds
 
@@ -141,6 +141,9 @@ export default defineComponent({
             type: Array,
             required: true,
         },
+    },
+    directives: {
+        ClickAway: directive,
     },
     data() {
         return {
@@ -309,17 +312,19 @@ export default defineComponent({
                 this.onLostFocus(); // Shift back from edit when called
             }, FOCUS_TIMEOUT_MS); // Timeout given here
         },
-
         /**
-         *  @function  onLostFocus shifts the current filter from edit mode to not edit mode
+         *  @function  onLostFocus shifts the current filter from edit mode to not edit mode.
+         *  When user clicks away from filters, it's treated as lost focus too.
          */
         onLostFocus() {
             if (this.currentFilter == null) {
                 return;
             } // If there isn't a currently focused element then forget about it
+
             // Emit update that changes isSelectionOpen (edit mode) to false
             this.$emit('updateFilter', { prop: 'isSelectionOpen', value: false, id: this.currentFilter.id });
             this.showOnEdit = { status: false, filterType: 'none' };
+
             // if filter is really empty, i.e. user didn't enter any values, then we should not display it
             if (this.currentFilter.value === '') {
                 this.$emit('removeFilter', this.currentFilter.id);

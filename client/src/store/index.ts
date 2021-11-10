@@ -97,11 +97,9 @@ export default createStore({
          */
         updateFilter<K extends keyof Filter>(state: AppState, args: { prop: K; value: Filter[K]; id: number }) {
             const startEdit = args.prop === 'isSelectionOpen';
-            console.log('store, updateFilter.selectionOpen status: ', startEdit);
             state.filters = state.filters
                 .filter((t) => !startEdit || t.type !== 'empty') // If we're starting to edit one, delete all empties
                 .map((filter: Filter) => {
-                    console.log('store, updateFilter.filtered: ', state.filters);
                     // If this is not the one that is being updated
                     if (args.id !== filter.id) {
                         // Don't allow for the opening of more than one at a time - close if open
@@ -120,7 +118,6 @@ export default createStore({
                         [args.prop]: value, // Set value
                     };
                 });
-            console.log('store, updateFilter.end result: ', state.filters);
         },
 
         /**
