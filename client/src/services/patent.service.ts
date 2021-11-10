@@ -32,7 +32,6 @@ export default class PatentService extends HttpService {
         // reset requestPending variable
         this.requestPending = false;
 
-
         //temporary approach to handle no results meeting filters
         if (json.length === 0) {
             PatentService.throwError(404);

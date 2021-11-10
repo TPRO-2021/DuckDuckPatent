@@ -1,5 +1,5 @@
 <template>
-    <div class="d3-container">
+    <div :class="{ 'd3-container': true, updating: updating }">
         <svg xmlns="http://www.w3.org/2000/svg" @click="canvasClicked">
             <defs>
                 <marker
@@ -89,6 +89,7 @@ export default defineComponent({
             required: true,
             type: Array,
         },
+        updating: Boolean,
     },
     emits: {
         onNodeSelected: (e: { node: NodeInfo }) => e,
@@ -717,6 +718,11 @@ export default defineComponent({
         height: 100%;
         width: 100%;
     }
+}
+.d3-container.updating {
+    transition: all 0.5s;
+    z-index: -1;
+    opacity: 0.5;
 }
 
 .tooltip {
