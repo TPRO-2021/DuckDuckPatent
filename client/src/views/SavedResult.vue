@@ -9,7 +9,7 @@
                 v-for="(savedPatent, index) in savedPatents"
                 :key="index"
                 :savedPatentTitle="savedPatent.patent.title"
-                :savedpatentAbstract="savedPatent.patent.abstract"
+                :savedPatentAbstract="savedPatent.patent.abstract"
                 @click="onSelectPatent(savedPatent)"
                 v-on:on-remove="this.removeFromSaved(savedPatent.patent)"
                 v-on:on-close="this.selectedPatent = null"

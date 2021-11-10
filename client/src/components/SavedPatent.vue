@@ -5,7 +5,7 @@
                 <h2>{{ savedPatentTitle }}</h2>
             </div>
             <div class="patent-abstract">
-                <p>{{ savedpatentAbstract?.slice(0, 350) }} ...</p>
+                <p>{{ savedPatentAbstract?.slice(0, 350) }} ...</p>
             </div>
         </div>
     </div>
@@ -18,7 +18,7 @@ export default defineComponent({
     name: 'savedPatent',
     props: {
         savedPatentTitle: String,
-        savedpatentAbstract: String,
+        savedPatentAbstract: String,
     },
     emits: ['onRemove'],
     computed: {
