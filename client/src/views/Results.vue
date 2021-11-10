@@ -120,22 +120,22 @@ export default defineComponent({
     data() {
         return {
             debounceHandler: null as number | null,
+            detailedPatent: null as ExtendedPatent | null,
+            inputFieldWaiting: false,
+            keywordService: new KeywordService(),
+            lastFilterString: '',
+            moreDataAvailable: false,
+            patentService: new PatentService(),
             resetHandler: null as number | null,
             resetWaiting: false,
-            patentService: new PatentService(),
-            keywordService: new KeywordService(),
-            showTimeline: false,
             selectedNode: null as NodeInfo | null,
-            inputFieldWaiting: false,
-            moreDataAvailable: false,
-            lastFilterString: '',
-            detailedPatent: null as ExtendedPatent | null,
+            showTimeline: false,
         };
     },
     watch: {
         filters(filters: Filter[]): void {
             // On every change of the filters we need to check if we should update the results
-            // Creata a filter string that we can compare to recently sent ones (this could be refactored)
+            // Create a filter string that we can compare to recently sent ones (this could be refactored)
             const newFilterString = FilterHelperService.getParameterList(filters).join('&'); // Convert to "key=value&key2=value2" string
 
             // Compare the string with the last sent, if they're different, refresh the results
@@ -340,7 +340,6 @@ export default defineComponent({
 
         /**
          * Event handler which resets the current node index
-         * @param e
          */
         onClearNodeSelected() {
             this.selectedNode = null;
