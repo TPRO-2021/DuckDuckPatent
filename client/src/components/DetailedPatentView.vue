@@ -95,7 +95,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="column btn-exploration" v-if="explorationAvailable">
+                <div class="column btn-exploration" v-if="explorationAvailable && showExploreBtn">
                     <Button icon-key="travel_explore" btn-text="Start exploration" @click="openExploration" />
                 </div>
             </div>
@@ -130,6 +130,10 @@ export default defineComponent({
         isSavedPage: {
             type: Boolean,
             default: false,
+        },
+        showExploreBtn: {
+            type: Boolean,
+            default: true,
         },
     },
     emits: ['onClose', 'removeFromSaved', 'onOpenExploration'],
@@ -236,6 +240,11 @@ export default defineComponent({
          * Loads the patent family of the current patent
          */
         async loadFamily() {
+            // if no exploration button should be shown we don't need to load the data
+            if (!this.showExploreBtn) {
+                return;
+            }
+
             const extPatent = this.extendedPatent as ExtendedPatent;
 
             if (!extPatent) return;
