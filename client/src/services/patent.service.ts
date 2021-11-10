@@ -43,4 +43,28 @@ export default class PatentService extends HttpService {
 
         return { patents: json, totalCount };
     }
+
+    /**
+     * Queries the backend for patents belonging to the same patent family
+     * @param patentId
+     */
+    public async queryFamily(patentId: string): Promise<Patent[]> {
+        const queryUrl = this.baseUrl.concat('/').concat(patentId).concat('/family');
+
+        const response = await this.makeRequest(queryUrl);
+        const json = (await response.json()) as { patents: Patent[]; total: number };
+
+        return json.patents;
+    }
+
+    /**
+     * Loads a single patent from the backend
+     * @param patentId
+     */
+    public async get(patentId: string): Promise<Patent> {
+        const queryUrl = this.baseUrl.concat(`/${patentId}`);
+
+        const response = await this.makeRequest(queryUrl);
+        return (await response.json()) as Patent;
+    }
 }
