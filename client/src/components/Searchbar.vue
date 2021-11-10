@@ -134,13 +134,12 @@ export default defineComponent({
         initializeSearch(): void {
             if (this.currentKeyword.trim().length > 0) {
                 this.addKeyword();
+                this.$emit('onSearch', { searchTerms: this.searchTerms as string[] | [] });
             }
-
             // if no search terms are specified we need to prevent the state change.
             if (!this.searchTerms || this.searchTerms.length === 0 || this.$route.path === '/search') {
                 return;
             }
-
             this.$emit('onSearch', { searchTerms: this.searchTerms as string[] | [] });
         },
     },
