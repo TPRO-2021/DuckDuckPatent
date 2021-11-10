@@ -43,6 +43,11 @@ export class PatentsController {
         return res.set({ 'X-Total-Count': total }).json(patents);
     }
 
+    @Get('/:patentId')
+    async get(@Param('patentId') patentId): Promise<Patent> {
+        return this.patentService.get(patentId);
+    }
+
     @Get('/:patentId/documents')
     async queryDocuments(@Param('patentId') patentId): Promise<DocumentInformation[]> {
         return this.patentService.queryDocuments(patentId);
@@ -65,5 +70,10 @@ export class PatentsController {
         }
 
         return response.send(data.data);
+    }
+
+    @Get('/:patentId/family')
+    async queryFamily(@Param('patentId') patentId) {
+        return this.patentService.queryFamily(patentId);
     }
 }

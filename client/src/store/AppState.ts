@@ -1,5 +1,6 @@
 import { Patent } from '@/models/Patent';
 import { SavedAppState } from './SavedAppState';
+import { PatentMap } from '@/models/PatentMap';
 
 /**
  * The entire application views will have global containers to share data between components which is the state
@@ -27,11 +28,13 @@ export class AppState extends SavedAppState {
      * True if the loadingBar should be visible
      */
     public showLoadingBar = false;
+
     /**
      * Holds the showNoResultsToast state
      * True if the toast should be visible
      */
     public showNoResultsToast = false;
+
     /**
      * Holds the showErrorToast state
      * True if the toast should be visible
@@ -42,21 +45,35 @@ export class AppState extends SavedAppState {
      * Holds the current total count value
      */
     public totalCount = 0;
+
     /**
      * Holds the dialog mask state
      * True if dialog mask should be visible
      */
     public showDialogMask = false;
+
     /**
      * Id of patent currently previewed (on Results page)
      */
     public patentID = '' as string;
+
     /**
      * Highlight border of a node upon its click or preview
      */
     public highlightNode = false;
+
     /**
      * Controls one/two checkmark assignment
      */
     public markTwice = false;
+
+    /**
+     * Contains temporary saved extended patents. Is used to pass patent info to different views
+     */
+    public extendedPatents = {} as PatentMap;
+
+    /**
+     * Contains temporary saved patent families. Is used to pass patent family info to different views
+     */
+    public patentFamilies = {} as Record<string, Patent[]>;
 }
