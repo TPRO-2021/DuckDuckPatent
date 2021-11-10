@@ -38,6 +38,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import(/* webpackChunkName: "explore" */ '@/views/Exploration.vue'),
         props: true,
     },
+    {
+        path: '/patent',
+        name: 'Patent',
+        component: () => import(/* webpackChunkName: "patent" */ '@/views/Patent.vue'),
+        props: true,
+    },
 ];
 
 const router = createRouter({

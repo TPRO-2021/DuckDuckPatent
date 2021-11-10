@@ -27,8 +27,7 @@
                     @click="this.savePatent"
                 ></RoundButton>
                 <RoundButton class="round-btn" icon-key="open_in_new" />
-                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="visibility_off" />
-                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="done" />
+                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="done" @click="this.showPatentPage" />
             </div>
         </div>
         <template #header>
@@ -159,9 +158,8 @@ export default defineComponent({
             noDocuments: false,
             // Holds the submenu buttons
             optionButtons: [
-                { iconKey: 'bookmark', action: 'save' },
-                { iconKey: 'visibility_off', action: 'dontLike' },
-                { iconKey: 'done', action: 'like' },
+                { iconKey: 'bookmark', action: this.savePatent },
+                { iconKey: 'done', action: this.showPatentPage },
             ],
             patentAvailable: false,
             patentService: new PatentService(),
@@ -201,7 +199,18 @@ export default defineComponent({
             this.$emit('onSavePatentDetailed', { patent: this.extendedPatent as ExtendedPatent });
             this.isSubMenuOpen = false;
         },
-
+        showPatentPage(): void {
+            const patent = this.extendedPatent as ExtendedPatent;
+            //TODO: Save current state in vuex store
+            this.$store.commit('STORE_PATENT', patent);
+            this.$router.push({
+                path: 'patent',
+                query: {
+                    patentId: patent.patent.id,
+                },
+            });
+            this.$store.commit('HIDE_DIALOG_MASK');
+        },
         /**
          * Closes the modal and emits the removeFromSave event
          */
