@@ -112,6 +112,7 @@ import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import Button from '@/components/Button.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
+
 import { Patent } from '@/models/Patent';
 import DocumentService from '@/services/document.service';
 import { DocumentInformation } from '@/models/DocumentInformation';
@@ -204,10 +205,8 @@ export default defineComponent({
             //TODO: Save current state in vuex store
             this.$store.commit('STORE_PATENT', patent);
             this.$router.push({
-                path: 'patent',
-                query: {
-                    patentId: patent.patent.id,
-                },
+                path: '/patent',
+                query: { patentId: patent.patent.id, searchTerms: patent.searchTerms },
             });
             this.$store.commit('HIDE_DIALOG_MASK');
         },
