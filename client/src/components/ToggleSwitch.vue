@@ -1,5 +1,5 @@
 <template>
-    <div class="toggle__button" @click="toggle">
+    <div :class="{toggle__button: true, disabled: $props.disabled}" @click="toggle">
         <div class="toggle__switch" :style="style" :class="{ active: isActive }"></div>
     </div>
 </template>
@@ -22,10 +22,15 @@ export default defineComponent({
             type: String,
             default: null,
         },
+        disabled: {
+            type: Boolean,
+            default: false,
+        },
     },
     emits: ['onClicked'],
     methods: {
         toggle(): void {
+            if (this.$props.disabled) { return; }
             this.isActive = !this.isActive;
             this.$emit('onClicked', this.isActive);
         },
@@ -81,6 +86,9 @@ export default defineComponent({
     border: 0.25px solid #d6d4d4;
     border-radius: 90px;
 }
+.toggle__button.disabled {
+    background-color: #eee;
+}
 
 .toggle__switch {
     left: 0;
@@ -90,6 +98,9 @@ export default defineComponent({
     background: black;
     border-radius: 90px;
     transition: all 0.25s;
+}
+.disabled .toggle__switch {
+    filter: grayscale(0.5);
 }
 
 .active {
