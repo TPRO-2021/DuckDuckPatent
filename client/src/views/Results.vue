@@ -62,14 +62,14 @@
                 v-if="currentPatentPreview"
                 :current="currentPatentPreview"
                 :terms="terms"
-                v-on:on-change-patent="onChangeNode($event, allPatentIds, 'patent')"
+                v-on:on-change-patent="onChangeNode($event, this.selectedNode.type)"
                 v-on:on-save-patent="onSavePatent($event)"
                 v-on:on-show-more="onShowMore($event)"
             />
             <NodePreviewComponent
                 v-if="currentNodePreview"
                 :current="currentNodePreview"
-                v-on:on-control-change="onChangeNode($event, allCitationIds, 'citation')"
+                v-on:on-control-change="onChangeNode($event, this.selectedNode.type)"
                 v-on:on-select-patent="selectPatent($event)"
             />
         </div>
@@ -186,16 +186,23 @@ export default defineComponent({
                 return null;
             }
             const patent = this.patents.find((t) => t.id === this.selectedNode?.id);
-            if (patent == null) {
+            if (patent == undefined) {
                 return null;
             }
             const savedPatents = this.$store.state.savedPatents;
             return PreviewHelperService.getPatentPreview(patent, savedPatents);
         },
+        /**
+         * Non-patent node is check to which type belongs and the helper function is called to preview info into the card
+         */
         currentNodePreview(): NodePreview | null {
             switch (this.selectedNode?.type) {
                 case 'citation':
                     return PreviewHelperService.getCitationPreview(this.selectedNode, this.$store.state.patents);
+                case 'author':
+                    return PreviewHelperService.getAuthorPreview(this.selectedNode, this.$store.state.patents);
+                case 'company':
+                    return PreviewHelperService.getCompanyPreview(this.selectedNode, this.$store.state.patents);
             }
             return null;
         },
@@ -205,8 +212,42 @@ export default defineComponent({
         allPatentIds(): string[] {
             return this.patents.map((t) => t.id);
         },
+
+        /**
+         * Assigning ids to all citations and eliminates the duplicates
+         */
         allCitationIds(): string[] {
-            return this.patents.reduce((list, p) => [...list, ...(p.citations || [])], [] as Patent[]).map((t) => t.id);
+            let citations = this.patents.reduce(
+                (citationMap, p) =>
+                    p.citations?.reduce((citationMap, c) => ({ ...citationMap, [c.id]: true }), citationMap) ??
+                    citationMap,
+                {},
+            );
+            return Object.keys(citations);
+        },
+
+        /**
+         * Assigning the ids for all author and eliminate the duplicates ids
+         */
+
+        allAuthorIds(): string[] {
+            let authors = this.patents.reduce(
+                (invMap, p) => p.inventors?.reduce((invMap, i) => ({ ...invMap, [i]: true }), invMap) ?? invMap,
+                {},
+            );
+            return Object.keys(authors);
+        },
+
+        /**
+         * Assigns the ids to all companies and eliminates the ids
+         */
+        allCompanyIds(): string[] {
+            let companies = this.patents.reduce(
+                (authorMap, p) =>
+                    p.applicants?.reduce((authorMap, i) => ({ ...authorMap, [i]: true }), authorMap) ?? authorMap,
+                {},
+            );
+            return Object.keys(companies);
         },
     },
     async created() {
@@ -340,7 +381,6 @@ export default defineComponent({
 
         /**
          * Event handler which resets the current node index
-         * @param e
          */
         onClearNodeSelected() {
             this.selectedNode = null;
@@ -349,24 +389,43 @@ export default defineComponent({
         /**
          * Handle the controls in the node preview being clicked
          */
-        onChangeNode(e: { direction: string }, collection: string[], type: NodeType): void {
+        onChangeNode(e: { direction: string }, type: NodeType): void {
             // reset highlight on node
             this.$store.commit('HIGHLIGHT_NODE_OFF');
-
-            let selectedIndex = collection.findIndex((t) => t === this.selectedNode?.id);
-            switch (e.direction) {
-                case 'next':
-                    selectedIndex = (selectedIndex + 1) % collection.length;
+            switch (type) {
+                case 'patent':
+                    this.navigationNodes(
+                        e,
+                        this.allPatentIds,
+                        this.allPatentIds.findIndex((t) => t === this.selectedNode?.id),
+                        type,
+                    );
                     break;
-                case 'previous':
-                    selectedIndex = selectedIndex - 1;
-                    selectedIndex = selectedIndex < 0 ? collection.length - 1 : selectedIndex;
+                case 'citation':
+                    this.navigationNodes(
+                        e,
+                        this.allCitationIds,
+                        this.allCitationIds.findIndex((t) => t === this.selectedNode?.id),
+                        type,
+                    );
+                    break;
+                case 'author':
+                    this.navigationNodes(
+                        e,
+                        this.allAuthorIds,
+                        this.allAuthorIds.findIndex((t) => t === this.selectedNode?.id),
+                        type,
+                    );
+                    break;
+                case 'company':
+                    this.navigationNodes(
+                        e,
+                        this.allCompanyIds,
+                        this.allCompanyIds.findIndex((t) => t === this.selectedNode?.id),
+                        type,
+                    );
                     break;
             }
-            this.selectedNode = {
-                id: collection[selectedIndex],
-                type,
-            };
 
             //set mark once on viewed node
             this.$store.commit('MARK_NODE_ON', {
@@ -480,6 +539,32 @@ export default defineComponent({
             const patent = this.patents.find((t) => t.id === event.id);
             this.$store.commit('ADD_SAVED_PATENT', { patent, searchTerms: this.terms });
             this.selectedNode = null;
+        },
+
+        /**
+         * Arrow navigation for Node Preview for citation,
+         * @param e
+         * @param collection
+         * @param indexNode
+         * @param type
+         */
+        navigationNodes(e: { direction: string }, collection: string[], indexNode: number, type: NodeType) {
+            switch (e.direction) {
+                case 'next':
+                    console.log('i am pushing the next', indexNode);
+                    console.log('i am pushing length the next', collection.length);
+                    indexNode = (indexNode + 1) % collection.length;
+                    break;
+                case 'previous':
+                    console.log('i am pushing the back', indexNode);
+                    indexNode = indexNode - 1;
+                    indexNode = indexNode < 0 ? collection.length - 1 : indexNode;
+                    break;
+            }
+            this.selectedNode = {
+                id: collection[indexNode],
+                type,
+            };
         },
     },
 });
