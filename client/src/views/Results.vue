@@ -551,12 +551,9 @@ export default defineComponent({
         navigationNodes(e: { direction: string }, collection: string[], indexNode: number, type: NodeType) {
             switch (e.direction) {
                 case 'next':
-                    console.log('i am pushing the next', indexNode);
-                    console.log('i am pushing length the next', collection.length);
                     indexNode = (indexNode + 1) % collection.length;
                     break;
                 case 'previous':
-                    console.log('i am pushing the back', indexNode);
                     indexNode = indexNode - 1;
                     indexNode = indexNode < 0 ? collection.length - 1 : indexNode;
                     break;

@@ -57,7 +57,7 @@ export default class PreviewHelperService {
             id: node.id,
             title: `${node.id}`,
             type: node.type,
-            subTitle: 'Inventor of',
+            subTitle: 'Author of',
             relatedPatents: authorPatents,
         };
     }
