@@ -1,18 +1,12 @@
 <template>
-    <div class="patent-page">
-        <div class="patent-controls">
-            <RoundButton class="back-btn" icon-key="reply" @click="goBack"></RoundButton>
-        </div>
+    <div class="patent-controls">
+        <RoundButton class="back-btn" icon-key="reply" @click="goBack"></RoundButton>
+    </div>
 
-        <div class="top-controls">
-            <Button
-                btnText="Saved"
-                iconKey="turned_in"
-                :badge-value="savedPatentsCount"
-                v-on:on-clicked="openSavePage"
-            />
-        </div>
-
+    <div class="top-controls">
+        <Button btnText="Saved" iconKey="turned_in" :badge-value="savedPatentsCount" v-on:on-clicked="openSavePage" />
+    </div>
+    <div>
         <div class="patent-title" v-html="highlightTitle(this.patent.patent.title, this.patent.searchTerms)"></div>
         <div class="patent-owner">
             <span v-for="(applicant, index) in patent.patent.applicants" :key="index">
@@ -21,25 +15,27 @@
                 <span v-if="index <= patent.patent.applicants.length - 1"> </span>
             </span>
         </div>
-        <div class="patent-abstract">
-            <h1>Abstract</h1>
-            <div v-html="highlightAbstract(this.patent.patent.abstract, this.patent.searchTerms)"></div>
-        </div>
+    </div>
+    <div class="patent-abstract">
+        <h2>Abstract</h2>
+        <div v-html="highlightAbstract(this.patent.patent.abstract, this.patent.searchTerms)"></div>
+    </div>
 
-        <div class="patent-info">
-            <div>
-                <h3>Inventors</h3>
-                <ul class="inventors-list">
-                    <li v-for="(inventor, index) in patent.patent.inventors" :key="index">{{ inventor }}</li>
-                </ul>
-            </div>
-            <div>
-                <h3>Applicants</h3>
-                <ul class="inventors-list">
-                    <li v-for="(applicant, index) in patent.patent.applicants" :key="index">{{ applicant }}</li>
-                </ul>
-            </div>
+    <div class="patent-info">
+        <div>
+            <h3>Inventors</h3>
+            <ul class="inventors-list">
+                <li v-for="(inventor, index) in patent.patent.inventors" :key="index">{{ inventor }}</li>
+            </ul>
         </div>
+        <div>
+            <h3>Applicants</h3>
+            <ul class="inventors-list">
+                <li v-for="(applicant, index) in patent.patent.applicants" :key="index">{{ applicant }}</li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-container">
         <div class="patent-additional-info">
             <div class="keywords">
                 <div class="label-keywords">Searched keywords:</div>
@@ -62,11 +58,16 @@
                         v-on:on-open="openDocument(attachment)"
                     ></Attachment>
                 </div>
+                <!-- Display skeleton to indicate loading -->
+                <div class="attachment-items" v-if="!documents">
+                    <div class="card box-shadow" v-for="(_item, index) in [1, 2, 3]" :key="index">
+                        <Skeleton width="60px" height="30px"></Skeleton>
+                    </div>
+                </div>
             </div>
-
-            <div class="column btn-exploration" v-if="explorationAvailable">
-                <Button icon-key="travel_explore" btn-text="Start exploration" @click="openExploration" />
-            </div>
+        </div>
+        <div class="column btn-exploration" v-if="explorationAvailable">
+            <Button icon-key="travel_explore" btn-text="Start exploration" @click="openExploration" />
         </div>
     </div>
 </template>
@@ -260,7 +261,7 @@ export default defineComponent({
     text-align: left;
     padding-left: 40px;
     font-weight: bold;
-    font-size: 30px;
+    font-size: 25px;
 }
 .patent-owner {
     padding-bottom: 70px;
@@ -276,7 +277,7 @@ export default defineComponent({
     padding-right: 40px;
     font-style: normal;
     font-weight: normal;
-    font-size: 20px;
+    font-size: 15px;
     padding-bottom: 70px;
     overflow-y: auto;
 }
@@ -285,36 +286,45 @@ export default defineComponent({
     width: 100%;
     gap: 120px;
     padding-left: 40px;
-    padding-bottom: 100px;
+    padding-bottom: 50px;
     text-align: justify;
 }
 .inventors-list {
-    transform: translateX(25px);
+    transform: translateX(20px);
 }
-.applicant-list {
-    transform: translateX(200px);
+.footer-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    gap: 40px;
+    justify-content: space-between;
 }
 
 .patent-additional-info {
     display: flex;
-    flex-direction: row;
     flex-grow: 1;
-    gap: 100px;
+    gap: 40px;
 }
 .attachments {
     display: flex;
     flex-direction: column;
-    width: 90vw;
 }
 .label-attachment {
     text-align: left;
     transform: translateX(10px);
-    font-size: 30px;
+    font-size: 20px;
 }
 
 .attachment-items {
     display: flex;
-    padding-top: 30px;
+}
+.attachment {
+    border: 1px solid #cccccc;
+    box-sizing: border-box;
+    border-radius: 10px;
+    width: 250px;
+    height: 146px;
+    padding: 10px;
 }
 
 .keywords {
@@ -330,14 +340,15 @@ export default defineComponent({
 .label-keywords {
     display: inline-flex;
     align-items: flex-start;
-    font-size: 30px;
+    font-size: 20px;
     text-align: left;
     padding-left: 40px;
 }
 
 .btn-exploration {
-    width: 300px;
+    width: 230px;
     display: flex;
-    padding-top: 60px;
+    align-items: flex-end;
+    margin-right: 20px;
 }
 </style>
