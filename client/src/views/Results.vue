@@ -34,6 +34,7 @@
             <ResultsVisualization
                 :visualization-options="visualizationOptions"
                 :patents="patents"
+                :updating="showLoadingBar"
                 v-on:on-node-selected="onNodeSelected"
                 v-on:on-clear-node-selected="onClearNodeSelected"
             />
@@ -150,6 +151,9 @@ export default defineComponent({
      * and patents from store/index.ts
      */
     computed: {
+        showLoadingBar(): boolean {
+            return this.$store.state.showLoadingBar;
+        },
         filters(): Filter[] {
             return this.$store.state.filters;
         },
