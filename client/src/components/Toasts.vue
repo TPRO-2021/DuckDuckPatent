@@ -20,9 +20,9 @@ export default defineComponent({
         const showNoPatentsToast = () => {
             toast.add({
                 severity: 'warn',
-                summary: "'Oops! No result found :('",
-                detail: 'Please modify your search criteria and you will find results matching your needs',
-                life: 10000,
+                summary: 'Oops! No result found :)',
+                detail: 'Try modifying your filters or search terms',
+                life: 5000,
             });
         };
         const showErrorToast = () => {
