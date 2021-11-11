@@ -229,8 +229,8 @@ export default class VisualizationHelperService {
             .reduce(
                 (stakeholders, patent) => [
                     ...stakeholders,
-                    ...(patent[path] || []).map((inventor: string) => ({
-                        source: inventor,
+                    ...(patent[path] || []).map((id: string) => ({
+                        source: id,
                         target: patent.id,
                     })),
                 ],
@@ -267,7 +267,7 @@ export default class VisualizationHelperService {
             .reduce(
                 (links, node) => [
                     ...links,
-                    ...relationMap[node.id].map((t) => ({
+                    ...(relationMap[node.id] || []).map((t) => ({
                         source: node,
                         target: nodeMap[t],
                     })),
