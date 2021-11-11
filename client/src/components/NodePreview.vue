@@ -11,7 +11,6 @@
         <template #header>
             <div>
                 <div :class="{ 'node-preview-title': true, [current.type]: true }">{{ current.title }}</div>
-
                 <div class="node-preview-subtitle">{{ current.subTitle }}</div>
             </div>
         </template>
@@ -25,11 +24,6 @@
             >
                 <span class="node-preview-related-id">{{ rel.id }}</span> {{ rel.title }}
             </div>
-        </div>
-        <div class="node-preview-navigation no-select">
-            <!-- Navigation buttons -->
-            <span class="material-icons search-icon" @click="displayPrevious()">arrow_back</span>
-            <span class="material-icons search-icon" @click="displayNext()">arrow_forward</span>
         </div>
     </Dialog>
 </template>
@@ -48,7 +42,6 @@ export default defineComponent({
         current: { type: Object },
     },
     emits: {
-        onControlChange: (event: { direction: 'next' | 'previous' }) => event,
         onSelectPatent: (event: { id: string }) => event,
     },
     data() {
@@ -59,23 +52,6 @@ export default defineComponent({
     },
     watch: {
         current() {
-            this.showOptionsMenu = false;
-        },
-    },
-    methods: {
-        /**
-         * Method to check if next button is clicked then emit an event to ask the parent to send next patent
-         */
-        displayNext(): void {
-            this.$emit('onControlChange', { direction: 'next' });
-            this.showOptionsMenu = false;
-        },
-
-        /**
-         * Method to check if back button is clicked then emit an event to ask the parent to send previous patent
-         */
-        displayPrevious(): void {
-            this.$emit('onControlChange', { direction: 'previous' });
             this.showOptionsMenu = false;
         },
     },
@@ -123,6 +99,13 @@ export default defineComponent({
     padding: 0 10px;
 }
 
+.node-preview-related-id {
+    background-color: $brown;
+    border-radius: 10px;
+    color: white;
+    padding: 0 10px;
+}
+
 .node-preview-body {
     text-align: left;
     font-style: normal;
@@ -137,25 +120,6 @@ export default defineComponent({
     margin-top: 10px;
     margin-bottom: 10px;
     cursor: pointer;
-}
-
-.node-preview-related-id {
-    background-color: $brown;
-    border-radius: 10px;
-    color: white;
-    padding: 0 10px;
-}
-
-.node-preview-navigation {
-    position: absolute;
-    bottom: 32px;
-    right: 32px;
-    display: flex;
-    gap: 12px;
-
-    span:hover {
-        cursor: pointer;
-    }
 }
 
 .node-preview-subtitle {

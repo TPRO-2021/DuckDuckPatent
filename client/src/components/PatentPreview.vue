@@ -170,14 +170,14 @@ export default defineComponent({
 }
 
 .patent-title {
-    text-align: left;
+    text-align: justify;
     padding-right: 70px;
     font-style: normal;
     font-weight: normal;
     font-size: 20px;
 }
 .patent-abstract {
-    text-align: left;
+    text-align: justify;
     font-style: normal;
     font-weight: normal;
     font-size: 16px;
@@ -199,7 +199,7 @@ export default defineComponent({
 }
 
 .patent-owner {
-    padding-bottom: 12px;
+    //padding-bottom: 12px;
     text-align: left;
     font-style: normal;
     font-weight: 200;
