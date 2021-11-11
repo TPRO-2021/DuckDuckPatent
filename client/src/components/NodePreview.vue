@@ -15,6 +15,7 @@
                 <div class="node-preview-subtitle">{{ current.subTitle }}</div>
             </div>
         </template>
+        <!--            Previewing the Patent title and the patent number-->
         <div class="node-preview-body">
             <div
                 v-for="rel in current.relatedPatents"
@@ -69,6 +70,7 @@ export default defineComponent({
             this.$emit('onControlChange', { direction: 'next' });
             this.showOptionsMenu = false;
         },
+
         /**
          * Method to check if back button is clicked then emit an event to ask the parent to send previous patent
          */
@@ -106,6 +108,21 @@ export default defineComponent({
     border-radius: 10px;
     padding: 0 10px;
 }
+
+.node-preview-title.author {
+    color: white;
+    background-color: $red;
+    border-radius: 10px;
+    padding: 0 10px;
+}
+
+.node-preview-title.company {
+    color: white;
+    background-color: $blue;
+    border-radius: 10px;
+    padding: 0 10px;
+}
+
 .node-preview-body {
     text-align: left;
     font-style: normal;
@@ -133,7 +150,6 @@ export default defineComponent({
     position: absolute;
     bottom: 32px;
     right: 32px;
-
     display: flex;
     gap: 12px;
 
