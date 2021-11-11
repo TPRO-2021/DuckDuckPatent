@@ -4,11 +4,15 @@
         <div class="column btn-exploration">
             <Button icon-key="travel_explore" btn-text="Exploration mode" />
         </div>
-    </div>
-
-    <!-- This div contains the top right controls (saved button) -->
-    <div class="top-controls">
-        <Button btnText="Saved" iconKey="turned_in" :badge-value="savedPatentsCount" v-on:on-clicked="openSavePage" />
+        <!-- This div contains the top right controls (saved button) -->
+        <div class="top-controls">
+            <Button
+                btnText="Saved"
+                iconKey="turned_in"
+                :badge-value="savedPatentsCount"
+                v-on:on-clicked="openSavePage"
+            />
+        </div>
     </div>
 
     <div class="explore-container">
@@ -35,22 +39,11 @@
             <!-- Patent family -->
             <Divider align="left"><Chip :has-action="false" text="Family" class="divider-label"></Chip></Divider>
             <div class="patent-family" v-if="loading">
-                <div
+                <PreviewPlaceholder
                     class="card box-shadow family-placeholder"
                     v-for="(_item, index) of Array.from(Array(9).keys())"
                     :key="index"
-                >
-                    <Skeleton width="100%" height="16px"></Skeleton>
-                    <Skeleton width="80%" height="16px"></Skeleton>
-                    <br />
-                    <Skeleton
-                        width="100%"
-                        height="12px"
-                        v-for="(_i, i) of Array.from(Array(5).keys())"
-                        :key="i"
-                    ></Skeleton>
-                    <Skeleton width="60%" height="12px"></Skeleton>
-                </div>
+                />
             </div>
 
             <div class="patent-family" v-if="!loading">
@@ -69,6 +62,8 @@
                         </div>
                     </div>
                 </div>
+                <!-- This is here to hacky-fix the placement issue. Don't tell anyone about it! -->
+                <PreviewPlaceholder class="card box-shadow family-placeholder" />
             </div>
         </div>
     </div>
@@ -93,6 +88,7 @@ import { ExtendedPatent } from '@/models/ExtendedPatent';
 import PatentService from '@/services/patent.service';
 import DetailedPatentView from '@/components/DetailedPatentView.vue';
 import Chip from '@/components/Chip.vue';
+import PreviewPlaceholder from '@/components/PreviewPlaceholder.vue';
 
 export default defineComponent({
     name: 'Exploration',
@@ -101,6 +97,7 @@ export default defineComponent({
         Chip,
         DetailedPatentView,
         RoundButton,
+        PreviewPlaceholder,
     },
     data() {
         return {
@@ -230,7 +227,6 @@ export default defineComponent({
     position: sticky;
     top: 0;
     left: 0;
-    width: 500px;
     display: flex;
     gap: 20px;
     padding: 20px;
@@ -255,8 +251,17 @@ export default defineComponent({
     z-index: 100;
 }
 
+.family-placeholder:last-child {
+    flex-grow: 7;
+    visibility: hidden;
+    height: 0;
+    padding: 0;
+    margin: 0;
+}
+
 .patent-container,
 .family-placeholder {
+    flex-grow: 1;
     width: 500px;
     height: 300px;
     max-height: 400px;
@@ -273,7 +278,6 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     gap: 10px;
-    float: left;
 }
 
 .patent-container:hover {
@@ -337,5 +341,11 @@ export default defineComponent({
     font-style: normal;
     font-size: 16px;
     overflow-y: auto;
+}
+
+.patent-family {
+    display: flex;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
 }
 </style>
