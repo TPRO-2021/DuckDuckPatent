@@ -370,7 +370,6 @@ export default defineComponent({
     box-shadow: 0 0 10px grey;
     box-sizing: border-box;
     padding: 10px 5px;
-    max-width: 120px;
     position: relative;
     z-index: 2000;
 }
@@ -381,16 +380,17 @@ export default defineComponent({
 }
 .year-selector > * > * {
     width: 90%;
-    margin: 5px;
 }
 .year-selector > * > label {
     text-align: left;
+    margin: 3px;
 }
 .year-selector > * > input {
     border-radius: 5px;
     background: lightgrey;
     border: none;
     padding: 0 5px;
+    margin: 5px;
 }
 
 .filter-container {
