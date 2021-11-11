@@ -26,8 +26,7 @@
                     icon-key="bookmark"
                     @click="this.savePatent"
                 ></RoundButton>
-                <RoundButton class="round-btn" icon-key="open_in_new" />
-                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="done" @click="this.showPatentPage" />
+                <RoundButton class="round-btn" icon-key="open_in_new" @click="this.showPatentPage" />
             </div>
         </div>
         <template #header>
@@ -158,10 +157,7 @@ export default defineComponent({
             pageDisplay: '',
             noDocuments: false,
             // Holds the submenu buttons
-            optionButtons: [
-                { iconKey: 'bookmark', action: this.savePatent },
-                { iconKey: 'done', action: this.showPatentPage },
-            ],
+            optionButtons: [{ iconKey: 'bookmark', action: this.savePatent }],
             patentAvailable: false,
             patentService: new PatentService(),
             saved: true,
@@ -337,7 +333,7 @@ export default defineComponent({
     text-align: justify;
     padding-right: 60px;
     font-style: normal;
-    font-weight: bold;
+    font-weight: normal;
     font-size: 16px;
     padding-bottom: 24px;
     overflow-y: auto;
