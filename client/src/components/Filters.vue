@@ -409,6 +409,7 @@ export default defineComponent({
     margin-top: 8px;
     float: right;
     width: 90px;
+    margin-right: 0 !important;
 }
 .invisible {
     visibility: hidden;
