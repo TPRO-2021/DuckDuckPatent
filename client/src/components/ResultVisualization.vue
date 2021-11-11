@@ -185,7 +185,8 @@ export default defineComponent({
          */
         highlightNode(newVal) {
             if (newVal) {
-                this.highlightAndMarkNodes();
+                this.highlightOnPreview(this.$store.state.patentID as string, this.$store.state.patentType as string);
+                this.updateMarks();
             }
         },
     },
@@ -327,12 +328,10 @@ export default defineComponent({
                     else return 'url(#end)';
                 });
 
-            //highlight nodes when clicked (credits to Ion Cicala for this change)
-            this.selections.graph
-                .selectAll('circle')
-                .classed('selected', false)
-                .filter((td) => td === this.selectedNode)
-                .classed('selected', true);
+            //handle checkmarks and highlights no click
+            this.highlightOnClick();
+            if (this.selectedNode?.type === 'patent') this.setMarkOnClick();
+            this.updateMarks();
 
             // Update caption every time data changes
             this.simulation?.alpha(alpha).restart();
@@ -554,10 +553,6 @@ export default defineComponent({
          * @param node
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
-            if (node.type === 'patent') {
-                //only patents have preview, hence checkmark them
-                this.$store.commit('MARK_NODE_ON', { pID: node.patent.id, twice: false });
-            }
             this.$emit('onNodeSelected', { node: node });
 
             // in order to prevent a canvas event to be triggered specify that a node is selected
@@ -566,13 +561,6 @@ export default defineComponent({
 
             this.updateData();
             this.updateGraph(0.01);
-
-            this.selections.graph
-                .selectAll('circle')
-                .classed('selected', false)
-                .filter((td) => td === node)
-                //highlight border
-                .classed('selected', true);
         },
 
         /**
@@ -627,76 +615,71 @@ export default defineComponent({
 
         /**
          * Highlights border color of a node, once node or preview cards are viewed. Some preview is shown without node click
-         * Node is marked once when the small preview card is displayed.
-         * It's marked twice when the extended panel is accessed on results or saved pages.
          *
          */
-        highlightAndMarkNodes(): void {
+        highlightOnPreview(nodeID: string, nodeType: string): void {
             // reset highlight
-            if (!this.selections.graph) {
-                return;
-            }
+            if (!this.selections.graph) return;
             this.selections.graph.selectAll('circle').classed('selected', false);
 
-            // find patentIndex
-            const patentID = this.$store.state.patentID as string;
-            const patentIndex = (this.patents as Patent[]).findIndex((e) => e.id === patentID);
-
-            // if patent index not found, no highlight/mark
-            if (patentIndex < 0) return;
-
-            //find node and highlight it
+            // find node in preview
             const target = this.selections.graph
-                .selectAll('circle')
-                .filter(function (d, i) {
-                    return i === patentIndex;
-                })
-                .classed('selected', true);
+                .selectAll<SVGSVGElement, VisualPatentNode>('circle')
+                .filter((d: VisualPatentNode) => d.type === nodeType)
+                .filter((d: VisualPatentNode) => d.id === nodeID);
 
-            // show mark
-            this.$store.state.markTwice ? target.classed('markedTwice', true) : target.classed('markedOnce', true);
+            //highlight it
+            target.classed('selected', true);
         },
-
+        /**
+         * Any clicked node should be highlighted
+         *
+         */
+        highlightOnClick(): void {
+            // currently non-patents will not be marked as visited
+            this.selections.graph
+                .selectAll('circle')
+                .classed('selected', false)
+                .filter((td) => td === this.selectedNode)
+                .classed('selected', true);
+        },
+        /**
+         * If patent clicked, it should get marked
+         *
+         */
+        setMarkOnClick(): void {
+            //set mark once on viewed node
+            this.$store.commit('ADD_MARK', {
+                pID: this.selectedNode?.id,
+                twice: false,
+            });
+        },
         /**
          * Once the visualization changes, the marks need to be set again
          *
          */
         updateMarks(): void {
-            // set marks for viewed once
-            if (!this.selections.graph) {
-                return;
-            }
+            if (!this.selections.graph) return;
+            //show marks for viewed once
             const markedOnce = this.$store.state.markedOnce;
 
-            markedOnce.forEach((element: string) => {
-                //find node and highlight it
-                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
-                // if patent index not found, no highlight/mark
-                if (nodeIndex < 0) return;
-
+            markedOnce.forEach((e: string) => {
                 this.selections.graph
-                    .selectAll('circle')
-                    .filter(function (d, i) {
-                        return i === nodeIndex;
-                    })
+                    .selectAll<SVGSVGElement, VisualPatentNode>('circle')
+                    .filter((d: VisualPatentNode) => d.type === 'patent')
+                    .filter((d: VisualPatentNode) => d.id === e)
                     // add a mark to indicate it has been viewed
                     .classed('markedOnce', true);
             });
 
-            //set marks for viewed twice
+            //show marks for viewed twice
             const markedTwice = this.$store.state.markedTwice;
 
-            markedTwice.forEach((element: string) => {
-                //find node and highlight it
-                const nodeIndex = (this.patents as Patent[]).findIndex((e) => e.id === element);
-                // if patent index not found, no highlight/mark
-                if (nodeIndex < 0) return;
-
+            markedTwice.forEach((e: string) => {
                 this.selections.graph
-                    .selectAll('circle')
-                    .filter(function (d, i) {
-                        return i === nodeIndex;
-                    })
+                    .selectAll<SVGSVGElement, VisualPatentNode>('circle')
+                    .filter((d: VisualPatentNode) => d.type === 'patent')
+                    .filter((d: VisualPatentNode) => d.id === e)
                     // add a mark to indicate it has been viewed
                     .classed('markedTwice', true);
             });

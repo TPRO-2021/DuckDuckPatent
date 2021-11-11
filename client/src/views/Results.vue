@@ -38,14 +38,9 @@
                 v-on:on-clear-node-selected="onClearNodeSelected"
             />
         </div>
-        <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
+        <!-- This div contains the bottom controls (timeline toggle, mode-toggle)     v-if="moreDataAvailable" -->
         <div class="bottom-controls">
-            <Button
-                v-if="moreDataAvailable"
-                v-on:on-clicked="extendSearch"
-                icon-key="check"
-                btn-text="Load more"
-            ></Button>
+            <Button v-on:on-clicked="extendSearch" icon-key="check" btn-text="Load more"></Button>
         </div>
         <!-- This div contains the top right controls (saved button) -->
         <div class="top-controls">
@@ -349,9 +344,6 @@ export default defineComponent({
          * Handle the controls in the node preview being clicked
          */
         onChangeNode(e: { direction: string }, collection: string[], type: NodeType): void {
-            // reset highlight on node
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
-
             let selectedIndex = collection.findIndex((t) => t === this.selectedNode?.id);
             switch (e.direction) {
                 case 'next':
@@ -367,18 +359,11 @@ export default defineComponent({
                 type,
             };
 
-            //set mark once on viewed node
-            this.$store.commit('MARK_NODE_ON', {
-                pID: this.selectedNode?.id,
-                twice: false,
-            });
-            // turn highlight on node on. Timeout so to have the component react to state change
-            setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', {
-                    pID: this.selectedNode?.id,
-                    twice: false,
-                });
-            });
+            // only patents on preview will get a highlight/checkmark from preview actions
+            this.highlightOnPreview();
+            if (this.selectedNode.type === 'patent') {
+                this.setMarkOnPreview();
+            }
         },
 
         /**
@@ -387,7 +372,27 @@ export default defineComponent({
         selectPatent(event: { id: string }) {
             this.selectedNode = { id: event.id, type: 'patent' };
         },
-
+        /**
+         * Highlight of previewed patent on
+         */
+        highlightOnPreview(): void {
+            // reset highlight on node
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
+            // turn highlight on node on. Timeout so to have the component react to state change
+            setTimeout(() => {
+                this.$store.commit('HIGHLIGHT_NODE_ON', {
+                    pID: this.selectedNode?.id,
+                    nodeType: this.selectedNode?.type,
+                });
+            });
+        },
+        /**
+         * Checkmark of previewed patent on
+         */
+        setMarkOnPreview(): void {
+            //set mark once on viewed node
+            this.$store.commit('ADD_MARK', { pID: this.selectedNode?.id, twice: false });
+        },
         /**
          * Shows the detailed patent view
          * Is called when the user clicks on the show-more button of a patent
@@ -400,10 +405,10 @@ export default defineComponent({
             this.$store.commit('SHOW_DIALOG_MASK');
             this.detailedPatent = { patent, searchTerms: event.searchTerms } as ExtendedPatent;
             //set mark twice on viewed node
-            this.$store.commit('MARK_NODE_ON', { pID: this.detailedPatent?.patent.id, twice: true });
+            this.$store.commit('ADD_MARK', { pID: this.detailedPatent?.patent.id, twice: true });
             // highlight node
             setTimeout(() => {
-                this.$store.commit('HIGHLIGHT_NODE_ON', this.detailedPatent?.patent.id);
+                this.$store.commit('HIGHLIGHT_NODE_ON', { pID: this.detailedPatent?.patent.id, nodeType: 'patent' });
             });
         },
 
