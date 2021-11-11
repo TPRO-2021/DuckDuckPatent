@@ -1,6 +1,6 @@
 <template>
     <div v-for="filter in filters" :key="filter.id" class="filter-container">
-        <div v-if="filter.type === 'date' && (filter.value.length > 7 || filter.isSelectionOpen)">
+        <div v-if="eligible(filter, 'date')">
             <FilterComponent
                 name="date"
                 :value="filter.value"
@@ -9,7 +9,7 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
-        <div v-if="filter.type === 'language' && (filter.value !== '' || filter.isSelectionOpen)">
+        <div v-if="eligible(filter, 'language')">
             <FilterComponent
                 name="language"
                 :value="displayValue(languageList, filter.value)"
@@ -18,7 +18,7 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
-        <div v-if="filter.type === 'country' && (filter.value !== '' || filter.isSelectionOpen)">
+        <div v-if="eligible(filter, 'country')">
             <FilterComponent
                 name="country"
                 :value="displayValue(countryList, filter.value)"
@@ -55,7 +55,6 @@
                                 :value="dateFilterFrom"
                                 type="number"
                                 @focus="updateFocus"
-                                @change="onDateChange('from', $event, filter)"
                                 @keyup="onDateChange('from', $event, filter)"
                             />
                             <input
@@ -64,7 +63,6 @@
                                 :value="dateFilterTo"
                                 type="number"
                                 @focus="updateFocus"
-                                @change="onDateChange('to', $event, filter)"
                                 @keyup="onDateChange('to', $event, filter)"
                             />
                         </div>
@@ -130,6 +128,7 @@ import FilterComponent from '@/components/Filter.vue';
 import ListPicker from '@/components/ListPicker.vue';
 import { Filter } from '@/models/Filter';
 import { directive } from 'vue3-click-away';
+import FilterHelperService from '@/services/filter-helper.service';
 
 const FOCUS_TIMEOUT_MS = 4000; // four seconds
 
@@ -326,7 +325,7 @@ export default defineComponent({
             this.showOnEdit = { status: false, filterType: 'none' };
 
             // if filter is really empty, i.e. user didn't enter any values, then we should not display it
-            if (this.currentFilter.value === '') {
+            if (!FilterHelperService.isValid(this.currentFilter)) {
                 this.$emit('removeFilter', this.currentFilter.id);
             }
             // Set the current filter to null, it's no longer current
@@ -346,6 +345,12 @@ export default defineComponent({
 
             this.onUpdateFilter('value', newCodes.join(','), filter.id); // Join new list together with commas and update the value
             this.updateFocus(); // Update focus so the user doesn't just randomly get knocked out of edit mode
+        },
+        /**
+         *  Checks whether filter meets all conditions to be displayed to user
+         */
+        eligible(filter: Filter, filterType: string): boolean {
+            return FilterHelperService.showFilter(filter, filterType);
         },
     },
 });
