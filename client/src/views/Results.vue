@@ -218,7 +218,7 @@ export default defineComponent({
         },
     },
     async created() {
-        this.$store.commit('showLoadingScreen');
+        this.$store.commit('SHOW_LOADING_SCREEN');
 
         // since the store is not preserved in a refresh we need to check the current URL for keywords
         this.checkUrl();
@@ -302,7 +302,13 @@ export default defineComponent({
             this.$store.commit('SHOW_LOADING_BAR');
             await this.$router.push({ query: { terms: this.terms } });
             try {
-                const { patents, totalCount } = await this.patentService.query(this.terms, this.filters);
+                // in order to have a more consistent experience the loading screen should appear at least 1s
+                const [result] = await Promise.all([
+                    this.patentService.query(this.terms, this.filters),
+                    this.defaultLoadingTime(),
+                ]);
+
+                const { patents, totalCount } = result;
                 this.$store.dispatch('addPatents', { patents, totalCount });
                 // eslint-disable-next-line
             } catch (e: any) {
@@ -313,7 +319,7 @@ export default defineComponent({
             }
 
             //hideScreen
-            this.$store.commit('hideLoadingScreen');
+            this.$store.commit('HIDE_LOADING_SCREEN');
             this.$store.commit('HIDE_LOADING_BAR');
 
             // now we can check the result
@@ -498,6 +504,20 @@ export default defineComponent({
             this.$store.commit('ADD_SAVED_PATENT', { patent, searchTerms: this.terms });
             this.selectedNode = null;
         },
+
+        /**
+         * Returns a promise that should be fulfilled after 1s
+         */
+        async defaultLoadingTime() {
+            return new Promise((res) => {
+                setTimeout(() => res(1), 1000);
+            });
+        },
+
+        /**
+         * Saves a patent
+         * @param event
+         */
         onSavePatentDetailed(event: { patent: ExtendedPatent }): void {
             this.$store.commit('ADD_SAVED_PATENT', {
                 patent: event.patent.patent,
