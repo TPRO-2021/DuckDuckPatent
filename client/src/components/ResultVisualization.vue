@@ -130,9 +130,9 @@ export default defineComponent({
                 case 'patent':
                     return this.currentNode?.patent.title;
                 case 'author':
-                    return this.currentNode?.id;
+                    return `AUT: ${this.currentNode?.id}`;
                 case 'company':
-                    return this.currentNode?.id;
+                    return `CO.: ${this.currentNode?.id}`;
                 case 'citation':
                     return `CITATION: ${this.currentNode?.id}`;
                 case 'family':
