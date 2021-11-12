@@ -10,13 +10,14 @@ export default class HttpService {
 
     /**
      * Makes a request and also aborts previous pending requests
-     * @param url
-     * @param accept
+     * @param url   The target url for the request
+     * @param accept    The content type which should be used as the Accept header
+     * @param abortRequest  Specifies weather the request should be aborted if another one is pending
      * @protected
      */
-    protected async makeRequest(url: string, accept = 'application/json'): Promise<Response> {
+    protected async makeRequest(url: string, accept = 'application/json', abortRequest = true): Promise<Response> {
         // if request pending, abort it.
-        if (this.requestPending && this.controller) {
+        if (this.requestPending && this.controller && abortRequest) {
             HttpService.abortRequest(this.controller);
         }
         //generate signal for new request

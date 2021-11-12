@@ -64,7 +64,7 @@ export default class PatentService extends HttpService {
     public async get(patentId: string): Promise<Patent> {
         const queryUrl = this.baseUrl.concat(`/${patentId}`);
 
-        const response = await this.makeRequest(queryUrl);
+        const response = await this.makeRequest(queryUrl, 'application/json', false);
         return (await response.json()) as Patent;
     }
 }

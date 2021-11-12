@@ -9,4 +9,5 @@ export interface Patent {
     familyId?: string;
     inventors?: string[];
     applicants?: string[];
+    isLoading?: boolean;
 }
