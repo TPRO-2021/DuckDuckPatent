@@ -79,7 +79,7 @@ export default defineComponent({
         },
 
         onSearch() {
-            this.$store.commit('showLoadingScreen');
+            this.$store.commit('SHOW_LOADING_SCREEN');
             this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
         },
     },

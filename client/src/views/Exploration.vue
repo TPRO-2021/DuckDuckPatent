@@ -164,19 +164,36 @@ export default defineComponent({
         },
     },
     async created() {
+        // for consistency show the loading screen for 0.5s
+        this.$store.commit('SHOW_LOADING_SCREEN');
+        setTimeout(() => {
+            this.$store.commit('HIDE_LOADING_SCREEN');
+        }, 500);
+
+        // check the current url to retrieve query params
         this.checkUrl();
 
+        // show the loading indicator
+        this.$store.commit('SHOW_LOADING_BAR');
+
+        // if no patent is available in the vuex store load the patent from the backend
         if (!this.patent) {
             await this.loadPatent();
         } else {
+            // set citations array to the patents citations
             this.citations = (this.patent.patent.citations || []).map((citation) => ({ ...citation, isLoading: true }));
         }
 
+        // if no family is present in the state load the family for the patent as well
         if (!this.family) {
             await this.loadFamily();
         }
 
+        // load the citation data
         await this.loadCitations();
+
+        //  after all loading has finished hide the indicator
+        this.$store.commit('HIDE_LOADING_BAR');
     },
     methods: {
         goBack(): void {
@@ -191,7 +208,6 @@ export default defineComponent({
             if (!this.patentId) return;
 
             try {
-                this.$store.commit('SHOW_LOADING_BAR');
                 const patent = await this.patentService.get(this.patentId);
                 this.$store.commit('STORE_PATENT', { patent, searchTerms: this.searchTerms });
 
@@ -199,7 +215,6 @@ export default defineComponent({
             } catch (err) {
                 console.error(err);
             }
-            this.$store.commit('HIDE_LOADING_BAR');
         },
 
         /**
@@ -209,15 +224,12 @@ export default defineComponent({
             if (!this.patent) return;
 
             try {
-                this.$store.commit('SHOW_LOADING_BAR');
                 const family = await this.patentService.queryFamily(this.patent.patent.id);
 
                 this.$store.commit('STORE_FAMILY', { patentId: this.patent.patent.id, family });
             } catch (err) {
                 console.error(err);
             }
-
-            this.$store.commit('HIDE_LOADING_BAR');
         },
 
         /**
@@ -258,9 +270,6 @@ export default defineComponent({
          * Loads citation data from the backend
          */
         async loadCitations() {
-            // showing the loading indicator
-            this.$store.commit('SHOW_LOADING_BAR');
-
             // mapping all requests into a promises array
             const promises = this.citations.map((citation, index) => {
                 return new Promise((res, rej) => {
@@ -278,8 +287,8 @@ export default defineComponent({
             // waiting for all promises to finish and then hiding the loading bar
             try {
                 await Promise.all(promises);
-            } finally {
-                this.$store.commit('HIDE_LOADING_BAR');
+            } catch (err) {
+                console.error(err);
             }
         },
     },

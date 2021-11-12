@@ -187,6 +187,7 @@ export default defineComponent({
          * Handles closing of the preview and also resets the "state" values
          */
         handleClose(): void {
+            this.explorationAvailable = false;
             this.patentAvailable = false;
             this.documents = null;
             this.noDocuments = false;
