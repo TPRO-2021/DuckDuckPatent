@@ -21,8 +21,8 @@
                         xlink:href="../assets/singleTick.svg"
                         style="fill-opacity: 0.5"
                         stroke="black"
-                        x="-4"
-                        y="-4"
+                        x="-6"
+                        y="-6"
                     ></image>
                 </pattern>
                 <pattern id="markTwice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -235,13 +235,41 @@ export default defineComponent({
             const svg = this.selections.svg;
 
             // Define the arrow marker
-            svg.append('svg:defs')
-                .selectAll('marker')
-                .data(['end']) // Different link/path types can be defined here
+            const selected = svg.append('svg:defs').selectAll('marker');
+            selected
+                .data(['small']) // Different link/path types can be defined here
                 .enter()
                 .append('svg:marker') // This section adds in the arrows
-                .attr('id', String)
-                .attr('refX', 13.5) // Prevents arrowhead from being covered by circle
+                .attr('id', 'small')
+                .attr('refX', 12.5) // Prevents arrowhead from being covered by circle
+                .attr('refY', 2)
+                .attr('markerWidth', 8)
+                .attr('markerHeight', 8)
+                .attr('orient', 'auto')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M0,0V 4L6,2Z')
+                .attr('style', 'fill: black');
+            selected
+                .data(['middle']) // Different link/path types can be defined here
+                .enter()
+                .append('svg:marker')
+                .attr('id', 'middle')
+                .attr('refX', 15.5) // Prevents arrowhead from being covered by circle
+                .attr('refY', 2)
+                .attr('markerWidth', 8)
+                .attr('markerHeight', 8)
+                .attr('orient', 'auto')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M0,0V 4L6,2Z')
+                .attr('style', 'fill: black');
+            selected
+                .data(['large']) // Different link/path types can be defined here
+                .enter()
+                .append('svg:marker')
+                .attr('id', 'large')
+                .attr('refX', 23.5) // Prevents arrowhead from being covered by circle
                 .attr('refY', 2)
                 .attr('markerWidth', 8)
                 .attr('markerHeight', 8)
@@ -307,7 +335,10 @@ export default defineComponent({
                 .data(this.graph.nodes)
                 .enter()
                 .append('circle')
-                .attr('r', (d) => (d.size = VisualizationHelperService.patentSize(d.id)))
+                .attr('r', (d) =>
+                    // patent size is not given in advance like for others
+                    d.type === 'patent' ? (d.size = VisualizationHelperService.patentSize(d.id)) : d.size,
+                )
                 .attr('class', (d: VisualPatentNode) => d.type)
                 .call(
                     drag<SVGCircleElement, VisualPatentNode>()
@@ -327,7 +358,11 @@ export default defineComponent({
                 .attr('marker-end', (d) => {
                     // Caption items doesn't have source and target
                     if (d.source && d.target && d.source.index === d.target.index) return 'url(#end-self)';
-                    else return 'url(#end)';
+                    //TODO: should this change?
+                    //arrow marker adjusted based on the target size
+                    else if (d.target.size > 25) return 'url(#large)';
+                    else if (d.target.size > 15) return 'url(#middle)';
+                    else return 'url(#small)';
                 });
 
             //handle checkmarks and highlights no click

@@ -113,16 +113,16 @@ export default class VisualizationHelperService {
 
     static patentSize(id: string): number {
         if (!this.linkDataset) {
-            return 18;
+            return 15;
         }
-        // const patentLinkCount = this.patentSizeCounter(this.linkDataset);
-        // const dynamicSize = patentLinkCount.filter((e) => e.elem === id);
 
         let count = this.linkDataset.filter((e) => e.target === id).length;
         //   console.log('init array: ', this.linkDataset);
         count > 0 ? console.log(`found count ${count} for id ${id} `) : '';
-        count = count * 3 + 15;
-        return count > 0 ? count : 18;
+        if (count < 3) count = 15;
+        else if (count <= 5) count = 25;
+        else count = 35;
+        return count;
     }
 
     /**
