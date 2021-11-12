@@ -64,8 +64,6 @@ export default defineComponent({
              */
             optionButtons: [
                 { iconKey: 'bookmark', action: this.savePatent },
-                { iconKey: 'visibility_off', action: this.hidePatent },
-                { iconKey: 'done', action: 'suggestMore' },
                 { iconKey: 'read_more', action: this.showMore },
             ],
             previewAvailable: true,
@@ -74,6 +72,11 @@ export default defineComponent({
     watch: {
         current() {
             this.resetState();
+        },
+    },
+    computed: {
+        isSaved(): boolean {
+            return (this.$store.state.savedPatents || {})[this.current?.id];
         },
     },
     methods: {
