@@ -21,8 +21,17 @@
                         xlink:href="../assets/singleTick.svg"
                         style="fill-opacity: 0.5"
                         stroke="black"
-                        x="-6"
-                        y="-6"
+                        x="-7"
+                        y="-7"
+                    ></image>
+                </pattern>
+                <pattern id="markOnceM" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <image
+                        xlink:href="../assets/singleTickM.svg"
+                        style="fill-opacity: 0.5"
+                        stroke="black"
+                        x="0"
+                        y="-2"
                     ></image>
                 </pattern>
                 <pattern id="markOnceL" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -30,8 +39,8 @@
                         xlink:href="../assets/singleTickL.svg"
                         style="fill-opacity: 0.5"
                         stroke="black"
-                        x="3"
-                        y="3"
+                        x="-5"
+                        y="-7"
                     ></image>
                 </pattern>
                 <pattern id="markTwice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -39,8 +48,26 @@
                         xlink:href="../assets/doubleTick.svg"
                         style="fill-opacity: 0.5"
                         stroke="black"
-                        x="-6"
+                        x="-7"
+                        y="-7"
+                    ></image>
+                </pattern>
+                <pattern id="markTwiceM" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <image
+                        xlink:href="../assets/doubleTickM.svg"
+                        style="fill-opacity: 0.5"
+                        stroke="black"
+                        x="-1"
                         y="-4"
+                    ></image>
+                </pattern>
+                <pattern id="markTwiceL" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <image
+                        xlink:href="../assets/doubleTickL.svg"
+                        style="fill-opacity: 0.5"
+                        stroke="black"
+                        x="-6"
+                        y="-8"
                     ></image>
                 </pattern>
             </defs>
@@ -264,7 +291,7 @@ export default defineComponent({
                 .enter()
                 .append('svg:marker')
                 .attr('id', 'middle')
-                .attr('refX', 15.5) // Prevents arrowhead from being covered by circle
+                .attr('refX', 17.5) // Prevents arrowhead from being covered by circle
                 .attr('refY', 2)
                 .attr('markerWidth', 8)
                 .attr('markerHeight', 8)
@@ -278,7 +305,7 @@ export default defineComponent({
                 .enter()
                 .append('svg:marker')
                 .attr('id', 'large')
-                .attr('refX', 23.5) // Prevents arrowhead from being covered by circle
+                .attr('refX', 18.5) // Prevents arrowhead from being covered by circle
                 .attr('refY', 2)
                 .attr('markerWidth', 8)
                 .attr('markerHeight', 8)
@@ -369,7 +396,7 @@ export default defineComponent({
                     if (d.source && d.target && d.source.index === d.target.index) return 'url(#end-self)';
                     //TODO: should this change?
                     //arrow marker adjusted based on the target size
-                    else if (d.target.size > 25) return 'url(#large)';
+                    else if (d.target.size > 20) return 'url(#large)';
                     else if (d.target.size > 15) return 'url(#middle)';
                     else return 'url(#small)';
                 });
@@ -710,32 +737,26 @@ export default defineComponent({
             const markedOnce = this.$store.state.markedOnce;
 
             markedOnce.forEach((e: string) => {
-                let label = '';
                 const target = this.selections.graph
                     .selectAll<SVGSVGElement, VisualPatentNode>('circle')
                     .filter((d: VisualPatentNode) => d.type === 'patent')
-                    .filter((d: VisualPatentNode) => d.id === e)
-                    .attr('class', (d: VisualPatentNode) => {
-                        if (d.size > 25) {
-                            label = ' markedOnceL ';
-                        } else {
-                            label = ' markedOnce ';
-                        }
-                        return d.type + label;
-                    })
-                    .classed(label, true);
+                    .filter((d: VisualPatentNode) => d.id === e);
+                target.filter((d: VisualPatentNode) => d.size > 20).classed('markedOnceL', true);
+                target.filter((d: VisualPatentNode) => d.size > 15 && d.size < 25).classed('markedOnceM', true);
+                target.filter((d: VisualPatentNode) => d.size < 16).classed('markedOnce', true);
             });
 
             //show marks for viewed twice
             const markedTwice = this.$store.state.markedTwice;
 
             markedTwice.forEach((e: string) => {
-                this.selections.graph
+                const target = this.selections.graph
                     .selectAll<SVGSVGElement, VisualPatentNode>('circle')
                     .filter((d: VisualPatentNode) => d.type === 'patent')
-                    .filter((d: VisualPatentNode) => d.id === e)
-                    // add a mark to indicate it has been viewed
-                    .classed('markedTwice', true);
+                    .filter((d: VisualPatentNode) => d.id === e);
+                target.filter((d: VisualPatentNode) => d.size > 20).classed('markedTwiceL', true);
+                target.filter((d: VisualPatentNode) => d.size > 15 && d.size < 25).classed('markedTwiceM', true);
+                target.filter((d: VisualPatentNode) => d.size < 16).classed('markedTwice', true);
             });
         },
     },
@@ -826,20 +847,30 @@ circle.selected {
     animation: selected 2s infinite alternate ease-in-out;
 }
 
+circle.markedOnce {
+    fill: url(#markOnce) #cccccc;
+    stroke: rgb(168, 133, 41);
+    stroke-width: 6px;
+}
+circle.markedOnceM {
+    fill: url(#markOnceM) #cccccc;
+    stroke: rgb(168, 133, 41);
+    stroke-width: 6px;
+}
 circle.markedOnceL {
     fill: url(#markOnceL) #cccccc;
     stroke: rgb(168, 133, 41);
     stroke-width: 6px;
 }
 
-circle.markedOnce {
-    fill: url(#markOnce) #cccccc;
+circle.markedTwice {
+    fill: url(#markTwice);
     stroke: rgb(168, 133, 41);
     stroke-width: 6px;
 }
 
-circle.markedTwice {
-    fill: url(#markTwice);
+circle.markedTwiceL {
+    fill: url(#markTwiceL);
     stroke: rgb(168, 133, 41);
     stroke-width: 6px;
 }

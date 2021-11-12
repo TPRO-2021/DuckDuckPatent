@@ -118,10 +118,10 @@ export default class VisualizationHelperService {
 
         let count = this.linkDataset.filter((e) => e.target === id).length;
         //   console.log('init array: ', this.linkDataset);
-        count > 0 ? console.log(`found count ${count} for id ${id} `) : '';
+        //   count > 0 ? console.log(`found count ${count} for id ${id} `) : '';
         if (count < 3) count = 15;
-        else if (count <= 5) count = 25;
-        else count = 35;
+        else if (count <= 5) count = 20;
+        else count = 25;
         return count;
     }
 
