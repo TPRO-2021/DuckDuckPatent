@@ -151,7 +151,7 @@ export default defineComponent({
         return {
             documents: null as DocumentInformation[] | null,
             documentService: new DocumentService(),
-            explorationAvailable: false,
+            familyAvailable: false,
             index: 0,
             isSubMenuOpen: false,
             pageDisplay: '',
@@ -162,6 +162,11 @@ export default defineComponent({
             patentService: new PatentService(),
             saved: true,
         };
+    },
+    computed: {
+        explorationAvailable() {
+            return this.familyAvailable || (this.extendedPatent || ({} as ExtendedPatent))?.patent.citations.length > 0;
+        },
     },
     watch: {
         async extendedPatent(newVal: ExtendedPatent): Promise<void> {
@@ -187,7 +192,7 @@ export default defineComponent({
          * Handles closing of the preview and also resets the "state" values
          */
         handleClose(): void {
-            this.explorationAvailable = false;
+            this.familyAvailable = false;
             this.patentAvailable = false;
             this.documents = null;
             this.noDocuments = false;
@@ -279,10 +284,10 @@ export default defineComponent({
                 const family = await this.patentService.queryFamily(extPatent.patent.id);
 
                 this.$store.commit('STORE_FAMILY', { patentId: extPatent.patent.id, family });
-                this.explorationAvailable = true;
+                this.familyAvailable = true;
             } catch (err) {
                 console.error(err);
-                this.explorationAvailable = false;
+                this.familyAvailable = false;
             }
 
             this.$store.commit('HIDE_LOADING_BAR');
