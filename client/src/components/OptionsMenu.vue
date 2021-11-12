@@ -148,10 +148,9 @@ export default defineComponent({
 .nodes-toggle-container {
     height: 41px;
     display: flex;
-    flex-direction: column;
-    justify-content: space-evenly;
-    align-items: flex-end;
-    margin-right: 10px; //TODO: check if this is still relevant
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     padding: 15px;
     cursor: pointer;
 }
@@ -170,14 +169,6 @@ export default defineComponent({
 .nodes-toggle {
     display: flex;
     width: 50%;
-    justify-content: center;
-}
-
-#fixed-switch {
-    width: 22px;
-    height: 22px;
-    background-color: $brown;
-    border-radius: 90px;
-    box-shadow: 1px 1px 2px grey;
+    justify-content: flex-end;
 }
 </style>
