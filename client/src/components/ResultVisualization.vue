@@ -25,6 +25,15 @@
                         y="-6"
                     ></image>
                 </pattern>
+                <pattern id="markOnceL" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <image
+                        xlink:href="../assets/singleTickL.svg"
+                        style="fill-opacity: 0.5"
+                        stroke="black"
+                        x="3"
+                        y="3"
+                    ></image>
+                </pattern>
                 <pattern id="markTwice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                     <image
                         xlink:href="../assets/doubleTick.svg"
@@ -678,7 +687,7 @@ export default defineComponent({
                 .selectAll('circle')
                 .classed('selected', false)
                 .filter((td) => td === this.selectedNode)
-                .classed('selected', true);
+                .classed(' selected ', true);
         },
         /**
          * If patent clicked, it should get marked
@@ -701,12 +710,20 @@ export default defineComponent({
             const markedOnce = this.$store.state.markedOnce;
 
             markedOnce.forEach((e: string) => {
-                this.selections.graph
+                let label = '';
+                const target = this.selections.graph
                     .selectAll<SVGSVGElement, VisualPatentNode>('circle')
                     .filter((d: VisualPatentNode) => d.type === 'patent')
                     .filter((d: VisualPatentNode) => d.id === e)
-                    // add a mark to indicate it has been viewed
-                    .classed('markedOnce', true);
+                    .attr('class', (d: VisualPatentNode) => {
+                        if (d.size > 25) {
+                            label = ' markedOnceL ';
+                        } else {
+                            label = ' markedOnce ';
+                        }
+                        return d.type + label;
+                    })
+                    .classed(label, true);
             });
 
             //show marks for viewed twice
@@ -807,6 +824,12 @@ circle.selected {
     stroke: #0048ba !important;
     stroke-width: 6px !important;
     animation: selected 2s infinite alternate ease-in-out;
+}
+
+circle.markedOnceL {
+    fill: url(#markOnceL) #cccccc;
+    stroke: rgb(168, 133, 41);
+    stroke-width: 6px;
 }
 
 circle.markedOnce {
