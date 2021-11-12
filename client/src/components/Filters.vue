@@ -113,12 +113,14 @@
             </div>
         </div>
     </div>
-    <ChipButton
-        :class="{ invisible: currentFilter || hasAll, 'add-button': true }"
-        icon-key="add"
-        text="Add"
-        v-on:on-select="onAddClicked()"
-    ></ChipButton>
+    <div class="filter-bottom-controls">
+        <ChipButton
+            :class="{ invisible: currentFilter || hasAll, 'add-button': true }"
+            icon-key="add"
+            text="Add"
+            v-on:on-select="onAddClicked()"
+        ></ChipButton>
+    </div>
 </template>
 
 <script lang="ts">
@@ -395,21 +397,24 @@ export default defineComponent({
 
 .filter-container {
     margin-top: 10px;
+    margin-right: 5px;
+    margin-left: 5px;
 }
-
+.filter-bottom-controls {
+    margin-right: 5px;
+    margin-left: 5px;
+}
 .type-selection {
     display: flex;
     justify-content: space-between;
     min-height: 2em;
-}
-.type-selection > * {
 }
 
 .add-button {
     margin-top: 8px;
     float: right;
     width: 90px;
-    margin-right: 0 !important;
+    //  margin-right: 0 !important;
 }
 .invisible {
     visibility: hidden;

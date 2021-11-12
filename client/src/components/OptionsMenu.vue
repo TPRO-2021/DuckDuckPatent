@@ -9,12 +9,7 @@
     />
 
     <!--  This div the menu container with nodes, togglers, and filters  -->
-    <div
-        class="main-container box-shadow card no-select"
-        v-show="openMenu === true"
-        @mouseleave="timeOut()"
-        @mouseenter="resetTimer()"
-    >
+    <div class="main-container box-shadow card no-select" v-show="openMenu === true" @mouseenter="resetTimer()">
         <!--  This is where the nodes can be activated and deactivated using togglers  -->
         <h4 class="labels">Selected data</h4>
         <div class="nodes-container">
@@ -50,7 +45,7 @@
             </div>
         </div>
 
-        <!--  TODO: This is where filters for narrowing down the results will be placed  -->
+        <!--  Filters  -->
         <h4 class="labels">Filters</h4>
         <div class="filters-container">
             <Filters
@@ -170,6 +165,8 @@ export default defineComponent({
 }
 
 .labels {
+    padding-top: 3px;
+    padding-left: 5px;
     text-align: start;
 }
 .nodes-labels {
@@ -182,7 +179,8 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
-    align-items: center;
+    align-items: flex-end;
+    margin-right: 10px;
 }
 p {
     margin: 16px 0;
