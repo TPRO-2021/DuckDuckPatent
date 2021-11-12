@@ -111,8 +111,6 @@ import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import Button from '@/components/Button.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
-
-import { Patent } from '@/models/Patent';
 import DocumentService from '@/services/document.service';
 import { DocumentInformation } from '@/models/DocumentInformation';
 import Chip from '@/components/Chip.vue';
@@ -163,11 +161,6 @@ export default defineComponent({
             saved: true,
         };
     },
-    computed: {
-        explorationAvailable() {
-            return this.familyAvailable || (this.extendedPatent || ({} as ExtendedPatent))?.patent.citations.length > 0;
-        },
-    },
     watch: {
         async extendedPatent(newVal: ExtendedPatent): Promise<void> {
             this.patentAvailable = !!newVal;
@@ -183,6 +176,9 @@ export default defineComponent({
         this.loadFamily();
     },
     computed: {
+        explorationAvailable() {
+            return this.familyAvailable || (this.extendedPatent || ({} as ExtendedPatent))?.patent.citations.length > 0;
+        },
         isSaved(): boolean {
             return (this.$store.state.savedPatents || {})[this.extendedPatent?.patent?.id];
         },

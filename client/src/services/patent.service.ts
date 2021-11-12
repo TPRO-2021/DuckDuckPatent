@@ -13,21 +13,27 @@ export default class PatentService extends HttpService {
      * @param searchTerms
      * @param filters
      * @param page
+     * @param abortPrevious
+     * @param contentType
      */
     public async query(
         searchTerms: string[],
         filters: Filter[],
         page = 0,
+        abortPrevious = true,
+        contentType = 'application/json',
     ): Promise<{ patents: Patent[]; totalCount: number }> {
         const filterParams = FilterHelperService.getParameterList(filters);
 
-        const queryString = searchTerms
-            .map((term) => `keywords=${term}`)
-            .concat(filterParams)
-            .concat(`page=${page}`)
-            .join('&');
+        let queryString: string | string[] = [];
 
-        const response = await this.makeRequest(`${this.baseUrl}?${queryString}`);
+        if (searchTerms.length > 0) {
+            queryString = searchTerms.map((term) => `keywords=${term}`);
+        }
+
+        queryString = queryString.concat(filterParams).concat(`page=${page}`).join('&');
+
+        const response = await this.makeRequest(`${this.baseUrl}?${queryString}`, contentType, abortPrevious);
 
         // accessing x-total-count header which indicates how many results are available
         const totalCount = parseInt(response.headers.get('x-total-count') || '99');

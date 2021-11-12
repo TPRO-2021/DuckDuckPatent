@@ -98,6 +98,68 @@
                     </div>
                     <div class="card box-shadow family-placeholder patent-container"></div>
                 </div>
+
+                <!-- Patent inventors -->
+                <Divider align="left" v-if="loading || inventorAvailable">
+                    <Chip
+                        :has-action="false"
+                        text="More from the inventor(s)"
+                        class="divider-label"
+                        custom-color="rgb(41, 115, 168)"
+                    ></Chip>
+                </Divider>
+                <div class="patent-citations patent-family">
+                    <div
+                        v-for="(item, index) of inventorSuggestions"
+                        :key="index"
+                        class="family-placeholder card box-shadow patent-container"
+                    >
+                        <PreviewPlaceholder v-if="item.isLoading" />
+
+                        <div @click="onSelectPatent(item, 'citation')" v-if="!item.isLoading">
+                            <div class="patent-info">
+                                <div class="patent-title">
+                                    <h2>{{ item.title }}</h2>
+                                </div>
+                                <div class="patent-abstract">
+                                    <p>{{ item.abstract?.slice(0, 300) }} ...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card box-shadow family-placeholder patent-container"></div>
+                </div>
+
+                <!-- Patent applicants -->
+                <Divider align="left" v-if="loading || applicantAvailable">
+                    <Chip
+                        :has-action="false"
+                        text="More from the applicant(s)"
+                        class="divider-label"
+                        custom-color="rgb(168, 41, 41)"
+                    ></Chip>
+                </Divider>
+                <div class="patent-citations patent-family">
+                    <div
+                        v-for="(item, index) of applicantSuggestions"
+                        :key="index"
+                        class="family-placeholder card box-shadow patent-container"
+                    >
+                        <PreviewPlaceholder v-if="item.isLoading" />
+
+                        <div @click="onSelectPatent(item, 'citation')" v-if="!item.isLoading">
+                            <div class="patent-info">
+                                <div class="patent-title">
+                                    <h2>{{ item.title }}</h2>
+                                </div>
+                                <div class="patent-abstract">
+                                    <p>{{ item.abstract?.slice(0, 300) }} ...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card box-shadow family-placeholder patent-container"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -125,6 +187,7 @@ import Chip from '@/components/Chip.vue';
 import PreviewPlaceholder from '@/components/PreviewPlaceholder.vue';
 import PatentPlaceholder from '@/components/PatentPlaceholder.vue';
 import ChipButton from '@/components/ChipButton.vue';
+import ExplorationHelperService from '@/services/exploration-helper.service';
 
 export default defineComponent({
     name: 'Exploration',
@@ -143,6 +206,10 @@ export default defineComponent({
             selectedPatent: null as ExtendedPatent | null,
             selectedItemType: 'patent' as 'patent' | 'citation',
             citations: [] as Patent[],
+            inventors: [] as string[],
+            applicants: [] as string[],
+            applicantSuggestions: [] as Patent[],
+            inventorSuggestions: [] as Patent[],
         };
     },
     watch: {
@@ -190,6 +257,12 @@ export default defineComponent({
         isSaved(): boolean {
             return this.$store.state.savedPatents[this.patentId];
         },
+        applicantAvailable(): boolean {
+            return this.applicantSuggestions.length > 0;
+        },
+        inventorAvailable(): boolean {
+            return this.inventorSuggestions.length > 0;
+        },
     },
     async created() {
         // for consistency show the loading screen for 0.5s
@@ -225,15 +298,19 @@ export default defineComponent({
                     ...citation,
                     isLoading: true,
                 }));
+
+                this.applicants = this.patent.patent.applicants || [];
+                this.inventors = this.patent.patent.inventors || [];
             }
+
+            const promises = [] as Promise<void>[];
 
             // if no family is present in the state load the family for the patent as well
             if (!this.family) {
-                await this.loadFamily();
+                promises.push(this.loadFamily());
             }
 
-            // load the citation data
-            await this.loadCitations();
+            await Promise.all(promises.concat([this.loadCitations(), this.loadRelated()]));
 
             //  after all loading has finished hide the indicator
             this.$store.commit('HIDE_LOADING_BAR');
@@ -250,6 +327,8 @@ export default defineComponent({
                 this.$store.commit('STORE_PATENT', { patent, searchTerms: this.searchTerms });
 
                 this.citations = (patent.citations || []).map((citation) => ({ ...citation, isLoading: true }));
+                this.applicants = patent.applicants || [];
+                this.inventors = patent.inventors || [];
             } catch (err) {
                 console.error(err);
             }
@@ -334,8 +413,62 @@ export default defineComponent({
             this.citations = this.citations.filter((citation) => !citation.isLoading);
         },
 
+        /**
+         * Adds a patent to the store
+         */
         savePatent() {
             this.$store.commit('ADD_SAVED_PATENT', this.patent);
+        },
+
+        /**
+         * Loads related patents for the patent
+         */
+        async loadRelated() {
+            const applicants = this.patent.patent.applicants || [];
+            const inventors = this.patent.patent.inventors || [];
+
+            const [applicantCits, inventorCits] = await Promise.all([
+                Promise.all(this.queryRelatedPatents(applicants, 'applicant')),
+                Promise.all(this.queryRelatedPatents(inventors, 'inventor')),
+            ]);
+
+            const applicantSuggestions = ExplorationHelperService.shuffle(
+                ExplorationHelperService.getPatentsArray(applicantCits),
+            );
+            const inventorSuggestions = ExplorationHelperService.shuffle(
+                ExplorationHelperService.getPatentsArray(inventorCits),
+            );
+
+            this.applicantSuggestions = applicantSuggestions.splice(0, 10) as Patent[];
+            this.inventorSuggestions = inventorSuggestions.splice(0, 10) as Patent[];
+        },
+
+        /**
+         * Queries the backend for applicants and inventors
+         * @param queryList
+         * @param type
+         */
+        queryRelatedPatents(queryList: string[], type: 'applicant' | 'inventor') {
+            return queryList.map((related) => {
+                return new Promise<Patent[] | null>((res) => {
+                    this.patentService
+                        .query(
+                            [],
+                            [
+                                {
+                                    id: 1,
+                                    type: type,
+                                    isSelectionOpen: false,
+                                    value: ExplorationHelperService.processRelatedName(related),
+                                },
+                            ],
+                            0,
+                            false,
+                        )
+                        .then((data) => res(data.patents))
+                        .catch(() => res(null));
+                });
+            });
         },
     },
 });
