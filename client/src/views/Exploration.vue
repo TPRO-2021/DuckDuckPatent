@@ -29,11 +29,22 @@
                     </span>
                 </div>
                 <div class="legend-patent-abstract">{{ patent?.patent.abstract }}</div>
+
+                <div class="legend-patent-controls" v-if="!isSaved">
+                    <ChipButton text="Add to saved items" icon-key="bookmark" v-on:on-select="savePatent" />
+                </div>
             </div>
 
             <div class="exploration-content">
                 <!-- Patent family -->
-                <Divider align="left"><Chip :has-action="false" text="Family" class="divider-label"></Chip></Divider>
+                <Divider align="left">
+                    <Chip
+                        :has-action="false"
+                        text="Family"
+                        class="divider-label"
+                        custom-color="rgb(137, 105, 120)"
+                    ></Chip>
+                </Divider>
                 <div class="patent-family" v-if="loading">
                     <PreviewPlaceholder
                         class="card box-shadow family-placeholder"
@@ -84,12 +95,8 @@
                                 </div>
                             </div>
                         </div>
-
-                        <PreviewPlaceholder
-                            class="card box-shadow family-placeholder"
-                            v-if="index === citations.length - 1"
-                        />
                     </div>
+                    <div class="card box-shadow family-placeholder patent-container"></div>
                 </div>
             </div>
         </div>
@@ -117,12 +124,14 @@ import DetailedPatentView from '@/components/DetailedPatentView.vue';
 import Chip from '@/components/Chip.vue';
 import PreviewPlaceholder from '@/components/PreviewPlaceholder.vue';
 import PatentPlaceholder from '@/components/PatentPlaceholder.vue';
+import ChipButton from '@/components/ChipButton.vue';
 
 export default defineComponent({
     name: 'Exploration',
     components: {
         Button,
         Chip,
+        ChipButton,
         DetailedPatentView,
         RoundButton,
         PatentPlaceholder,
@@ -178,6 +187,9 @@ export default defineComponent({
         showExplorationButton(): boolean {
             return this.selectedItemType === 'citation';
         },
+        isSaved(): boolean {
+            return this.$store.state.savedPatents[this.patentId];
+        },
     },
     async created() {
         // for consistency show the loading screen for 0.5s
@@ -194,6 +206,9 @@ export default defineComponent({
             this.$router.back();
         },
 
+        /**
+         * Initializes the view with the current data
+         */
         async initView(): Promise<void> {
             // check the current url to retrieve query params
             this.checkUrl();
@@ -317,6 +332,10 @@ export default defineComponent({
 
             // Since some requests are running into a 404 error therefore we need to filter those citations out
             this.citations = this.citations.filter((citation) => !citation.isLoading);
+        },
+
+        savePatent() {
+            this.$store.commit('ADD_SAVED_PATENT', this.patent);
         },
     },
 });
@@ -452,6 +471,14 @@ export default defineComponent({
     font-style: normal;
     font-size: 16px;
     overflow-y: auto;
+}
+
+.legend-patent-controls {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 10px;
+    padding-right: 8px;
 }
 
 .patent-citations,
