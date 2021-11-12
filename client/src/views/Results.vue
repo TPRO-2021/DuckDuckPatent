@@ -38,9 +38,14 @@
                 v-on:on-clear-node-selected="onClearNodeSelected"
             />
         </div>
-        <!-- This div contains the bottom controls (timeline toggle, mode-toggle)     v-if="moreDataAvailable" -->
+        <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
-            <Button v-on:on-clicked="extendSearch" icon-key="check" btn-text="Load more"></Button>
+            <Button
+                v-if="moreDataAvailable"
+                v-on:on-clicked="extendSearch"
+                icon-key="check"
+                btn-text="Load more"
+            ></Button>
         </div>
         <!-- This div contains the top right controls (saved button) -->
         <div class="top-controls">
