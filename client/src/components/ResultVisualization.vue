@@ -1,5 +1,5 @@
 <template>
-    <div class="d3-container">
+    <div :class="{ 'd3-container': true, updating: updating }">
         <svg xmlns="http://www.w3.org/2000/svg" @click="canvasClicked">
             <defs>
                 <marker
@@ -64,6 +64,7 @@ import {
 } from 'd3';
 
 import { VisualPatentNode } from '@/models/VisualPatentNode';
+import { NodeInfo } from '@/models/NodeInfo';
 import VisualizationHelperService from '@/services/visualization-helper.service';
 import { VisualPatentLink } from '@/models/VisualPatentLink';
 import { RelationMap } from '@/models/RelationMap';
@@ -88,9 +89,11 @@ export default defineComponent({
             required: true,
             type: Array,
         },
+        updating: Boolean,
     },
     emits: {
-        onPatentSelected: (e: { patent?: Patent; index: number }) => e,
+        onNodeSelected: (e: { node: NodeInfo }) => e,
+        onClearNodeSelected: null,
     },
     data() {
         return {
@@ -127,9 +130,13 @@ export default defineComponent({
                 case 'patent':
                     return this.currentNode?.patent.title;
                 case 'author':
-                    return this.currentNode?.id;
+                    return `AUT: ${this.currentNode?.id}`;
                 case 'company':
-                    return this.currentNode?.id;
+                    return `CO.: ${this.currentNode?.id}`;
+                case 'citation':
+                    return `CITATION: ${this.currentNode?.id}`;
+                case 'family':
+                    return `FAMILY: ${this.currentNode?.id}`;
             }
             return 'No Data';
         },
@@ -395,8 +402,7 @@ export default defineComponent({
             this.selectedNode = null;
             this.updateData();
             this.updateGraph(0.01);
-            this.$emit('onPatentSelected', { index: -1 });
-
+            this.$emit('onClearNodeSelected');
             this.selections.graph.selectAll('circle').classed('selected', false);
         },
 
@@ -550,13 +556,10 @@ export default defineComponent({
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
             if (node.type === 'patent') {
-                // show preview card
-                this.$emit('onPatentSelected', { patent: node.patent, index: node.index ?? -1 });
                 //only patents have preview, hence checkmark them
                 this.$store.commit('MARK_NODE_ON', { pID: node.patent.id, twice: false });
-            } else {
-                this.$emit('onPatentSelected', { index: -1 });
             }
+            this.$emit('onNodeSelected', { node: node });
 
             // in order to prevent a canvas event to be triggered specify that a node is selected
             this.selectedNode = node;
@@ -714,6 +717,11 @@ export default defineComponent({
         height: 100%;
         width: 100%;
     }
+}
+.d3-container.updating {
+    transition: all 0.5s;
+    z-index: -1;
+    opacity: 0.5;
 }
 
 .tooltip {

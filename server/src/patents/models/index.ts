@@ -33,17 +33,26 @@ export interface PatentQueryResponse {
     'ops:world-patent-data': {
         'ops:biblio-search': {
             '@total-result-count': string;
-            'ops:query': {
+            'ops:query'?: {
                 $: string;
                 '@syntax': string;
             };
-            'ops:range': {
+            'ops:range'?: {
                 '@begin': string;
                 '@end': string;
             };
             'ops:search-result': {
                 'exchange-documents': { 'exchange-document': OpsExchangeDocument }[];
             };
+        };
+    };
+}
+
+export interface PatentFamilyResponse {
+    'ops:world-patent-data': {
+        'ops:patent-family': {
+            '@total-result-count': string;
+            'ops:family-member': OpsFamilyMember[];
         };
     };
 }
@@ -67,6 +76,14 @@ export interface AuthResponse {
     expires_in: string;
     refresh_count: string;
     status: string;
+}
+
+export interface OpsPatent {
+    'ops:world-patent-data': {
+        'exchange-documents': {
+            'exchange-document': OpsExchangeDocument;
+        };
+    };
 }
 
 /**
@@ -156,6 +173,17 @@ export interface OpsClassifications {
     subgroup: OpsStringData;
     'classification-value': OpsStringData;
     'generating-office': OpsStringData;
+}
+
+export interface OpsFamilyMember {
+    '@family-id': string;
+    'publication-reference': OpsPublicationReference;
+    'application-reference': {
+        '@doc-id': string;
+        '@is-representative': 'YES' | 'NO';
+        'document-id': OpsDocumentId;
+    };
+    'exchange-document': OpsExchangeDocument;
 }
 
 export interface OpsPatentTitle {

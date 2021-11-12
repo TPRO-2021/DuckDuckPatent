@@ -134,13 +134,12 @@ export default defineComponent({
         initializeSearch(): void {
             if (this.currentKeyword.trim().length > 0) {
                 this.addKeyword();
+                this.$emit('onSearch', { searchTerms: this.searchTerms as string[] | [] });
             }
-
             // if no search terms are specified we need to prevent the state change.
             if (!this.searchTerms || this.searchTerms.length === 0 || this.$route.path === '/search') {
                 return;
             }
-
             this.$emit('onSearch', { searchTerms: this.searchTerms as string[] | [] });
         },
     },
@@ -169,6 +168,7 @@ export default defineComponent({
     overflow-wrap: break-word;
     .chip {
         float: left;
+        //vertical-align: middle;
     }
 }
 
@@ -195,7 +195,7 @@ export default defineComponent({
     right: 20px;
     width: 30px;
     height: 100%;
-    padding: 10px;
+    padding: 13px;
     background: none;
     color: black;
     cursor: pointer;
@@ -206,6 +206,7 @@ export default defineComponent({
 
 .search-icon {
     font-size: 30px !important;
+    vertical-align: middle;
 }
 
 .search-input {

@@ -21,12 +21,15 @@ export default class VisualizationHelperService {
     ): VisualPatentNode[] {
         const patentMap = VisualizationHelperService.buildMap(patents, 'id'); // Build a map of all patents, this should make finding them by ID faster.
 
-        let nodes = patents.map((patent) => ({
-            id: patent.id,
-            patent,
-            type: 'patent',
-            size: 18,
-        })) as VisualPatentNode[];
+        let nodes: VisualPatentNode[] = [];
+        if (vizOptions.includes('patents')) {
+            nodes = patents.map((patent) => ({
+                id: patent.id,
+                patent,
+                type: 'patent',
+                size: 18,
+            })) as VisualPatentNode[];
+        }
 
         // If the user has selected to view authors
         if (vizOptions.includes('authors')) {
@@ -68,11 +71,11 @@ export default class VisualizationHelperService {
                         return false;
                     }
                     // If a node is selected, only show if connected to it
-                    let patents = [selectedNode.patent.id];
+                    let connectedPatents = [selectedNode.patent.id];
                     if (selectedNode.type === 'citation') {
-                        patents = citationMap[selectedNode.id];
+                        connectedPatents = citationMap[selectedNode.id] || []; // TODO: citations should always have atleast one
                     }
-                    return patents.some((t) => citationMap[citationId].includes(t));
+                    return connectedPatents.some((t) => citationMap[citationId].includes(t));
                 })
                 .map((citationId) => {
                     const citingPatents = citationMap[citationId]; // With the citations of this patent

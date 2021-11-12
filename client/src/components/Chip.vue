@@ -53,7 +53,7 @@ export default defineComponent({
     border-radius: 90px;
     border: none;
     min-height: 26px;
-    max-width: fit-content;
+    width: fit-content;
     padding: 2px 12px 2px 12px;
     margin: 5px 5px;
 }

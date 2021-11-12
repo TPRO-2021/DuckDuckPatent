@@ -9,39 +9,29 @@
     />
 
     <!--  This div the menu container with nodes, togglers, and filters  -->
-    <div class="main-container box-shadow card no-select" v-show="openMenu === true" @mouseenter="resetTimer()">
+    <div
+        class="main-container box-shadow card no-select"
+        v-show="openMenu === true"
+        @mouseleave="timeOut()"
+        @mouseenter="resetTimer()"
+    >
         <!--  This is where the nodes can be activated and deactivated using togglers  -->
         <h4 class="labels">Selected data</h4>
         <div class="nodes-container">
-            <div class="nodes-labels">
-                <p v-for="node in nodes" :key="node.type">{{ node.type }}</p>
-            </div>
-            <div class="nodes-togglers">
-                <ToggleSwitch
-                    :default-state="isPatentsOn"
-                    custom-color="#a88529"
-                    v-on:on-clicked="onClicked($event, 'patents')"
-                ></ToggleSwitch>
-                <ToggleSwitch
-                    :default-state="isFamiliesOn"
-                    custom-color="#896978"
-                    v-on:on-clicked="onClicked($event, 'families')"
-                ></ToggleSwitch>
-                <ToggleSwitch
-                    :default-state="isAuthorsOn"
-                    custom-color="#A82929"
-                    v-on:on-clicked="onClicked($event, 'authors')"
-                ></ToggleSwitch>
-                <ToggleSwitch
-                    :default-state="isCompaniesOn"
-                    custom-color="#2973A8"
-                    v-on:on-clicked="onClicked($event, 'companies')"
-                ></ToggleSwitch>
-                <ToggleSwitch
-                    :default-state="isCitationsOn"
-                    custom-color="#487909"
-                    v-on:on-clicked="onClicked($event, 'citations')"
-                ></ToggleSwitch>
+            <div
+                class="nodes-toggle-container"
+                v-for="node in nodes"
+                :key="node.type"
+                @click="onClicked(!isOptionOn(node.type), node.type)"
+            >
+                <label :for="`toggle-switch-${node.type}`">{{ node.type }}</label>
+                <div class="nodes-toggle">
+                    <ToggleSwitch
+                        :id="`toggle-switch-${node.type}`"
+                        :default-state="isOptionOn(node.type)"
+                        :custom-color="node.color"
+                    ></ToggleSwitch>
+                </div>
             </div>
         </div>
 
@@ -72,11 +62,11 @@ export default defineComponent({
             openMenu: false,
             timer: 0,
             nodes: [
-                { type: 'patents' },
-                { type: 'families' },
-                { type: 'authors' },
-                { type: 'companies' },
-                { type: 'citations' },
+                { type: 'patents', color: '#A88529' },
+                { type: 'families', color: '#896978' },
+                { type: 'authors', color: '#A82929' },
+                { type: 'companies', color: '#2973A8' },
+                { type: 'citations', color: '#487909' },
             ],
         };
     },
@@ -92,24 +82,10 @@ export default defineComponent({
         },
     },
     emits: ['addNode', 'removeNode', 'updateFilter', 'removeFilter', 'addFilter'],
-    computed: {
-        isPatentsOn(): boolean {
-            return this.$props.options.includes('patents');
-        },
-        isFamiliesOn(): boolean {
-            return this.$props.options.includes('families');
-        },
-        isAuthorsOn(): boolean {
-            return this.$props.options.includes('authors');
-        },
-        isCompaniesOn(): boolean {
-            return this.$props.options.includes('companies');
-        },
-        isCitationsOn(): boolean {
-            return this.$props.options.includes('citations');
-        },
-    },
     methods: {
+        isOptionOn(type: string) {
+            return this.$props.options.includes(type);
+        },
         /**
          *  @function to hide the options menu once the mouse left the panel for 5 seconds
          * - openMenu is set to false
@@ -144,6 +120,8 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+@import '../styles/colors.scss';
+
 .settingsBtn {
     float: left;
     background-color: white;
@@ -159,9 +137,7 @@ export default defineComponent({
 }
 
 .nodes-container {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
+    display: inline-block;
 }
 
 .labels {
@@ -169,20 +145,39 @@ export default defineComponent({
     padding-left: 5px;
     text-align: start;
 }
-.nodes-labels {
-    width: 50%;
-    align-items: flex-start;
-    text-align: start;
-}
-.nodes-togglers {
-    width: 50%;
+.nodes-toggle-container {
+    height: 41px;
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
     align-items: flex-end;
-    margin-right: 10px;
+    margin-right: 10px; //TODO: check if this is still relevant
+    padding: 15px;
+    cursor: pointer;
 }
-p {
-    margin: 16px 0;
+.nodes-toggle-container:first-child {
+    margin-top: 16px;
+}
+.nodes-toggle-container:last-child {
+    margin-bottom: 16px;
+}
+
+.nodes-toggle-container.highlight {
+    background-color: #eee;
+    border-radius: 1em;
+}
+
+.nodes-toggle {
+    display: flex;
+    width: 50%;
+    justify-content: center;
+}
+
+#fixed-switch {
+    width: 22px;
+    height: 22px;
+    background-color: $brown;
+    border-radius: 90px;
+    box-shadow: 1px 1px 2px grey;
 }
 </style>

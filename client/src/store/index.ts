@@ -150,7 +150,7 @@ export default createStore({
          * @constructor
          */
         ADD_PATENTS(state, patents: Patent[]): void {
-            state.patents = patents;
+            state.patents = patents || [];
         },
 
         /**
@@ -245,7 +245,6 @@ export default createStore({
          * Switches highlight for node on. Each node is saved for later checkmark restoration.
          * @param state
          * @param pID - ID of patent being previewed
-         * @param twice - boolean: if true, mark twice
          */
         HIGHLIGHT_NODE_ON(state, pID: string) {
             if (pID === null || pID.length < 0 || pID === 'undefined') {
@@ -311,6 +310,26 @@ export default createStore({
          */
         HIDE_DIALOG_MASK(state) {
             state.showDialogMask = false;
+        },
+
+        /**
+         * Store an extended patent in the extended patents map
+         * @param state
+         * @param extPatent
+         * @constructor
+         */
+        STORE_PATENT(state, extPatent: ExtendedPatent) {
+            state.extendedPatents[extPatent.patent.id] = extPatent;
+        },
+
+        /**
+         * Store a patents family in the family map
+         * @param state
+         * @param info
+         * @constructor
+         */
+        STORE_FAMILY(state, info: { patentId: string; family: Patent[] }) {
+            state.patentFamilies[info.patentId] = info.family;
         },
     },
 
