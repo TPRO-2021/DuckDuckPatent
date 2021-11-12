@@ -16,9 +16,9 @@
     </div>
 
     <div class="explore-container">
-        <div class="patent-information card box-shadow">
-            <PatentPlaceholder v-if="loading" />
+        <div class="patent-information card box-shadow duckduckpatent">
             <!-- Patent information -->
+            <PatentPlaceholder v-if="loading" />
             <div v-if="!loading">
                 <div class="legend-patent-title">{{ patent?.patent.title }}</div>
                 <div class="legend-patent-owner">
@@ -31,63 +31,65 @@
                 <div class="legend-patent-abstract">{{ patent?.patent.abstract }}</div>
             </div>
 
-            <!-- Patent family -->
-            <Divider align="left"><Chip :has-action="false" text="Family" class="divider-label"></Chip></Divider>
-            <div class="patent-family" v-if="loading">
-                <PreviewPlaceholder
-                    class="card box-shadow family-placeholder"
-                    v-for="(_item, index) of Array.from(Array(5).keys())"
-                    :key="index"
-                />
-            </div>
-
-            <div class="patent-family" v-if="!loading">
-                <div
-                    class="card box-shadow patent-container"
-                    v-for="(patent, index) of family"
-                    :key="index"
-                    @click="onSelectPatent(patent)"
-                >
-                    <div class="patent-info">
-                        <div class="patent-title">
-                            <h2>{{ patent.title }}</h2>
-                        </div>
-                        <div class="patent-abstract">
-                            <p>{{ patent.abstract?.slice(0, 300) }} ...</p>
-                        </div>
-                    </div>
-                </div>
-                <!-- This is here to hacky-fix the placement issue. Don't tell anyone about it! -->
-                <PreviewPlaceholder class="card box-shadow family-placeholder" />
-            </div>
-
-            <!-- Patent citations -->
-            <Divider align="left" v-if="loading || citationsAvailable">
-                <Chip :has-action="false" text="Citations" class="divider-label" custom-color="#487909"></Chip>
-            </Divider>
-            <div class="patent-citations patent-family">
-                <div
-                    v-for="(item, index) of citations"
-                    :key="index"
-                    class="family-placeholder card box-shadow patent-container"
-                >
-                    <PreviewPlaceholder v-if="item.isLoading" />
-
-                    <div @click="onSelectPatent(item)" v-if="!item.isLoading">
-                        <div class="patent-info">
-                            <div class="patent-title">
-                                <h2>{{ item.title }}</h2>
-                            </div>
-                            <div class="patent-abstract">
-                                <p>{{ item.abstract?.slice(0, 300) }} ...</p>
-                            </div>
-                        </div>
-                    </div>
-
+            <div class="exploration-content">
+                <!-- Patent family -->
+                <Divider align="left"><Chip :has-action="false" text="Family" class="divider-label"></Chip></Divider>
+                <div class="patent-family" v-if="loading">
                     <PreviewPlaceholder
                         class="card box-shadow family-placeholder"
-                        v-if="index === citations.length - 1"
+                        v-for="(_item, index) of Array.from(Array(5).keys())"
+                        :key="index"
                     />
+                </div>
+
+                <div class="patent-family" v-if="!loading">
+                    <div
+                        class="card box-shadow patent-container"
+                        v-for="(patent, index) of family"
+                        :key="index"
+                        @click="onSelectPatent(patent)"
+                    >
+                        <div class="patent-info">
+                            <div class="patent-title">
+                                <h2>{{ patent.title }}</h2>
+                            </div>
+                            <div class="patent-abstract">
+                                <p>{{ patent.abstract?.slice(0, 300) }} ...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- This is here to hacky-fix the placement issue. Don't tell anyone about it! -->
+                    <PreviewPlaceholder class="card box-shadow family-placeholder" />
+                </div>
+
+                <!-- Patent citations -->
+                <Divider align="left" v-if="loading || citationsAvailable">
+                    <Chip :has-action="false" text="Citations" class="divider-label" custom-color="#487909"></Chip>
+                </Divider>
+                <div class="patent-citations patent-family">
+                    <div
+                        v-for="(item, index) of citations"
+                        :key="index"
+                        class="family-placeholder card box-shadow patent-container"
+                    >
+                        <PreviewPlaceholder v-if="item.isLoading" />
+
+                        <div @click="onSelectPatent(item, 'citation')" v-if="!item.isLoading">
+                            <div class="patent-info">
+                                <div class="patent-title">
+                                    <h2>{{ item.title }}</h2>
+                                </div>
+                                <div class="patent-abstract">
+                                    <p>{{ item.abstract?.slice(0, 300) }} ...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <PreviewPlaceholder
+                            class="card box-shadow family-placeholder"
+                            v-if="index === citations.length - 1"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -98,9 +100,9 @@
         :is-saved-page="false"
         v-on:on-close="
             selectedPatent = null;
-            this.$store.commit('HIDE_DIALOG_MASK');
+            $store.commit('HIDE_DIALOG_MASK');
         "
-        :show-explore-btn="false"
+        :show-explore-btn="showExplorationButton"
     />
 </template>
 
@@ -130,8 +132,19 @@ export default defineComponent({
         return {
             patentService: new PatentService(),
             selectedPatent: null as ExtendedPatent | null,
+            selectedItemType: 'patent' as 'patent' | 'citation',
             citations: [] as Patent[],
         };
+    },
+    watch: {
+        $route(newVal) {
+            if (!(newVal.path === '/explore')) {
+                return;
+            }
+
+            // if the route params change we need to reinitialize the data
+            this.initView();
+        },
     },
     computed: {
         patentId(): string {
@@ -162,6 +175,9 @@ export default defineComponent({
         citationsAvailable(): boolean {
             return this.citations.length > 0;
         },
+        showExplorationButton(): boolean {
+            return this.selectedItemType === 'citation';
+        },
     },
     async created() {
         // for consistency show the loading screen for 0.5s
@@ -170,35 +186,42 @@ export default defineComponent({
             this.$store.commit('HIDE_LOADING_SCREEN');
         }, 500);
 
-        // check the current url to retrieve query params
-        this.checkUrl();
-
-        // show the loading indicator
-        this.$store.commit('SHOW_LOADING_BAR');
-
-        // if no patent is available in the vuex store load the patent from the backend
-        if (!this.patent) {
-            await this.loadPatent();
-        } else {
-            // set citations array to the patents citations
-            this.citations = (this.patent.patent.citations || []).map((citation) => ({ ...citation, isLoading: true }));
-        }
-
-        // if no family is present in the state load the family for the patent as well
-        if (!this.family) {
-            await this.loadFamily();
-        }
-
-        // load the citation data
-        await this.loadCitations();
-
-        //  after all loading has finished hide the indicator
-        this.$store.commit('HIDE_LOADING_BAR');
+        await this.initView();
     },
     methods: {
         goBack(): void {
             // if no search terms are present (after reload) go back to homepage
             this.$router.back();
+        },
+
+        async initView(): Promise<void> {
+            // check the current url to retrieve query params
+            this.checkUrl();
+
+            // show the loading indicator
+            this.$store.commit('SHOW_LOADING_BAR');
+
+            // if no patent is available in the vuex store load the patent from the backend
+            if (!this.patent) {
+                await this.loadPatent();
+            } else {
+                // set citations array to the patents citations
+                this.citations = (this.patent.patent.citations || []).map((citation) => ({
+                    ...citation,
+                    isLoading: true,
+                }));
+            }
+
+            // if no family is present in the state load the family for the patent as well
+            if (!this.family) {
+                await this.loadFamily();
+            }
+
+            // load the citation data
+            await this.loadCitations();
+
+            //  after all loading has finished hide the indicator
+            this.$store.commit('HIDE_LOADING_BAR');
         },
 
         /**
@@ -260,8 +283,10 @@ export default defineComponent({
         /**
          * Set a patent as the selected patent and mark it twice on preview
          * @param patent
+         * @param type
          */
-        onSelectPatent(patent: Patent): void {
+        onSelectPatent(patent: Patent, type = 'patent' as 'citation' | 'patent'): void {
+            this.selectedItemType = type;
             this.selectedPatent = { patent: patent, searchTerms: this.searchTerms };
             this.$store.commit('SHOW_DIALOG_MASK');
         },
@@ -272,7 +297,7 @@ export default defineComponent({
         async loadCitations() {
             // mapping all requests into a promises array
             const promises = this.citations.map((citation, index) => {
-                return new Promise((res, rej) => {
+                return new Promise((res) => {
                     this.patentService
                         .get(citation.id)
                         .then((patent) => {
@@ -280,16 +305,18 @@ export default defineComponent({
                             this.citations[index] = newCit;
                             res(newCit);
                         })
-                        .catch((err) => rej(err));
+                        .catch((err) => {
+                            console.error(err);
+                            res({});
+                        });
                 });
             });
 
             // waiting for all promises to finish and then hiding the loading bar
-            try {
-                await Promise.all(promises);
-            } catch (err) {
-                console.error(err);
-            }
+            await Promise.all(promises);
+
+            // Since some requests are running into a 404 error therefore we need to filter those citations out
+            this.citations = this.citations.filter((citation) => !citation.isLoading);
         },
     },
 });
@@ -301,12 +328,12 @@ export default defineComponent({
     cursor: default;
 }
 .page-controls {
-    position: sticky;
+    position: fixed;
     top: 0;
     left: 0;
     display: flex;
     gap: 20px;
-    padding: 20px;
+    margin: 20px;
     height: 40px;
     z-index: 100;
 }
@@ -322,7 +349,7 @@ export default defineComponent({
 
 .top-controls {
     margin: 20px;
-    position: absolute;
+    position: fixed;
     top: 0;
     right: 0;
     z-index: 100;
@@ -362,12 +389,19 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 5vh;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.exploration-content {
 }
 
 .patent-information {
     width: 90vw;
-    margin-top: 60px;
+    max-height: 94vh;
+    overflow: scroll;
+    margin-top: 86px;
+    margin-bottom: 28px;
 }
 
 .patent-info {
@@ -393,10 +427,12 @@ export default defineComponent({
 
 .legend-patent-title {
     text-align: left;
-    padding-right: 42px;
     font-style: normal;
     font-weight: normal;
     font-size: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 10px;
 }
 
 .legend-patent-owner {
@@ -405,12 +441,14 @@ export default defineComponent({
     font-style: normal;
     font-weight: 200;
     font-size: 15px;
+    padding-left: 20px;
 }
 
 .legend-patent-abstract {
     flex-grow: 1;
     text-align: justify;
-    padding-right: 60px;
+    padding-right: 20px;
+    padding-left: 20px;
     font-style: normal;
     font-size: 16px;
     overflow-y: auto;

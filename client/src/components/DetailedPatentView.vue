@@ -291,16 +291,18 @@ export default defineComponent({
         /**
          * Opens the exploration page
          */
-        openExploration() {
+        async openExploration() {
             const patent = this.extendedPatent as ExtendedPatent;
 
             //TODO: Save current state in vuex store
             this.$store.commit('STORE_PATENT', patent);
 
-            this.$router.push({
+            await this.$router.push({
                 path: '/explore',
                 query: { patentId: patent.patent.id, searchTerms: patent.searchTerms },
             });
+
+            this.handleClose();
             this.$store.commit('HIDE_DIALOG_MASK');
         },
     },

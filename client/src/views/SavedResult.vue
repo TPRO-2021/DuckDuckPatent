@@ -93,12 +93,7 @@ export default defineComponent({
                 return;
             }
 
-            // if (this.previousPage) {
-            //     return;
-            // }
-
             this.$router.back();
-            // this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
         },
 
         /**
