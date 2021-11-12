@@ -45,17 +45,28 @@ export class PatentsService {
      * @param languages
      * @param country
      * @param date
+     * @param inventor
+     * @param applicant
      */
-    public async query(terms: string[], page: number, languages = '', country = '', date = ''): Promise<QueryResult> {
+    public async query(
+        terms: string[],
+        page: number,
+        languages = '',
+        country = '',
+        date = '',
+        inventor?: string,
+        applicant?: string,
+    ): Promise<QueryResult> {
         const queryString = PatentsServiceHelper.getQueryString(
             terms,
             PatentsService.patentEndpoint,
             page,
             country,
             date,
+            inventor,
+            applicant,
+            inventor || applicant ? 5 : 100,
         );
-
-        console.log(queryString);
 
         const response = await this.sendOpsRequest<PatentQueryResponse>(queryString, {}, 'get');
         return PatentsServiceHelper.processQuery(response.data, languages);
