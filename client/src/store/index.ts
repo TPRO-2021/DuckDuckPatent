@@ -244,15 +244,13 @@ export default createStore({
         /**
          * Switches highlight for node on. Each node is saved for later checkmark restoration.
          * @param state
-         * @param pID - ID of patent being previewed
+         * @param obj - contains ID and type of node to be highlighted
          */
-        HIGHLIGHT_NODE_ON(state, pID: string) {
-            if (pID === null || pID.length < 0 || pID === 'undefined') {
-                return;
-            }
+        HIGHLIGHT_NODE_ON(state, obj: { pID: string; nodeType: string }) {
+            if (obj.pID === null || obj.pID.length < 0 || obj.pID === 'undefined') return;
 
-            state.patentID = pID;
-
+            state.patentID = obj.pID;
+            state.patentType = obj.nodeType;
             state.highlightNode = true;
         },
         /**
@@ -261,20 +259,23 @@ export default createStore({
          */
         HIGHLIGHT_NODE_OFF(state) {
             state.patentID = '';
+            state.patentType = '';
             state.highlightNode = false;
         },
-        MARK_NODE_ON(state, obj: { pID: string; twice: boolean }) {
-            if (obj.pID === null || obj.pID.length < 0 || obj.pID === 'undefined') {
-                return;
-            }
+        /**
+         * Adds checkmarks to the visited patent
+         *
+         */
+        ADD_MARK(state, obj: { pID: string; twice: boolean }) {
+            if (obj.pID === null || obj.pID.length < 0 || obj.pID === 'undefined') return;
 
             state.patentID = obj.pID;
             state.markTwice = obj.twice; //if true mark twice
+            // if (state.markedTwice.indexOf(obj.pID) >= 0) return; //don't change the mark if already exists
             state.markTwice ? state.markedTwice.push(obj.pID) : state.markedOnce.push(obj.pID);
-
             //filter duplicates out
-            state.markedOnce = state.markedOnce.filter((e, i) => i === state.markedOnce.indexOf(e));
-            state.markedTwice = state.markedTwice.filter((e, i) => i === state.markedTwice.indexOf(e));
+            state.markedOnce = state.markedOnce.filter((e, i) => state.markedOnce.indexOf(e) === i);
+            state.markedTwice = state.markedTwice.filter((e, i) => state.markedTwice.indexOf(e) === i);
 
             // remove matching ids from markedOnce
             state.markedOnce = state.markedOnce.filter((e) => state.markedTwice.indexOf(e) < 0);
