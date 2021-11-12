@@ -375,6 +375,8 @@ export default defineComponent({
                 authorsMap,
                 companyMap,
             );
+
+            //TODO: could check for node sizes here
         },
 
         /**

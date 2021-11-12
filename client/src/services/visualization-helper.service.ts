@@ -27,7 +27,7 @@ export default class VisualizationHelperService {
                 id: patent.id,
                 patent,
                 type: 'patent',
-                size: 18,
+                size: 18, //TODO: to be adjusted for all with incoming arrows
             })) as VisualPatentNode[];
         }
 
@@ -96,7 +96,7 @@ export default class VisualizationHelperService {
             const familyNodes = Object.keys(familyMap)
                 .filter((t) => familyMap[t].length > 1)
                 .map((id) => {
-                    const patentsInFamily = familyMap[id];
+                    const patentsInFamily = familyMap[id]; //array containing what exactly?
                     return {
                         id, // Set the id to be the family Id
                         patent: patentMap[patentsInFamily[0]], // used for tooltip ect. - this should change
@@ -110,6 +110,29 @@ export default class VisualizationHelperService {
         return nodes;
     }
 
+    // links contain [index, source patent, target patent]
+    static patentSizeCounter(nodeLinks: { source: string; target: string }[]): { elem: string; count: number }[] {
+        //collect all targets and remove duplicates
+        let targetNodes = nodeLinks.map((e) => e.target);
+        targetNodes = targetNodes.filter((e, i) => i === targetNodes.indexOf(e));
+
+        console.log('targets are: ', targetNodes);
+        console.log('init array: ', nodeLinks);
+
+        // reduce the map containing unique target and unique source id's per target
+
+        const linkCount = targetNodes.map(
+            (e) =>
+                ({ elem: e, count: nodeLinks.filter((or) => or.target === e).length } as {
+                    elem: string;
+                    count: number;
+                }),
+        );
+        // return target patent ids with count of mentions
+        console.log('tarSource array: ', linkCount);
+
+        return linkCount;
+    }
     /**
      * Processes the passed patents and finds relations between them.
      */
@@ -158,6 +181,7 @@ export default class VisualizationHelperService {
 
         // add author links
         const authorLinks = VisualizationHelperService.getCreatorLinks(nodes, nodeMap, 'author', authorsMap);
+
         // add company links
         const companyLinks = VisualizationHelperService.getCreatorLinks(nodes, nodeMap, 'company', companyMap);
 
@@ -175,6 +199,11 @@ export default class VisualizationHelperService {
                 ],
                 [] as { source: VisualPatentNode; target: VisualPatentNode }[],
             );
+
+        const allLinkIDs = [...interNodeCitations, ...citationLinks, ...authorLinks, ...companyLinks, ...familyLinks]
+            .filter((t) => t.source && t.target) // Filter out any that have sources/targets that are either: null, 0, '', undefined, or false
+            .map((e) => ({ source: e.source.id, target: e.target.id } as { source: string; target: string }));
+        this.patentSizeCounter(allLinkIDs);
 
         // Combine all links together
         return [...interNodeCitations, ...citationLinks, ...authorLinks, ...companyLinks, ...familyLinks]
