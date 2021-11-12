@@ -5,6 +5,7 @@ import { VisualizationOptions } from '@/models/VisualizationOptions';
 import { RelationMap } from '@/models/RelationMap';
 
 export default class VisualizationHelperService {
+    static linkDataset: { source: string; target: string }[];
     /**
      * Processes the passed patents and returns them as nodes for D3 to display them.
      * A SimulationNodeDatum needs a unique identifier which we can provide by using the
@@ -27,7 +28,7 @@ export default class VisualizationHelperService {
                 id: patent.id,
                 patent,
                 type: 'patent',
-                size: 18, //TODO: to be adjusted for all with incoming arrows
+                size: this.patentSize(patent.id), //TODO: to be adjusted for all with incoming arrows
             })) as VisualPatentNode[];
         }
 
@@ -110,29 +111,20 @@ export default class VisualizationHelperService {
         return nodes;
     }
 
-    // links contain [index, source patent, target patent]
-    static patentSizeCounter(nodeLinks: { source: string; target: string }[]): { elem: string; count: number }[] {
-        //collect all targets and remove duplicates
-        let targetNodes = nodeLinks.map((e) => e.target);
-        targetNodes = targetNodes.filter((e, i) => i === targetNodes.indexOf(e));
+    static patentSize(id: string): number {
+        if (!this.linkDataset) {
+            return 18;
+        }
+        // const patentLinkCount = this.patentSizeCounter(this.linkDataset);
+        // const dynamicSize = patentLinkCount.filter((e) => e.elem === id);
 
-        console.log('targets are: ', targetNodes);
-        console.log('init array: ', nodeLinks);
-
-        // reduce the map containing unique target and unique source id's per target
-
-        const linkCount = targetNodes.map(
-            (e) =>
-                ({ elem: e, count: nodeLinks.filter((or) => or.target === e).length } as {
-                    elem: string;
-                    count: number;
-                }),
-        );
-        // return target patent ids with count of mentions
-        console.log('tarSource array: ', linkCount);
-
-        return linkCount;
+        let count = this.linkDataset.filter((e) => e.target === id).length;
+        //   console.log('init array: ', this.linkDataset);
+        count > 0 ? console.log(`found count ${count} for id ${id} `) : '';
+        count = count * 3 + 15;
+        return count > 0 ? count : 18;
     }
+
     /**
      * Processes the passed patents and finds relations between them.
      */
@@ -200,10 +192,9 @@ export default class VisualizationHelperService {
                 [] as { source: VisualPatentNode; target: VisualPatentNode }[],
             );
 
-        const allLinkIDs = [...interNodeCitations, ...citationLinks, ...authorLinks, ...companyLinks, ...familyLinks]
+        this.linkDataset = [...interNodeCitations, ...citationLinks, ...authorLinks, ...companyLinks, ...familyLinks]
             .filter((t) => t.source && t.target) // Filter out any that have sources/targets that are either: null, 0, '', undefined, or false
             .map((e) => ({ source: e.source.id, target: e.target.id } as { source: string; target: string }));
-        this.patentSizeCounter(allLinkIDs);
 
         // Combine all links together
         return [...interNodeCitations, ...citationLinks, ...authorLinks, ...companyLinks, ...familyLinks]

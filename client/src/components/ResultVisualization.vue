@@ -68,6 +68,7 @@ import { NodeInfo } from '@/models/NodeInfo';
 import VisualizationHelperService from '@/services/visualization-helper.service';
 import { VisualPatentLink } from '@/models/VisualPatentLink';
 import { RelationMap } from '@/models/RelationMap';
+import FilterHelperService from '@/services/filter-helper.service';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
@@ -306,7 +307,7 @@ export default defineComponent({
                 .data(this.graph.nodes)
                 .enter()
                 .append('circle')
-                .attr('r', (d) => d.size)
+                .attr('r', (d) => (d.size = VisualizationHelperService.patentSize(d.id)))
                 .attr('class', (d: VisualPatentNode) => d.type)
                 .call(
                     drag<SVGCircleElement, VisualPatentNode>()
@@ -375,8 +376,6 @@ export default defineComponent({
                 authorsMap,
                 companyMap,
             );
-
-            //TODO: could check for node sizes here
         },
 
         /**
