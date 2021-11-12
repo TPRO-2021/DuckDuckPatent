@@ -19,6 +19,7 @@ export class PatentsServiceHelper {
      */
     public static processQuery(data: PatentQueryResponse, languages?: string): QueryResult {
         const searchResult = data['ops:world-patent-data']['ops:biblio-search'];
+        const totalCount = data['ops:world-patent-data']['ops:biblio-search']['@total-result-count'];
 
         let queryData = searchResult['ops:search-result']['exchange-documents'];
         if (!(queryData instanceof Array)) {
@@ -49,7 +50,7 @@ export class PatentsServiceHelper {
 
         return {
             patents: processed,
-            total: processed.length,
+            total: Number(totalCount),
         };
     }
 
