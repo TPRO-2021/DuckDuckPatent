@@ -6,68 +6,70 @@
     <div class="top-controls">
         <Button btnText="Saved" iconKey="turned_in" :badge-value="savedPatentsCount" v-on:on-clicked="openSavePage" />
     </div>
-    <div>
-        <div class="patent-title" v-html="highlightTitle(this.patent.patent.title, this.patent.searchTerms)"></div>
-        <div class="patent-owner">
-            <span v-for="(applicant, index) in patent.patent.applicants" :key="index">
-                {{ applicant }}
-                <span v-if="index !== patent.patent.applicants.length - 1">, </span>
-                <span v-if="index <= patent.patent.applicants.length - 1"> </span>
-            </span>
-        </div>
-    </div>
-    <div class="patent-abstract">
-        <h2>Abstract</h2>
-        <div v-html="highlightAbstract(this.patent.patent.abstract, this.patent.searchTerms)"></div>
-    </div>
-
-    <div class="patent-info">
+    <div class="patent-container">
         <div>
-            <h3>Inventors</h3>
-            <ul class="inventors-list">
-                <li v-for="(inventor, index) in patent.patent.inventors" :key="index">{{ inventor }}</li>
-            </ul>
-        </div>
-        <div>
-            <h3>Applicants</h3>
-            <ul class="inventors-list">
-                <li v-for="(applicant, index) in patent.patent.applicants" :key="index">{{ applicant }}</li>
-            </ul>
-        </div>
-    </div>
-    <div class="footer-container">
-        <div class="patent-additional-info">
-            <div class="keywords">
-                <div class="label-keywords">Searched keywords:</div>
-                <span class="keyword-chips">
-                    <Chip
-                        v-for="(keyword, index) in patent.searchTerms"
-                        :key="index"
-                        :has-action="false"
-                        :text="keyword"
-                    ></Chip>
+            <div class="patent-title" v-html="highlightText(patent?.patent.title, patent?.searchTerms)"></div>
+            <div class="patent-owner">
+                <span v-for="(applicant, index) in patent?.patent.applicants" :key="index">
+                    {{ applicant }}
+                    <span v-if="index !== patent?.patent.applicants.length - 1">, </span>
+                    <span v-if="index <= patent?.patent.applicants.length - 1"> </span>
                 </span>
             </div>
-            <div class="attachments" v-if="!noDocuments">
-                <div class="label-attachment">Attachments</div>
-                <div class="attachment-items" v-if="documents">
-                    <Attachment
-                        v-for="(attachment, index) in documents"
-                        :key="index"
-                        :type="attachment.type"
-                        v-on:on-open="openDocument(attachment)"
-                    ></Attachment>
+        </div>
+        <div class="patent-abstract">
+            <h2>Abstract</h2>
+            <div v-html="highlightText(patent?.patent.abstract, patent?.searchTerms)"></div>
+        </div>
+
+        <div class="patent-info">
+            <div>
+                <h3>Inventors</h3>
+                <ul class="inventors-list">
+                    <li v-for="(inventor, index) in patent?.patent.inventors" :key="index">{{ inventor }}</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Applicants</h3>
+                <ul class="inventors-list">
+                    <li v-for="(applicant, index) in patent?.patent.applicants" :key="index">{{ applicant }}</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-container">
+            <div class="patent-additional-info">
+                <div class="keywords">
+                    <div class="label-keywords">Searched keywords:</div>
+                    <span class="keyword-chips">
+                        <Chip
+                            v-for="(keyword, index) in patent?.searchTerms"
+                            :key="index"
+                            :has-action="false"
+                            :text="keyword"
+                        ></Chip>
+                    </span>
                 </div>
-                <!-- Display skeleton to indicate loading -->
-                <div class="attachment-items" v-if="!documents">
-                    <div class="card box-shadow" v-for="(_item, index) in [1, 2, 3]" :key="index">
-                        <Skeleton width="60px" height="30px"></Skeleton>
+                <div class="attachments" v-if="!noDocuments">
+                    <div class="label-attachment">Attachments</div>
+                    <div class="attachment-items" v-if="documents">
+                        <Attachment
+                            v-for="(attachment, index) in documents"
+                            :key="index"
+                            :type="attachment.type"
+                            v-on:on-open="openDocument(attachment)"
+                        ></Attachment>
+                    </div>
+                    <!-- Display skeleton to indicate loading -->
+                    <div class="attachment-items" v-if="!documents">
+                        <div class="card box-shadow" v-for="(_item, index) in [1, 2, 3]" :key="index">
+                            <Skeleton width="60px" height="30px"></Skeleton>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="column btn-exploration" v-if="explorationAvailable">
-            <Button icon-key="travel_explore" btn-text="Start exploration" @click="openExploration" />
+            <div class="column btn-exploration" v-if="explorationAvailable">
+                <Button icon-key="travel_explore" btn-text="Start exploration" @click="openExploration" />
+            </div>
         </div>
     </div>
 </template>
@@ -82,6 +84,8 @@ import { DocumentInformation } from '@/models/DocumentInformation';
 import DocumentService from '@/services/document.service';
 import Attachment from '@/components/Attachment.vue';
 import Chip from '@/components/Chip.vue';
+import { Patent } from '@/models/Patent';
+
 export default defineComponent({
     name: 'Patent',
     components: { RoundButton, Attachment, Button, Chip },
@@ -95,14 +99,17 @@ export default defineComponent({
         };
     },
     computed: {
-        patentID(): string {
+        patentId(): string {
             return (this.$route.query.patentId as string) || '';
         },
         searchTerms(): string[] {
             return this.$store.state.searchTerms;
         },
         patent(): ExtendedPatent {
-            return this.$store.state.extendedPatents[this.patentID];
+            return this.$store.state.extendedPatents[this.patentId];
+        },
+        family(): Patent[] {
+            return this.$store.state.patentFamilies[this.patentId];
         },
         savedPatentsCount(): string {
             const items = Object.keys(this.$store.state.savedPatents).length;
@@ -114,15 +121,19 @@ export default defineComponent({
         },
     },
     async created() {
+        this.checkUrl();
+
         if (!this.patent) {
             await this.loadPatent();
         }
+
+        if (!this.family) {
+            await this.loadFamily();
+        } else {
+            this.explorationAvailable = true;
+        }
         await this.loadDocuments();
-        await this.loadFamily();
     },
-    // async mounted() {
-    //     await this.loadDocuments();
-    // },
     methods: {
         /**
          * Attempts to take the user back to the previous page
@@ -131,28 +142,35 @@ export default defineComponent({
             // if no search terms are present (after reload) go back to homepage
             this.$router.back();
         },
-        highlightTitle(title: string, keywords: string[]) {
+
+        /**
+         * Highlights keywords in a text
+         * @param text
+         * @param keywords
+         */
+        highlightText(text = '', keywords = [] as string[]) {
             const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
-            return title.replace(pattern, (match) => {
+            return text.replace(pattern, (match) => {
                 return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
             });
         },
-        highlightAbstract(abstract: string, keywords: string[]) {
-            const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
-            return abstract.replace(pattern, (match) => {
-                return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
-            });
-        },
+
+        /**
+         * Opens the saved page
+         */
         openSavePage(): void {
             this.$router.push({ path: '/saved' });
         },
+
+        /**
+         * Loads a patent from the backend
+         */
         async loadPatent() {
-            if (!this.patentID) return;
+            if (!this.patentId) return;
 
             try {
                 this.$store.commit('SHOW_LOADING_BAR');
-                const patent = await this.patentService.get(this.patentID);
-                console.log(this.patentID);
+                const patent = await this.patentService.get(this.patentId);
 
                 this.$store.commit('STORE_PATENT', { patent, searchTerms: this.searchTerms });
             } catch (err) {
@@ -160,18 +178,21 @@ export default defineComponent({
             }
             this.$store.commit('HIDE_LOADING_BAR');
         },
+
+        /**
+         * Loads the family of a patent
+         */
         async loadFamily() {
             // if no exploration button should be shown we don't need to load the data
-
             const extPatent = this.patent as ExtendedPatent;
 
             if (!extPatent) return;
 
             try {
                 this.$store.commit('SHOW_LOADING_BAR');
-                const family = await this.patentService.queryFamily(extPatent.patent.id);
+                const family = await this.patentService.queryFamily(this.patentId);
 
-                this.$store.commit('STORE_FAMILY', { patentId: extPatent.patent.id, family });
+                this.$store.commit('STORE_FAMILY', { patentId: this.patentId, family });
                 this.explorationAvailable = true;
             } catch (err) {
                 console.error(err);
@@ -180,6 +201,7 @@ export default defineComponent({
 
             this.$store.commit('HIDE_LOADING_BAR');
         },
+
         /**
          * Opens the document view and passes the document as a query parameter
          * @param document
@@ -204,13 +226,17 @@ export default defineComponent({
             // if a new patent is available load the documents for it
             this.$store.commit('SHOW_LOADING_BAR');
             try {
-                this.documents = await this.documentService.query((this.patent as ExtendedPatent)?.patent?.id);
+                this.documents = await this.documentService.query(this.patentId);
             } catch (err) {
                 this.noDocuments = true;
                 console.error(err);
             }
             this.$store.commit('HIDE_LOADING_BAR');
         },
+
+        /**
+         * Opens the exploration mode
+         */
         openExploration() {
             const patent = this.patent as ExtendedPatent;
 
@@ -222,6 +248,24 @@ export default defineComponent({
                 query: { patentId: patent.patent.id, searchTerms: patent.searchTerms },
             });
             this.$store.commit('HIDE_DIALOG_MASK');
+        },
+
+        /**
+         * Checks the url for query parameters and adds them to the state
+         */
+        checkUrl() {
+            let searchTerms = this.$route.query.searchTerms;
+
+            // if no patentId or search terms go back to landing page
+            if (!this.patentId || !searchTerms) {
+                this.$router.push('/');
+            }
+
+            if (!(searchTerms instanceof Array)) {
+                searchTerms = [searchTerms];
+            }
+
+            this.$store.commit('SET_SEARCH_TERMS', searchTerms);
         },
     },
 });
@@ -277,7 +321,7 @@ export default defineComponent({
     padding-right: 40px;
     font-style: normal;
     font-weight: normal;
-    font-size: 15px;
+    font-size: 18px;
     padding-bottom: 70px;
     overflow-y: auto;
 }
@@ -298,6 +342,7 @@ export default defineComponent({
     display: flex;
     gap: 40px;
     justify-content: space-between;
+    padding-bottom: 5vh;
 }
 
 .patent-additional-info {
@@ -350,5 +395,11 @@ export default defineComponent({
     display: flex;
     align-items: flex-end;
     margin-right: 20px;
+}
+
+.patent-container {
+    width: 100%;
+    height: 100%;
+    padding: 5vh 5vw;
 }
 </style>
