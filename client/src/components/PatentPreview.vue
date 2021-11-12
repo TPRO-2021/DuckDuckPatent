@@ -26,7 +26,7 @@
             </div>
         </template>
         <div class="patent-abstract">
-            <p>{{ current.mainText }}</p>
+            <p :class="settingsMenu ? 'open-menu' : ''">{{ current.mainText }}</p>
         </div>
         <div class="patent-navigation no-select">
             <!-- Navigation buttons -->
@@ -168,14 +168,14 @@ export default defineComponent({
 }
 
 .patent-title {
-    text-align: left;
+    text-align: justify;
     padding-right: 70px;
     font-style: normal;
     font-weight: normal;
     font-size: 20px;
 }
 .patent-abstract {
-    text-align: left;
+    text-align: justify;
     font-style: normal;
     font-weight: normal;
     font-size: 16px;
@@ -197,7 +197,7 @@ export default defineComponent({
 }
 
 .patent-owner {
-    padding-bottom: 12px;
+    //padding-bottom: 12px;
     text-align: left;
     font-style: normal;
     font-weight: 200;
@@ -241,5 +241,8 @@ export default defineComponent({
     display: flex;
     justify-content: center;
     align-items: center;
+}
+.open-menu {
+    opacity: 0.5;
 }
 </style>

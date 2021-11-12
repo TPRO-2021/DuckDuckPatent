@@ -1,9 +1,41 @@
 <template>
     <div v-for="filter in filters" :key="filter.id" class="filter-container">
-        <div v-if="filter.type === 'empty' || filter.isSelectionOpen" class="type-selection">
+        <div v-if="eligible(filter, 'date')">
+            <FilterComponent
+                name="date"
+                :value="filter.value"
+                :filter="filter"
+                v-on:edit="onEditClicked(filter.id)"
+                v-on:delete="onRemoveClicked(filter.id)"
+            />
+        </div>
+        <div v-if="eligible(filter, 'language')">
+            <FilterComponent
+                name="language"
+                :value="displayValue(languageList, filter.value)"
+                :filter="filter"
+                v-on:edit="onEditClicked(filter.id)"
+                v-on:delete="onRemoveClicked(filter.id)"
+            />
+        </div>
+        <div v-if="eligible(filter, 'country')">
+            <FilterComponent
+                name="country"
+                :value="displayValue(countryList, filter.value)"
+                :filter="filter"
+                v-on:edit="onEditClicked(filter.id)"
+                v-on:delete="onRemoveClicked(filter.id)"
+            />
+        </div>
+        <div v-if="filter.type === 'empty' || filter.isSelectionOpen" class="type-selection" v-click-away="onLostFocus">
             <div>
                 <ChipButton
-                    :class="{ invisible: filter.type === 'date' || hasDate }"
+                    :class="{
+                        invisible:
+                            filter.type === 'date' ||
+                            hasDate ||
+                            (this.showOnEdit.status && this.showOnEdit.filterType !== 'date'),
+                    }"
                     icon-key="add"
                     text="Date"
                     v-on:on-select="onUpdateFilter('type', 'date', filter.id)"
@@ -23,7 +55,6 @@
                                 :value="dateFilterFrom"
                                 type="number"
                                 @focus="updateFocus"
-                                @change="onDateChange('from', $event, filter)"
                                 @keyup="onDateChange('from', $event, filter)"
                             />
                             <input
@@ -32,7 +63,6 @@
                                 :value="dateFilterTo"
                                 type="number"
                                 @focus="updateFocus"
-                                @change="onDateChange('to', $event, filter)"
                                 @keyup="onDateChange('to', $event, filter)"
                             />
                         </div>
@@ -42,7 +72,12 @@
 
             <div>
                 <ChipButton
-                    :class="{ invisible: filter.type === 'language' || hasLanguage }"
+                    :class="{
+                        invisible:
+                            filter.type === 'language' ||
+                            hasLanguage ||
+                            (this.showOnEdit.status && this.showOnEdit.filterType !== 'language'),
+                    }"
                     icon-key="add"
                     text="Language"
                     v-on:on-select="onUpdateFilter('type', 'language', filter.id)"
@@ -58,7 +93,12 @@
 
             <div>
                 <ChipButton
-                    :class="{ invisible: filter.type === 'country' || hasCountry }"
+                    :class="{
+                        invisible:
+                            filter.type === 'country' ||
+                            hasCountry ||
+                            (this.showOnEdit.status && this.showOnEdit.filterType !== 'country'),
+                    }"
                     icon-key="add"
                     text="Country"
                     v-on:on-select="onUpdateFilter('type', 'country', filter.id)"
@@ -72,40 +112,15 @@
                 />
             </div>
         </div>
-        <div v-else-if="filter.type === 'date'">
-            <FilterComponent
-                name="date"
-                :value="filter.value"
-                :filter="filter"
-                v-on:edit="onEditClicked(filter.id)"
-                v-on:delete="onRemoveClicked(filter.id)"
-            />
-        </div>
-        <div v-else-if="filter.type === 'language'">
-            <FilterComponent
-                name="language"
-                :value="displayValue(languageList, filter.value)"
-                :filter="filter"
-                v-on:edit="onEditClicked(filter.id)"
-                v-on:delete="onRemoveClicked(filter.id)"
-            />
-        </div>
-        <div v-else-if="filter.type === 'country'">
-            <FilterComponent
-                name="country"
-                :value="displayValue(countryList, filter.value)"
-                :filter="filter"
-                v-on:edit="onEditClicked(filter.id)"
-                v-on:delete="onRemoveClicked(filter.id)"
-            />
-        </div>
     </div>
-    <ChipButton
-        :class="{ invisible: currentFilter || hasAll, 'add-button': true }"
-        icon-key="add"
-        text="Add"
-        v-on:on-select="onAddClicked()"
-    ></ChipButton>
+    <div class="filter-bottom-controls">
+        <ChipButton
+            :class="{ invisible: currentFilter || hasAll, 'add-button': true }"
+            icon-key="add"
+            text="Add"
+            v-on:on-select="onAddClicked()"
+        ></ChipButton>
+    </div>
 </template>
 
 <script lang="ts">
@@ -114,6 +129,8 @@ import ChipButton from '@/components/ChipButton.vue';
 import FilterComponent from '@/components/Filter.vue';
 import ListPicker from '@/components/ListPicker.vue';
 import { Filter } from '@/models/Filter';
+import { directive } from 'vue3-click-away';
+import FilterHelperService from '@/services/filter-helper.service';
 
 const FOCUS_TIMEOUT_MS = 4000; // four seconds
 
@@ -125,6 +142,9 @@ export default defineComponent({
             type: Array,
             required: true,
         },
+    },
+    directives: {
+        ClickAway: directive,
     },
     data() {
         return {
@@ -168,7 +188,7 @@ export default defineComponent({
                 { key: 'lt', value: 'Lithuania' },
                 { key: 'lu', value: 'Luxembourg' },
                 { key: 'mc', value: 'Monaco' },
-                { key: 'md', value: 'Republic of Moldovia' },
+                { key: 'md', value: 'Republic of Moldova' },
                 { key: 'me', value: 'Montenegro' },
                 { key: 'no', value: 'Norway' },
                 { key: 'pl', value: 'Poland' },
@@ -179,6 +199,10 @@ export default defineComponent({
                 { key: 'se', value: 'Sweden' },
                 { key: 'sk', value: 'Slovakia' },
             ],
+            showOnEdit: {
+                status: false,
+                filterType: 'none',
+            },
         };
     },
     watch: {
@@ -186,6 +210,7 @@ export default defineComponent({
             if (value == null) {
                 return;
             }
+
             const filters = value as Filter[];
             this.hasDate = filters.some((t) => t.type === 'date');
             this.hasLanguage = filters.some((t) => t.type === 'language');
@@ -196,6 +221,7 @@ export default defineComponent({
             if (this.currentFilter == null) {
                 return;
             }
+
             const yearParts = this.currentFilter.value.split('-');
             this.dateFilterFrom = `${yearParts[0] ?? ''}`;
             this.dateFilterTo = `${yearParts[1] ?? ''}`;
@@ -219,6 +245,8 @@ export default defineComponent({
          *  @function onAddClicked emits an event to add an empty filter
          */
         onAddClicked(): void {
+            //reset Edit
+            this.showOnEdit = { status: false, filterType: 'none' };
             // Emit add filter
             this.$emit('addFilter');
         },
@@ -235,6 +263,8 @@ export default defineComponent({
          *  @param id: number, the client id of the filter being shifted into edit mode
          */
         onEditClicked(id: number): void {
+            // if editing a filter, other options should not show
+            this.showOnEdit = { status: true, filterType: this.$store.state.filters[id].type };
             // Emit update filter that shifts a filter into edit mode
             this.$emit('updateFilter', { prop: 'isSelectionOpen', value: true, id });
             this.updateFocus(); // Update the focus so the user doesn't have to make a change if they don't want
@@ -283,16 +313,23 @@ export default defineComponent({
                 this.onLostFocus(); // Shift back from edit when called
             }, FOCUS_TIMEOUT_MS); // Timeout given here
         },
-
         /**
-         *  @function  onLostFocus shifts the current filter from edit mode to not edit mode
+         *  @function  onLostFocus shifts the current filter from edit mode to not edit mode.
+         *  When user clicks away from filters, it's treated as lost focus too.
          */
         onLostFocus() {
             if (this.currentFilter == null) {
                 return;
             } // If there isn't a currently focused element then forget about it
+
             // Emit update that changes isSelectionOpen (edit mode) to false
             this.$emit('updateFilter', { prop: 'isSelectionOpen', value: false, id: this.currentFilter.id });
+            this.showOnEdit = { status: false, filterType: 'none' };
+
+            // if filter is really empty, i.e. user didn't enter any values, then we should not display it
+            if (!FilterHelperService.isValid(this.currentFilter)) {
+                this.$emit('removeFilter', this.currentFilter.id);
+            }
             // Set the current filter to null, it's no longer current
             this.currentFilter = null;
         },
@@ -307,8 +344,15 @@ export default defineComponent({
                 // If it has been already selected, we need to remove not add
                 newCodes = codes.filter((t) => t !== key); // Remove key from new list
             }
+
             this.onUpdateFilter('value', newCodes.join(','), filter.id); // Join new list together with commas and update the value
             this.updateFocus(); // Update focus so the user doesn't just randomly get knocked out of edit mode
+        },
+        /**
+         *  Checks whether filter meets all conditions to be displayed to user
+         */
+        eligible(filter: Filter, filterType: string): boolean {
+            return FilterHelperService.showFilter(filter, filterType);
         },
     },
 });
@@ -328,7 +372,6 @@ export default defineComponent({
     box-shadow: 0 0 10px grey;
     box-sizing: border-box;
     padding: 10px 5px;
-    max-width: 120px;
     position: relative;
     z-index: 2000;
 }
@@ -339,34 +382,39 @@ export default defineComponent({
 }
 .year-selector > * > * {
     width: 90%;
-    margin: 5px;
 }
 .year-selector > * > label {
     text-align: left;
+    margin: 3px;
 }
 .year-selector > * > input {
     border-radius: 5px;
     background: lightgrey;
     border: none;
     padding: 0 5px;
+    margin: 5px;
 }
 
 .filter-container {
     margin-top: 10px;
+    margin-right: 5px;
+    margin-left: 5px;
 }
-
+.filter-bottom-controls {
+    margin-right: 5px;
+    margin-left: 5px;
+}
 .type-selection {
     display: flex;
     justify-content: space-between;
     min-height: 2em;
-}
-.type-selection > * {
 }
 
 .add-button {
     margin-top: 8px;
     float: right;
     width: 90px;
+    //  margin-right: 0 !important;
 }
 .invisible {
     visibility: hidden;

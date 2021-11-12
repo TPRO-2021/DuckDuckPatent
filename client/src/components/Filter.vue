@@ -56,7 +56,7 @@ export default defineComponent({
     flex: 1;
     background-color: black;
     color: white;
-    text-align: center;
+    text-align: left; // selected options (in middle) look nicer when they don't change in spacing
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -76,6 +76,7 @@ export default defineComponent({
     border-right: none;
     background-color: white;
     color: black;
+    text-align: center; // filter names look nicer when centered
 }
 .filter > .tail {
     border: 1px solid black;

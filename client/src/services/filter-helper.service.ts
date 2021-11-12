@@ -26,4 +26,11 @@ export default class FilterHelperService {
             .map((filter) => `${filter.type}=${filter.value}`); // Convert to key=value strings
         return filterParams;
     }
+
+    /**
+     *  Only filters that are added to store and are being edited are to be shown. If not being edited, filter values should not be empty.
+     */
+    static showFilter(filter: Filter, currentType: string): boolean {
+        return filter.type === currentType && (filter.value !== '' || filter.isSelectionOpen);
+    }
 }
