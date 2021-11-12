@@ -79,6 +79,7 @@
                 detailedPatent = null;
                 this.$store.commit('HIDE_DIALOG_MASK');
             "
+            v-on:on-save-patent-detailed="onSavePatentDetailed($event)"
         />
     </div>
 </template>
@@ -496,6 +497,35 @@ export default defineComponent({
             const patent = this.patents.find((t) => t.id === event.id);
             this.$store.commit('ADD_SAVED_PATENT', { patent, searchTerms: this.terms });
             this.selectedNode = null;
+        },
+        onSavePatentDetailed(event: { patent: ExtendedPatent }): void {
+            this.$store.commit('ADD_SAVED_PATENT', {
+                patent: event.patent.patent,
+                searchTerms: event.patent.searchTerms,
+            });
+        },
+
+        /**
+         * Arrow navigation for Node Preview for citation,
+         * @param e
+         * @param collection
+         * @param indexNode
+         * @param type
+         */
+        navigationNodes(e: { direction: string }, collection: string[], indexNode: number, type: NodeType) {
+            switch (e.direction) {
+                case 'next':
+                    indexNode = (indexNode + 1) % collection.length;
+                    break;
+                case 'previous':
+                    indexNode = indexNode - 1;
+                    indexNode = indexNode < 0 ? collection.length - 1 : indexNode;
+                    break;
+            }
+            this.selectedNode = {
+                id: collection[indexNode],
+                type,
+            };
         },
     },
 });

@@ -20,10 +20,13 @@
                     icon-key="delete_forever"
                     v-on:on-clicked="onRemove"
                 />
-                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="bookmark"></RoundButton>
-                <RoundButton class="round-btn" icon-key="open_in_new" />
-                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="visibility_off" />
-                <RoundButton v-if="!isSavedPage" class="round-btn" icon-key="done" />
+                <RoundButton
+                    v-if="!isSavedPage && !isSaved"
+                    class="round-btn"
+                    icon-key="bookmark"
+                    @click="this.savePatent"
+                ></RoundButton>
+                <RoundButton class="round-btn" icon-key="open_in_new" @click="this.showPatentPage" />
             </div>
         </div>
         <template #header>
@@ -108,6 +111,8 @@ import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import Button from '@/components/Button.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
+
+import { Patent } from '@/models/Patent';
 import DocumentService from '@/services/document.service';
 import { DocumentInformation } from '@/models/DocumentInformation';
 import Chip from '@/components/Chip.vue';
@@ -136,7 +141,12 @@ export default defineComponent({
             default: true,
         },
     },
-    emits: ['onClose', 'removeFromSaved', 'onOpenExploration'],
+    emits: {
+        onClose: null,
+        onOpenExploration: null,
+        onSavePatentDetailed: (event: { patent: ExtendedPatent }) => event,
+        removeFromSaved: null,
+    },
     data() {
         return {
             documents: null as DocumentInformation[] | null,
@@ -147,11 +157,7 @@ export default defineComponent({
             pageDisplay: '',
             noDocuments: false,
             // Holds the submenu buttons
-            optionButtons: [
-                { iconKey: 'bookmark', action: 'save' },
-                { iconKey: 'visibility_off', action: 'dontLike' },
-                { iconKey: 'done', action: 'like' },
-            ],
+            optionButtons: [{ iconKey: 'bookmark', action: this.savePatent }],
             patentAvailable: false,
             patentService: new PatentService(),
             saved: true,
@@ -171,6 +177,11 @@ export default defineComponent({
     created() {
         this.loadFamily();
     },
+    computed: {
+        isSaved(): boolean {
+            return (this.$store.state.savedPatents || {})[this.extendedPatent?.patent?.id];
+        },
+    },
     methods: {
         /**
          * Handles closing of the preview and also resets the "state" values
@@ -181,7 +192,20 @@ export default defineComponent({
             this.noDocuments = false;
             this.$emit('onClose');
         },
-
+        savePatent(): void {
+            this.$emit('onSavePatentDetailed', { patent: this.extendedPatent as ExtendedPatent });
+            this.isSubMenuOpen = false;
+        },
+        showPatentPage(): void {
+            const patent = this.extendedPatent as ExtendedPatent;
+            //TODO: Save current state in vuex store
+            this.$store.commit('STORE_PATENT', patent);
+            this.$router.push({
+                path: '/patent',
+                query: { patentId: patent.patent.id, searchTerms: patent.searchTerms },
+            });
+            this.$store.commit('HIDE_DIALOG_MASK');
+        },
         /**
          * Closes the modal and emits the removeFromSave event
          */
@@ -309,7 +333,7 @@ export default defineComponent({
     text-align: justify;
     padding-right: 60px;
     font-style: normal;
-    font-weight: bold;
+    font-weight: normal;
     font-size: 16px;
     padding-bottom: 24px;
     overflow-y: auto;
