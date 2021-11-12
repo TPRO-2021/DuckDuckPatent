@@ -12,6 +12,7 @@ import ToastService from 'primevue/toastservice';
 import Tooltip from 'primevue/tooltip';
 import SpeedDial from 'primevue/speeddial';
 import Skeleton from 'primevue/skeleton';
+import VueClickAway from 'vue3-click-away';
 
 // creating app
 const app = createApp(App).use(store).use(router);
@@ -19,6 +20,7 @@ const app = createApp(App).use(store).use(router);
 // add prime vue
 app.use(PrimeVue);
 app.use(ToastService, Toast);
+app.use(VueClickAway);
 app.component('ProgressBar', ProgressBar);
 app.component('Dialog', Dialog);
 app.component('Divider', Divider);
