@@ -28,7 +28,7 @@
             </div>
         </template>
         <div class="patent-abstract">
-            <p>{{ current.mainText }}</p>
+            <p :class="settingsMenu ? 'open-menu' : ''">{{ current.mainText }}</p>
         </div>
         <div class="patent-navigation no-select">
             <!-- Navigation buttons -->
@@ -243,5 +243,8 @@ export default defineComponent({
     display: flex;
     justify-content: center;
     align-items: center;
+}
+.open-menu {
+    opacity: 0.5;
 }
 </style>
