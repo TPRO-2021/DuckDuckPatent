@@ -82,7 +82,7 @@ export default createStore({
         addFilter(state) {
             // Get the maxId and add one
             const newId = state.filters.reduce((a, b) => Math.max(a, b.id), -1) + 1;
-            state.filters = [...state.filters, { id: newId, type: 'empty', value: '' } as Filter];
+            state.filters = [...state.filters, { id: newId, type: 'empty', value: '' } as Filter]; //empty on first click
         },
 
         /**
@@ -113,7 +113,7 @@ export default createStore({
                     }
                     return {
                         ...filter, // Extend the current filter
-                        value: args.prop === 'type' ? '' : filter.value, // Clear the value if we are asigning /changing type
+                        value: args.prop === 'type' ? '' : filter.value, // Clear the value if we are assigning /changing type
                         isSelectionOpen: args.prop === 'type' || filter.isSelectionOpen, // If we just selected a type, we should show value selection
                         [args.prop]: value, // Set value
                     };

@@ -34,6 +34,7 @@
             <ResultsVisualization
                 :visualization-options="visualizationOptions"
                 :patents="patents"
+                :updating="showLoadingBar"
                 v-on:on-node-selected="onNodeSelected"
                 v-on:on-clear-node-selected="onClearNodeSelected"
             />
@@ -69,7 +70,6 @@
             <NodePreviewComponent
                 v-if="currentNodePreview"
                 :current="currentNodePreview"
-                v-on:on-control-change="onChangeNode($event, allCitationIds, 'citation')"
                 v-on:on-select-patent="selectPatent($event)"
             />
         </div>
@@ -140,7 +140,7 @@ export default defineComponent({
 
             // Compare the string with the last sent, if they're different, refresh the results
             if (newFilterString !== this.lastFilterString) {
-                this.lastFilterString = newFilterString; // Update the last observered filter string for next time
+                this.lastFilterString = newFilterString; // Update the last observed filter string for next time
                 this.debounce(4000); // Refresh the results after 3 seconds
             }
         },
@@ -150,6 +150,9 @@ export default defineComponent({
      * and patents from store/index.ts
      */
     computed: {
+        showLoadingBar(): boolean {
+            return this.$store.state.showLoadingBar;
+        },
         filters(): Filter[] {
             return this.$store.state.filters;
         },
@@ -186,16 +189,23 @@ export default defineComponent({
                 return null;
             }
             const patent = this.patents.find((t) => t.id === this.selectedNode?.id);
-            if (patent == null) {
+            if (patent == undefined) {
                 return null;
             }
             const savedPatents = this.$store.state.savedPatents;
             return PreviewHelperService.getPatentPreview(patent, savedPatents);
         },
+        /**
+         * Non-patent node is check to which type belongs and the helper function is called to preview info into the card
+         */
         currentNodePreview(): NodePreview | null {
             switch (this.selectedNode?.type) {
                 case 'citation':
                     return PreviewHelperService.getCitationPreview(this.selectedNode, this.$store.state.patents);
+                case 'author':
+                    return PreviewHelperService.getAuthorPreview(this.selectedNode, this.$store.state.patents);
+                case 'company':
+                    return PreviewHelperService.getCompanyPreview(this.selectedNode, this.$store.state.patents);
             }
             return null;
         },
@@ -204,9 +214,6 @@ export default defineComponent({
         },
         allPatentIds(): string[] {
             return this.patents.map((t) => t.id);
-        },
-        allCitationIds(): string[] {
-            return this.patents.reduce((list, p) => [...list, ...(p.citations || [])], [] as Patent[]).map((t) => t.id);
         },
     },
     async created() {
@@ -346,7 +353,7 @@ export default defineComponent({
         },
 
         /**
-         * Handle the controls in the node preview being clicked
+         * Handle the navigation back and forward for patent preview
          */
         onChangeNode(e: { direction: string }, collection: string[], type: NodeType): void {
             let selectedIndex = collection.findIndex((t) => t === this.selectedNode?.id);

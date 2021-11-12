@@ -20,6 +20,7 @@
         "vue-highlightable-input": "^1.0.9",
         "vue-router": "^4.0.11",
         "vue-window-size": "^1.1.2",
+        "vue3-click-away": "^1.2.1",
         "vuex": "^4.0.0-0"
     },
     "devDependencies": {

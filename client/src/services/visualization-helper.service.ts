@@ -21,12 +21,15 @@ export default class VisualizationHelperService {
     ): VisualPatentNode[] {
         const patentMap = VisualizationHelperService.buildMap(patents, 'id'); // Build a map of all patents, this should make finding them by ID faster.
 
-        let nodes = patents.map((patent) => ({
-            id: patent.id,
-            patent,
-            type: 'patent',
-            size: 18,
-        })) as VisualPatentNode[];
+        let nodes: VisualPatentNode[] = [];
+        if (vizOptions.includes('patents')) {
+            nodes = patents.map((patent) => ({
+                id: patent.id,
+                patent,
+                type: 'patent',
+                size: 18,
+            })) as VisualPatentNode[];
+        }
 
         // If the user has selected to view authors
         if (vizOptions.includes('authors')) {
