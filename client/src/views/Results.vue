@@ -140,7 +140,7 @@ export default defineComponent({
 
             // Compare the string with the last sent, if they're different, refresh the results
             if (newFilterString !== this.lastFilterString) {
-                this.lastFilterString = newFilterString; // Update the last observered filter string for next time
+                this.lastFilterString = newFilterString; // Update the last observed filter string for next time
                 this.debounce(4000); // Refresh the results after 3 seconds
             }
         },

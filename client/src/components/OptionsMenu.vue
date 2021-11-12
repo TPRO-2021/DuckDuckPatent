@@ -35,7 +35,7 @@
             </div>
         </div>
 
-        <!--  TODO: This is where filters for narrowing down the results will be placed  -->
+        <!--  Filters  -->
         <h4 class="labels">Filters</h4>
         <div class="filters-container">
             <Filters
@@ -141,6 +141,8 @@ export default defineComponent({
 }
 
 .labels {
+    padding-top: 3px;
+    padding-left: 5px;
     text-align: start;
 }
 .nodes-toggle-container {
@@ -167,14 +169,6 @@ export default defineComponent({
 .nodes-toggle {
     display: flex;
     width: 50%;
-    justify-content: center;
-}
-
-#fixed-switch {
-    width: 22px;
-    height: 22px;
-    background-color: $brown;
-    border-radius: 90px;
-    box-shadow: 1px 1px 2px grey;
+    justify-content: flex-end;
 }
 </style>
