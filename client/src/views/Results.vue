@@ -549,6 +549,8 @@ export default defineComponent({
             this.$store.commit('ADD_SAVED_PATENT', {
                 patent: event.patent.patent,
                 searchTerms: event.patent.searchTerms,
+            });
+        },
 
         /**
          * Arrow navigation for Node Preview for citation,
