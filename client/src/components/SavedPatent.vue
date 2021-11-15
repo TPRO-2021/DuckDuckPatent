@@ -38,6 +38,8 @@ export default defineComponent({
 
 .main-container:hover {
     cursor: pointer;
+    background: #eaeaea;
+    transition: all 0.5s ease;
 }
 
 .patent-info {

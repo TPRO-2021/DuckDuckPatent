@@ -332,6 +332,15 @@ export default createStore({
         STORE_FAMILY(state, info: { patentId: string; family: Patent[] }) {
             state.patentFamilies[info.patentId] = info.family;
         },
+
+        /**
+         * Clears all items from the saved patents map
+         * @param state
+         * @constructor
+         */
+        CLEAR_SAVED_ITEMS(state) {
+            state.savedPatents = {};
+        },
     },
 
     /**
