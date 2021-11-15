@@ -14,7 +14,7 @@
                 <RoundButton class="round-btn" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
             <div class="settings-menu" v-if="settingsMenu">
-                <RoundButton v-if="!isSaved" class="round-btn" icon-key="bookmark" @click="this.savePatent" />
+                <RoundButton v-if="current.showSave" class="round-btn" icon-key="bookmark" @click="this.savePatent" />
                 <RoundButton class="round-btn" icon-key="read_more" @click="this.showMore" />
             </div>
         </div>
@@ -72,11 +72,6 @@ export default defineComponent({
     watch: {
         current() {
             this.resetState();
-        },
-    },
-    computed: {
-        isSaved(): boolean {
-            return (this.$store.state.savedPatents || {})[this.current?.id];
         },
     },
     methods: {
