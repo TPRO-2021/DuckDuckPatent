@@ -271,7 +271,7 @@ export default createStore({
 
             state.patentID = obj.pID;
             state.markTwice = obj.twice; //if true mark twice
-            // if (state.markedTwice.indexOf(obj.pID) >= 0) return; //don't change the mark if already exists
+            if (state.markedTwice.indexOf(obj.pID) >= 0) return; //don't change the mark if already exists
             state.markTwice ? state.markedTwice.push(obj.pID) : state.markedOnce.push(obj.pID);
             //filter duplicates out
             state.markedOnce = state.markedOnce.filter((e, i) => state.markedOnce.indexOf(e) === i);

@@ -1,11 +1,11 @@
 import { Patent } from '@/models/Patent';
 import { VisualPatentNode } from '@/models/VisualPatentNode';
-import { SimulationLinkDatum } from 'd3';
+import { Selection, SimulationLinkDatum } from 'd3';
 import { VisualizationOptions } from '@/models/VisualizationOptions';
 import { RelationMap } from '@/models/RelationMap';
 
 export default class VisualizationHelperService {
-    static linkDataset: { source: string; target: string }[];
+    static linkDataset: { source: string; target: string }[]; // contains the list of patents and their sources. Set in getLinks method. TODO: check if to be changed
     /**
      * Processes the passed patents and returns them as nodes for D3 to display them.
      * A SimulationNodeDatum needs a unique identifier which we can provide by using the
@@ -110,21 +110,6 @@ export default class VisualizationHelperService {
 
         return nodes;
     }
-
-    static patentSize(id: string): number {
-        if (!this.linkDataset) {
-            return 15;
-        }
-
-        let count = this.linkDataset.filter((e) => e.target === id).length;
-        //   console.log('init array: ', this.linkDataset);
-        //   count > 0 ? console.log(`found count ${count} for id ${id} `) : '';
-        if (count < 3) count = 15;
-        else if (count <= 5) count = 20;
-        else count = 25;
-        return count;
-    }
-
     /**
      * Processes the passed patents and finds relations between them.
      */
@@ -192,8 +177,9 @@ export default class VisualizationHelperService {
                 [] as { source: VisualPatentNode; target: VisualPatentNode }[],
             );
 
+        // stores the data with links in a variable for later access by patentSize TODO:check if should be changed
         this.linkDataset = [...interNodeCitations, ...citationLinks, ...authorLinks, ...companyLinks, ...familyLinks]
-            .filter((t) => t.source && t.target) // Filter out any that have sources/targets that are either: null, 0, '', undefined, or false
+            .filter((t) => t.source && t.target)
             .map((e) => ({ source: e.source.id, target: e.target.id } as { source: string; target: string }));
 
         // Combine all links together
@@ -372,6 +358,35 @@ export default class VisualizationHelperService {
             }
             return { ...map, [key]: b }; // extend the object with a specific key
         }, {});
+    }
+    /**
+     *  Determines size of patent node based on the count of incoming edges
+     */
+    static patentSize(id: string): number {
+        if (!this.linkDataset) {
+            return 15;
+        }
+
+        let count = this.linkDataset.filter((e) => e.target === id).length;
+        if (count < 3) count = 15;
+        else if (count <= 5) count = 20;
+        else count = 25;
+        return count;
+    }
+    /**
+     * Assigns a checkmark class based on patent size
+     */
+    static patentMark(
+        graph: Selection<SVGSVGElement, VisualPatentNode, SVGGraphicsElement, unknown>,
+        marked: string[],
+        checkmarkType: string,
+    ): void {
+        marked.forEach((e: string) => {
+            const target = graph.filter((d: VisualPatentNode) => d.id === e);
+            target.filter((d: VisualPatentNode) => d.size > 20).classed(checkmarkType + 'L', true);
+            target.filter((d: VisualPatentNode) => d.size === 20).classed(checkmarkType + 'M', true);
+            target.filter((d: VisualPatentNode) => d.size < 20).classed(checkmarkType, true);
+        });
     }
 
     /**

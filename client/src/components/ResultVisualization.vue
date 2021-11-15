@@ -16,6 +16,7 @@
                     -->
                     <path d="M0,0V 4L6,2Z" style="fill: black"></path>
                 </marker>
+                <!-- Types of checkmarks for patents -->
                 <pattern id="markOnce" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                     <image
                         xlink:href="../assets/singleTick.svg"
@@ -104,7 +105,6 @@ import { NodeInfo } from '@/models/NodeInfo';
 import VisualizationHelperService from '@/services/visualization-helper.service';
 import { VisualPatentLink } from '@/models/VisualPatentLink';
 import { RelationMap } from '@/models/RelationMap';
-import FilterHelperService from '@/services/filter-helper.service';
 
 type d3Event = { x: number; y: number; node: SimulationNodeDatum };
 type d3ForceSim = Simulation<VisualPatentNode, SimulationLinkDatum<VisualPatentNode>>;
@@ -273,11 +273,11 @@ export default defineComponent({
             // Define the arrow marker
             const selected = svg.append('svg:defs').selectAll('marker');
             selected
-                .data(['small']) // Different link/path types can be defined here
+                .data(['small']) // small links for node size < 20
                 .enter()
                 .append('svg:marker') // This section adds in the arrows
                 .attr('id', 'small')
-                .attr('refX', 12.5) // Prevents arrowhead from being covered by circle
+                .attr('refX', 14) // Prevents arrowhead from being covered by circle
                 .attr('refY', 2)
                 .attr('markerWidth', 8)
                 .attr('markerHeight', 8)
@@ -287,11 +287,11 @@ export default defineComponent({
                 .attr('d', 'M0,0V 4L6,2Z')
                 .attr('style', 'fill: black');
             selected
-                .data(['middle']) // Different link/path types can be defined here
+                .data(['middle']) //  links for node size > 15 & <20
                 .enter()
                 .append('svg:marker')
                 .attr('id', 'middle')
-                .attr('refX', 17.5) // Prevents arrowhead from being covered by circle
+                .attr('refX', 17)
                 .attr('refY', 2)
                 .attr('markerWidth', 8)
                 .attr('markerHeight', 8)
@@ -301,11 +301,11 @@ export default defineComponent({
                 .attr('d', 'M0,0V 4L6,2Z')
                 .attr('style', 'fill: black');
             selected
-                .data(['large']) // Different link/path types can be defined here
+                .data(['large']) // links for node size > 20
                 .enter()
                 .append('svg:marker')
                 .attr('id', 'large')
-                .attr('refX', 18.5) // Prevents arrowhead from being covered by circle
+                .attr('refX', 19)
                 .attr('refY', 2)
                 .attr('markerWidth', 8)
                 .attr('markerHeight', 8)
@@ -394,7 +394,6 @@ export default defineComponent({
                 .attr('marker-end', (d) => {
                     // Caption items doesn't have source and target
                     if (d.source && d.target && d.source.index === d.target.index) return 'url(#end-self)';
-                    //TODO: should this change?
                     //arrow marker adjusted based on the target size
                     else if (d.target.size > 20) return 'url(#large)';
                     else if (d.target.size > 15) return 'url(#middle)';
@@ -733,31 +732,15 @@ export default defineComponent({
          */
         updateMarks(): void {
             if (!this.selections.graph) return;
-            //show marks for viewed once
+            const target = this.selections.graph
+                .selectAll<SVGSVGElement, VisualPatentNode>('circle')
+                .filter((d: VisualPatentNode) => d.type === 'patent');
+
             const markedOnce = this.$store.state.markedOnce;
+            VisualizationHelperService.patentMark(target, markedOnce, 'markedOnce');
 
-            markedOnce.forEach((e: string) => {
-                const target = this.selections.graph
-                    .selectAll<SVGSVGElement, VisualPatentNode>('circle')
-                    .filter((d: VisualPatentNode) => d.type === 'patent')
-                    .filter((d: VisualPatentNode) => d.id === e);
-                target.filter((d: VisualPatentNode) => d.size > 20).classed('markedOnceL', true);
-                target.filter((d: VisualPatentNode) => d.size > 15 && d.size < 25).classed('markedOnceM', true);
-                target.filter((d: VisualPatentNode) => d.size < 16).classed('markedOnce', true);
-            });
-
-            //show marks for viewed twice
             const markedTwice = this.$store.state.markedTwice;
-
-            markedTwice.forEach((e: string) => {
-                const target = this.selections.graph
-                    .selectAll<SVGSVGElement, VisualPatentNode>('circle')
-                    .filter((d: VisualPatentNode) => d.type === 'patent')
-                    .filter((d: VisualPatentNode) => d.id === e);
-                target.filter((d: VisualPatentNode) => d.size > 20).classed('markedTwiceL', true);
-                target.filter((d: VisualPatentNode) => d.size > 15 && d.size < 25).classed('markedTwiceM', true);
-                target.filter((d: VisualPatentNode) => d.size < 16).classed('markedTwice', true);
-            });
+            VisualizationHelperService.patentMark(target, markedTwice, 'markedTwice');
         },
     },
 });
@@ -848,23 +831,28 @@ circle.selected {
 }
 
 circle.markedOnce {
-    fill: url(#markOnce) #cccccc;
+    fill: url(#markOnce);
     stroke: rgb(168, 133, 41);
     stroke-width: 6px;
 }
 circle.markedOnceM {
-    fill: url(#markOnceM) #cccccc;
+    fill: url(#markOnceM);
     stroke: rgb(168, 133, 41);
     stroke-width: 6px;
 }
 circle.markedOnceL {
-    fill: url(#markOnceL) #cccccc;
+    fill: url(#markOnceL);
     stroke: rgb(168, 133, 41);
     stroke-width: 6px;
 }
 
 circle.markedTwice {
     fill: url(#markTwice);
+    stroke: rgb(168, 133, 41);
+    stroke-width: 6px;
+}
+circle.markedTwiceM {
+    fill: url(#markTwiceM);
     stroke: rgb(168, 133, 41);
     stroke-width: 6px;
 }
