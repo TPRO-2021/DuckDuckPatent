@@ -777,7 +777,7 @@ circle.selected {
 
 circle.markedOnce {
     stroke: rgb(106, 83, 0);
-    stroke-width: 8px;
+    stroke-width: 6px;
 }
 
 circle.markedTwice {

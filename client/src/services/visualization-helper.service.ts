@@ -364,11 +364,11 @@ export default class VisualizationHelperService {
      */
     static patentSize(id: string): number {
         if (!this.linkDataset) {
-            return 10;
+            return 15;
         }
 
         const count = this.linkDataset.filter((e) => e.target === id).length;
-        return count * 2 + 10;
+        return count * 2 + 15;
     }
     /**
      * Assigns a checkmark class based on patent size
