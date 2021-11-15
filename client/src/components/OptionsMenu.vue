@@ -4,17 +4,12 @@
         class="settingsBtn"
         icon-key="settings"
         type="light"
-        v-show="openMenu === false"
-        @click="openMenu = true"
+        @click="this.openMenu = !this.openMenu"
+        :class="{ openMenu: openMenu }"
     />
 
     <!--  This div the menu container with nodes, togglers, and filters  -->
-    <div
-        class="main-container box-shadow card no-select"
-        v-show="openMenu === true"
-        @mouseleave="timeOut()"
-        @mouseenter="resetTimer()"
-    >
+    <div class="main-container box-shadow card no-select" v-if="openMenu" v-vue-click-away="onClickAwayMenu">
         <!--  This is where the nodes can be activated and deactivated using togglers  -->
         <h4 class="labels">Selected data</h4>
         <div class="nodes-container">
@@ -53,14 +48,17 @@ import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import ToggleSwitch from '../components/ToggleSwitch.vue';
 import Filters from '../components/Filters.vue';
+import { directive } from 'vue3-click-away';
 
 export default defineComponent({
     name: 'OptionsMenu',
     components: { RoundButton, ToggleSwitch, Filters },
+    directives: {
+        VueClickAway: directive,
+    },
     data() {
         return {
             openMenu: false,
-            timer: 0,
             nodes: [
                 { type: 'patents', color: '#A88529' },
                 { type: 'families', color: '#896978' },
@@ -86,22 +84,7 @@ export default defineComponent({
         isOptionOn(type: string) {
             return this.$props.options.includes(type);
         },
-        /**
-         *  @function to hide the options menu once the mouse left the panel for 5 seconds
-         * - openMenu is set to false
-         * - timeout can be adjusted, if needed
-         */
-        timeOut(): void {
-            this.timer = setTimeout(() => (this.openMenu = !this.openMenu), 5000);
-        },
-        /**
-         *  @function to reset the timer once the mouse enters the panel again
-         * - timer var is reset
-         *
-         */
-        resetTimer(): void {
-            clearTimeout(this.timer);
-        },
+
         /**
          *  @function emits events to adjust (add or remove) the type of nodes available on the network graph. Accepts two params:
          *  - @param {boolean} togglerState -  state of toggle which is retrieved from ToggleSwitch
@@ -114,6 +97,14 @@ export default defineComponent({
             } else {
                 this.$emit('removeNode', nodeType);
             }
+        },
+
+        /**
+         * On clicking away from option menu dialog the card is closing and the filters a clean
+         */
+        onClickAwayMenu(): void {
+            this.$store.commit('CLOSE_CLEAN_FILTERS');
+            this.openMenu = !this.openMenu;
         },
 
         /**
@@ -141,6 +132,10 @@ export default defineComponent({
     float: left;
     background-color: white;
     font-size: 30px;
+}
+.settingsBtn:hover {
+    background: #d3d3d3;
+    border-color: #d3d3d3;
 }
 .main-container {
     width: 430px;
@@ -185,5 +180,8 @@ export default defineComponent({
     display: flex;
     width: 50%;
     justify-content: flex-end;
+}
+.openMenu {
+    display: none;
 }
 </style>
