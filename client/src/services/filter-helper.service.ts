@@ -19,12 +19,14 @@ export default class FilterHelperService {
         return !isNaN(year) && year > 1700 && year <= new Date().getFullYear();
     }
 
+    /**
+     * Compiles a string array of parameter key=value strings
+     * @param filters
+     */
     static getParameterList(filters: Filter[]): string[] {
-        // Prep the filter get parameters
-        const filterParams = filters
+        return filters
             .filter((filter) => FilterHelperService.isValid(filter)) // Remove unfinished or mal-formed filters
-            .map((filter) => `${filter.type}=${filter.value}`); // Convert to key=value strings
-        return filterParams;
+            .map((filter) => `${filter.type}=${filter.value}`);
     }
 
     /**

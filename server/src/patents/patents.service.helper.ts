@@ -229,21 +229,55 @@ export class PatentsServiceHelper {
      * @param page          The page which should be retrieved
      * @param country          The page which should be retrieved
      * @param date          The page which should be retrieved
+     * @param inventor
+     * @param applicant
+     * @param pageSize
      */
-    public static getQueryString(searchTerms: string[], endpoint: string, page = 0, country = '', date = ''): string {
-        let queryString = `${process.env.PATENT_API_URL}`
-            .concat(endpoint)
-            .concat(`?q=ti%3D ${searchTerms} or ab%3D ${searchTerms}`);
+    public static getQueryString(
+        searchTerms: string[],
+        endpoint: string,
+        page = 0,
+        country = '',
+        date = '',
+        inventor?: string,
+        applicant?: string,
+        pageSize = 100,
+    ): string {
+        let queryString = `${process.env.PATENT_API_URL}`.concat(endpoint);
+
+        const filters: string[] = [];
+
+        if (searchTerms) {
+            filters.push(`ti%3D ${searchTerms} or ab%3D ${searchTerms}`);
+        }
+
+        if (inventor) {
+            filters.push(`inventor%3D${inventor}`);
+        }
+
+        if (applicant) {
+            filters.push(`applicant%3D${applicant}`);
+        }
 
         if (country.trim().length > 0) {
-            queryString = queryString.concat(` and pn any "${country}"`);
+            filters.push(`pn any "${country}"`);
         }
 
         if (date.trim().length > 0) {
-            queryString = queryString.concat(` and pd within "${date}"`);
+            filters.push(`pd within "${date}"`);
         }
 
-        return queryString.concat(`&Range=${page * 100 + 1}-${(page + 1) * 100}`);
+        console.log(filters);
+        filters.forEach((filter, index) => {
+            if (index === 0) {
+                queryString = queryString.concat('?q=').concat(filter);
+                return;
+            }
+
+            queryString = queryString.concat(' and ').concat(filter);
+        });
+
+        return queryString.concat(`&Range=${page * pageSize + 1}-${(page + 1) * pageSize}`);
     }
 
     /**

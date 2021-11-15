@@ -21,7 +21,7 @@ export default createStore({
          * Sets the loading screen to visible
          * @param state
          */
-        showLoadingScreen(state) {
+        SHOW_LOADING_SCREEN(state) {
             state.showLoadingScreen = true;
         },
 
@@ -29,7 +29,7 @@ export default createStore({
          * Hides the loading screen
          * @param state
          */
-        hideLoadingScreen(state) {
+        HIDE_LOADING_SCREEN(state) {
             state.showLoadingScreen = false;
         },
         /**

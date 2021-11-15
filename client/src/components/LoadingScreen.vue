@@ -29,6 +29,7 @@ export default defineComponent({
     animation: fadeIn 0.1s ease;
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
     background: white;
     position: absolute;
     top: 0;

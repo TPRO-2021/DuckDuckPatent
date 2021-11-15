@@ -38,7 +38,6 @@ export default defineComponent({
     justify-content: space-between;
     gap: 10px;
     align-items: center;
-    justify-content: flex-start;
     background: #000000;
     border-radius: 90px;
     border: none;

@@ -111,8 +111,6 @@ import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import Button from '@/components/Button.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
-
-import { Patent } from '@/models/Patent';
 import DocumentService from '@/services/document.service';
 import { DocumentInformation } from '@/models/DocumentInformation';
 import Chip from '@/components/Chip.vue';
@@ -151,7 +149,7 @@ export default defineComponent({
         return {
             documents: null as DocumentInformation[] | null,
             documentService: new DocumentService(),
-            explorationAvailable: false,
+            familyAvailable: false,
             index: 0,
             isSubMenuOpen: false,
             pageDisplay: '',
@@ -177,7 +175,13 @@ export default defineComponent({
     created() {
         this.loadFamily();
     },
+    unmounted() {
+        this.$store.commit('HIDE_DIALOG_MASK');
+    },
     computed: {
+        explorationAvailable() {
+            return this.familyAvailable || (this.extendedPatent || ({} as ExtendedPatent))?.patent.citations.length > 0;
+        },
         isSaved(): boolean {
             return (this.$store.state.savedPatents || {})[this.extendedPatent?.patent?.id];
         },
@@ -187,6 +191,7 @@ export default defineComponent({
          * Handles closing of the preview and also resets the "state" values
          */
         handleClose(): void {
+            this.familyAvailable = false;
             this.patentAvailable = false;
             this.documents = null;
             this.noDocuments = false;
@@ -198,12 +203,14 @@ export default defineComponent({
         },
         showPatentPage(): void {
             const patent = this.extendedPatent as ExtendedPatent;
-            //TODO: Save current state in vuex store
             this.$store.commit('STORE_PATENT', patent);
-            this.$router.push({
+
+            const route = this.$router.resolve({
                 path: '/patent',
                 query: { patentId: patent.patent.id, searchTerms: patent.searchTerms },
             });
+
+            window.open(route.href, '_blank');
             this.$store.commit('HIDE_DIALOG_MASK');
         },
         /**
@@ -278,10 +285,10 @@ export default defineComponent({
                 const family = await this.patentService.queryFamily(extPatent.patent.id);
 
                 this.$store.commit('STORE_FAMILY', { patentId: extPatent.patent.id, family });
-                this.explorationAvailable = true;
+                this.familyAvailable = true;
             } catch (err) {
                 console.error(err);
-                this.explorationAvailable = false;
+                this.familyAvailable = false;
             }
 
             this.$store.commit('HIDE_LOADING_BAR');
@@ -290,16 +297,18 @@ export default defineComponent({
         /**
          * Opens the exploration page
          */
-        openExploration() {
+        async openExploration() {
             const patent = this.extendedPatent as ExtendedPatent;
 
             //TODO: Save current state in vuex store
             this.$store.commit('STORE_PATENT', patent);
 
-            this.$router.push({
+            await this.$router.push({
                 path: '/explore',
                 query: { patentId: patent.patent.id, searchTerms: patent.searchTerms },
             });
+
+            this.handleClose();
             this.$store.commit('HIDE_DIALOG_MASK');
         },
     },

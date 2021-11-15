@@ -75,6 +75,13 @@ export default defineComponent({
             return JSON.parse(atob(previous));
         },
     },
+    mounted() {
+        // adds the loading screen for 0.5s
+        this.$store.commit('SHOW_LOADING_SCREEN');
+        setTimeout(() => {
+            this.$store.commit('HIDE_LOADING_SCREEN');
+        }, 500);
+    },
     methods: {
         /**
          * Attempts to take the user back to the previous page
@@ -86,12 +93,7 @@ export default defineComponent({
                 return;
             }
 
-            // if (this.previousPage) {
-            //     return;
-            // }
-
             this.$router.back();
-            // this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
         },
 
         /**

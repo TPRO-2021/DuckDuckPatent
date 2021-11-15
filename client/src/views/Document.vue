@@ -47,9 +47,10 @@ export default defineComponent({
         this.page = Number(this.$route.query.page || 1);
     },
     async mounted() {
-        this.$store.commit('showLoadingScreen');
-        await this.retrieveDocumentPage(this.page);
-        this.$store.commit('hideLoadingScreen');
+        this.$store.commit('SHOW_LOADING_SCREEN');
+        // in order to have a more consistent experience the loading screen should appear at least 1s
+        await Promise.all([this.retrieveDocumentPage(this.page), this.defaultLoadingTime()]);
+        this.$store.commit('HIDE_LOADING_SCREEN');
     },
     methods: {
         async retrieveDocumentPage(page: number) {
@@ -94,6 +95,15 @@ export default defineComponent({
             }
 
             await this.retrieveDocumentPage(this.page);
+        },
+
+        /**
+         * Returns a promise that should be fulfilled after 1s
+         */
+        async defaultLoadingTime() {
+            return new Promise((res) => {
+                setTimeout(() => res(1), 1000);
+            });
         },
     },
 });
