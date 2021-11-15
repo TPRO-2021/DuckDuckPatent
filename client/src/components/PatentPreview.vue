@@ -9,7 +9,7 @@
         position="bottomleft"
     >
         <!-- Menu Buttons for interacting with the patent -->
-        <div class="settings-container no-select">
+        <div class="settings-container no-select" v-if="dataAvailable">
             <div class="settings-btn">
                 <RoundButton class="round-btn" icon-key="more_horiz" @click="settingsMenu = !settingsMenu" />
             </div>
@@ -19,16 +19,31 @@
             </div>
         </div>
         <template #header>
-            <div>
+            <div v-if="!dataAvailable" class="placeholder-container">
+                <Skeleton height="18px" width="90%"></Skeleton>
+                <Skeleton height="18px" width="30%"></Skeleton>
+                <Skeleton height="14px" width="20%" style="margin-top: 10px"></Skeleton>
+            </div>
+            <div v-if="dataAvailable">
                 <div class="patent-title">{{ current.title }}</div>
 
                 <div class="patent-owner">{{ current.subTitle }}</div>
             </div>
         </template>
-        <div class="patent-abstract">
+
+        <div class="patent-abstract" v-if="dataAvailable">
             <p :class="settingsMenu ? 'open-menu' : ''">{{ current.mainText }}</p>
         </div>
-        <div class="patent-navigation no-select">
+        <!-- Show placeholder when loading -->
+        <div class="patent-abstract placeholder-container" v-if="!dataAvailable">
+            <Skeleton width="100%" height="14px"></Skeleton>
+            <Skeleton width="100%" height="14px"></Skeleton>
+            <Skeleton width="100%" height="14px"></Skeleton>
+            <Skeleton width="100%" height="14px"></Skeleton>
+            <Skeleton width="100%" height="14px"></Skeleton>
+            <Skeleton width="80%" height="14px"></Skeleton>
+        </div>
+        <div class="patent-navigation no-select" v-if="!isAsyncResource">
             <!-- Navigation buttons -->
             <span class="material-icons search-icon" @click="displayPreviousPatent()">arrow_back</span>
             <span class="material-icons search-icon" @click="displayNextPatent()">arrow_forward</span>
@@ -47,8 +62,16 @@ export default defineComponent({
     name: 'PatentPreview',
     components: { RoundButton },
     props: {
-        current: { type: Object },
-        terms: { type: Array },
+        current: {
+            type: Object,
+        },
+        terms: {
+            type: Array,
+        },
+        isAsyncResource: {
+            type: Boolean,
+            default: false,
+        },
     },
     emits: {
         onChangePatent: (event: { direction: string }) => event,
@@ -68,6 +91,11 @@ export default defineComponent({
             ],
             previewAvailable: true,
         };
+    },
+    computed: {
+        dataAvailable(): boolean {
+            return this.isAsyncResource ? !!this.current : true;
+        },
     },
     watch: {
         current() {
@@ -242,5 +270,12 @@ export default defineComponent({
 }
 .open-menu {
     opacity: 0.5;
+}
+
+.placeholder-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 </style>

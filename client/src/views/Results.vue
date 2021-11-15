@@ -67,6 +67,15 @@
                 v-on:on-save-patent="onSavePatent($event)"
                 v-on:on-show-more="onShowMore($event)"
             />
+            <PatentPreviewComponent
+                v-if="citationSelected"
+                :current="currentCitation"
+                :terms="terms"
+                :is-async-resource="true"
+                v-on:on-change-patent="onChangeNode($event, allPatentIds, 'patent')"
+                v-on:on-save-patent="onSavePatent($event)"
+                v-on:on-show-more="onShowMore($event)"
+            />
             <NodePreviewComponent
                 v-if="currentNodePreview"
                 :current="currentNodePreview"
@@ -120,6 +129,8 @@ export default defineComponent({
     },
     data() {
         return {
+            citationSelected: false,
+            currentCitation: null as PatentPreview | null,
             debounceHandler: null as number | null,
             detailedPatent: null as ExtendedPatent | null,
             inputFieldWaiting: false,
@@ -189,7 +200,9 @@ export default defineComponent({
             if (this.selectedNode == null || this.selectedNode.type !== 'patent') {
                 return null;
             }
+
             const patent = this.patents.find((t) => t.id === this.selectedNode?.id);
+
             if (patent == undefined) {
                 return null;
             }
@@ -201,8 +214,6 @@ export default defineComponent({
          */
         currentNodePreview(): NodePreview | null {
             switch (this.selectedNode?.type) {
-                case 'citation':
-                    return PreviewHelperService.getCitationPreview(this.selectedNode, this.$store.state.patents);
                 case 'author':
                     return PreviewHelperService.getAuthorPreview(this.selectedNode, this.$store.state.patents);
                 case 'company':
@@ -349,7 +360,13 @@ export default defineComponent({
          * @param e
          */
         onNodeSelected(e: { node: NodeInfo }) {
+            this.citationSelected = false;
             this.selectedNode = e.node;
+
+            if (e.node.type === 'citation') {
+                this.citationSelected = true;
+                this.loadCitation(e.node);
+            }
         },
 
         /**
@@ -357,6 +374,7 @@ export default defineComponent({
          */
         onClearNodeSelected() {
             this.selectedNode = null;
+            this.citationSelected = false;
         },
 
         /**
@@ -389,6 +407,7 @@ export default defineComponent({
          * Handle selecting a patent
          */
         selectPatent(event: { id: string }) {
+            this.citationSelected = false;
             this.selectedNode = { id: event.id, type: 'patent' };
         },
         /**
@@ -418,11 +437,17 @@ export default defineComponent({
          * @param event
          */
         onShowMore(event: { id: string; searchTerms: string[] }) {
-            const patent = this.patents.find((t) => t.id === event.id);
-            this.$store.commit('HIGHLIGHT_NODE_OFF');
+            let patent = this.patents.find((t) => t.id === event.id);
 
+            if (!patent) {
+                patent = this.$store.state.extendedPatents[event.id].patent;
+            }
+
+            this.$store.commit('HIGHLIGHT_NODE_OFF');
             this.$store.commit('SHOW_DIALOG_MASK');
+
             this.detailedPatent = { patent, searchTerms: event.searchTerms } as ExtendedPatent;
+
             //set mark twice on viewed node
             this.$store.commit('ADD_MARK', { pID: this.detailedPatent?.patent.id, twice: true });
             // highlight node
@@ -546,6 +571,24 @@ export default defineComponent({
                 id: collection[indexNode],
                 type,
             };
+        },
+
+        /**
+         * Loads a citation and sets the current citation reference to it
+         * @param node
+         */
+        async loadCitation(node: { id: string }) {
+            this.currentCitation = null;
+            try {
+                const patent = await this.patentService.get(node.id);
+
+                this.$store.commit('STORE_PATENT', { patent, terms: [] });
+                this.currentCitation = PreviewHelperService.getPatentPreview(patent, this.$store.state.savedPatents);
+            } catch (err) {
+                this.currentCitation = null;
+                this.citationSelected = false;
+                throw err;
+            }
         },
     },
 });
