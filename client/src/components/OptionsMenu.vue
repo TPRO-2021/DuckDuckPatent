@@ -24,7 +24,7 @@
                 :key="node.type"
                 @click="onClicked(!isOptionOn(node.type), node.type)"
             >
-                <label :for="`toggle-switch-${node.type}`">{{ node.type }}</label>
+                <label :for="`toggle-switch-${node.type}`">{{ getOptionName(node.type) }}</label>
                 <div class="nodes-toggle">
                     <ToggleSwitch
                         :id="`toggle-switch-${node.type}`"
@@ -113,6 +113,21 @@ export default defineComponent({
                 this.$emit('addNode', nodeType);
             } else {
                 this.$emit('removeNode', nodeType);
+            }
+        },
+
+        /**
+         * Gets the name for the options menu from the type
+         * @param type
+         */
+        getOptionName(type: string): string {
+            switch (type) {
+                case 'authors':
+                    return 'inventors';
+                case 'companies':
+                    return 'applicants';
+                default:
+                    return type;
             }
         },
     },
