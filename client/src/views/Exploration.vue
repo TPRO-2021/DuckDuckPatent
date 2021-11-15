@@ -172,6 +172,7 @@
             $store.commit('HIDE_DIALOG_MASK');
         "
         :show-explore-btn="showExplorationButton"
+        v-on:on-save-patent-detailed="onSave"
     />
 </template>
 
@@ -469,6 +470,14 @@ export default defineComponent({
                         .catch(() => res(null));
                 });
             });
+        },
+
+        /**
+         * Saves a patent to the vuex store
+         * @param event
+         */
+        onSave(event: { patent: ExtendedPatent }) {
+            this.$store.commit('ADD_SAVED_PATENT', event.patent);
         },
     },
 });

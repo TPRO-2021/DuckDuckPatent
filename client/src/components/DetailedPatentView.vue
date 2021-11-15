@@ -175,6 +175,9 @@ export default defineComponent({
     created() {
         this.loadFamily();
     },
+    unmounted() {
+        this.$store.commit('HIDE_DIALOG_MASK');
+    },
     computed: {
         explorationAvailable() {
             return this.familyAvailable || (this.extendedPatent || ({} as ExtendedPatent))?.patent.citations.length > 0;
@@ -200,12 +203,14 @@ export default defineComponent({
         },
         showPatentPage(): void {
             const patent = this.extendedPatent as ExtendedPatent;
-            //TODO: Save current state in vuex store
             this.$store.commit('STORE_PATENT', patent);
-            this.$router.push({
+
+            const route = this.$router.resolve({
                 path: '/patent',
                 query: { patentId: patent.patent.id, searchTerms: patent.searchTerms },
             });
+
+            window.open(route.href, '_blank');
             this.$store.commit('HIDE_DIALOG_MASK');
         },
         /**
