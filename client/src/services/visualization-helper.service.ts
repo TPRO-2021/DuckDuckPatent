@@ -28,7 +28,7 @@ export default class VisualizationHelperService {
                 id: patent.id,
                 patent,
                 type: 'patent',
-                size: this.patentSize(patent.id), //TODO: to be adjusted for all with incoming arrows
+                size: this.patentSize(patent.id),
             })) as VisualPatentNode[];
         }
 
