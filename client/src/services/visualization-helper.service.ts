@@ -97,7 +97,7 @@ export default class VisualizationHelperService {
             const familyNodes = Object.keys(familyMap)
                 .filter((t) => familyMap[t].length > 1)
                 .map((id) => {
-                    const patentsInFamily = familyMap[id]; //array containing what exactly?
+                    const patentsInFamily = familyMap[id];
                     return {
                         id, // Set the id to be the family Id
                         patent: patentMap[patentsInFamily[0]], // used for tooltip ect. - this should change
