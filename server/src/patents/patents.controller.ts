@@ -16,9 +16,9 @@ export class PatentsController {
     @Get('')
     async query(@Query() query: PatentSearchQuery, @Response() res: Res): Promise<Res<any, Record<string, Patent>>> {
         let { keywords, date = '' } = query;
-        const { page = '0', language = 'en', country = '' } = query;
+        const { page = '0', language = 'en', country = '', inventor, applicant } = query;
 
-        if (!keywords) {
+        if (!keywords && !applicant && !inventor) {
             throw new BadRequestException('At least one keyword needs to be specified');
         }
 
@@ -37,6 +37,8 @@ export class PatentsController {
             language,
             country.toUpperCase(),
             date,
+            inventor,
+            applicant,
         );
 
         // set the X-Total-Count header on the response

@@ -21,7 +21,7 @@ export default createStore({
          * Sets the loading screen to visible
          * @param state
          */
-        showLoadingScreen(state) {
+        SHOW_LOADING_SCREEN(state) {
             state.showLoadingScreen = true;
         },
 
@@ -29,7 +29,7 @@ export default createStore({
          * Hides the loading screen
          * @param state
          */
-        hideLoadingScreen(state) {
+        HIDE_LOADING_SCREEN(state) {
             state.showLoadingScreen = false;
         },
         /**
@@ -331,6 +331,15 @@ export default createStore({
          */
         STORE_FAMILY(state, info: { patentId: string; family: Patent[] }) {
             state.patentFamilies[info.patentId] = info.family;
+        },
+
+        /**
+         * Clears all items from the saved patents map
+         * @param state
+         * @constructor
+         */
+        CLEAR_SAVED_ITEMS(state) {
+            state.savedPatents = {};
         },
     },
 

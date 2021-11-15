@@ -268,4 +268,6 @@ export interface PatentSearchQuery {
     language: string;
     country: string;
     date: string;
+    applicant?: string;
+    inventor?: string;
 }

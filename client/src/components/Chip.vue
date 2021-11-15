@@ -1,5 +1,5 @@
 <template>
-    <div class="chip" :class="{ 'chip-suggestion': isSuggestion, 'box-shadow': hasShadow }">
+    <div class="chip" :style="chipColor" :class="{ 'chip-suggestion': isSuggestion, 'box-shadow': hasShadow }">
         <span class="chip-text no-select">{{ text }}</span>
         <span class="chip-icon material-icons no-select" @click="$emit('onSelect')" v-if="hasAction">{{
             iconKey || 'add_circle'
@@ -36,8 +36,25 @@ export default defineComponent({
             type: Boolean,
             default: true,
         },
+        customColor: {
+            type: String,
+        },
     },
     emits: ['onSelect'],
+    computed: {
+        chipColor(): string {
+            let color;
+            if (this.customColor) {
+                color = this.customColor;
+            } else if (this.isSuggestion) {
+                color = '#5b9761';
+            } else {
+                color = '#000000';
+            }
+
+            return 'background: '.concat(color).concat(';');
+        },
+    },
 });
 </script>
 
@@ -49,17 +66,12 @@ export default defineComponent({
     justify-content: space-between;
     gap: 10px;
     align-items: center;
-    background: #000000;
     border-radius: 90px;
     border: none;
     min-height: 26px;
     width: fit-content;
     padding: 2px 12px 2px 12px;
     margin: 5px 5px;
-}
-
-.chip-suggestion {
-    background: #5b9761;
 }
 
 .chip-icon {

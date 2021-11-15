@@ -1,19 +1,34 @@
 <template>
     <div class="saved-page">
-        <div class="saved-controls">
+        <div class="page-controls">
             <RoundButton class="back-btn" icon-key="reply" @click="goBack"></RoundButton>
             <Button class="saved-btn" iconKey="bookmark" :btnText="btnText">Saved</Button>
         </div>
         <div class="saved-list">
-            <savedPatent
-                v-for="(savedPatent, index) in savedPatents"
-                :key="index"
-                :savedPatentTitle="savedPatent.patent.title"
-                :savedPatentAbstract="savedPatent.patent.abstract"
-                @click="onSelectPatent(savedPatent)"
-                v-on:on-remove="this.removeFromSaved(savedPatent.patent)"
-                v-on:on-close="this.selectedPatent = null"
-            />
+            <div class="saved-patents-container card box-shadow">
+                <div v-if="Object.keys(savedPatents).length === 0" class="empty-placeholder">No saved patents yet!</div>
+                <div class="saved-patents">
+                    <savedPatent
+                        class="patent-container"
+                        v-for="(savedPatent, index) in savedPatents"
+                        :key="index"
+                        :savedPatentTitle="savedPatent.patent.title"
+                        :savedPatentAbstract="savedPatent.patent.abstract"
+                        @click="onSelectPatent(savedPatent)"
+                        v-on:on-remove="this.removeFromSaved(savedPatent.patent)"
+                        v-on:on-close="this.selectedPatent = null"
+                    />
+                    <div class="card box-shadow patent-container"></div>
+                </div>
+
+                <div class="bottom-controls" v-if="Object.keys(savedPatents).length > 0">
+                    <ChipButton
+                        text="Clear saved items"
+                        icon-key="delete_forever"
+                        v-on:on-select="$store.commit('CLEAR_SAVED_ITEMS')"
+                    ></ChipButton>
+                </div>
+            </div>
         </div>
 
         <DetailedPatentView
@@ -37,14 +52,16 @@ import { Patent } from '@/models/Patent';
 import DetailedPatentView from '@/components/DetailedPatentView.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
 import { RouteLocationNormalized } from 'vue-router';
+import ChipButton from '@/components/ChipButton.vue';
 
 export default defineComponent({
     name: 'SavedResult',
     components: {
+        Button,
+        ChipButton,
+        DetailedPatentView,
         RoundButton,
         savedPatent,
-        Button,
-        DetailedPatentView,
     },
     data() {
         return {
@@ -75,6 +92,13 @@ export default defineComponent({
             return JSON.parse(atob(previous));
         },
     },
+    mounted() {
+        // adds the loading screen for 0.5s
+        this.$store.commit('SHOW_LOADING_SCREEN');
+        setTimeout(() => {
+            this.$store.commit('HIDE_LOADING_SCREEN');
+        }, 500);
+    },
     methods: {
         /**
          * Attempts to take the user back to the previous page
@@ -86,12 +110,7 @@ export default defineComponent({
                 return;
             }
 
-            // if (this.previousPage) {
-            //     return;
-            // }
-
             this.$router.back();
-            // this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
         },
 
         /**
@@ -126,17 +145,19 @@ export default defineComponent({
 <style lang="scss" scoped>
 .saved-page {
     height: 100vh;
-    width: 100%;
+    width: 100vw;
+    overflow: hidden;
 }
 
-.saved-controls {
-    position: sticky;
+.page-controls {
+    position: fixed;
     top: 0;
     left: 0;
-    width: 500px;
     display: flex;
     gap: 20px;
-    padding: 20px;
+    margin: 20px;
+    height: 40px;
+    z-index: 100;
 }
 
 .saved-btn {
@@ -146,13 +167,55 @@ export default defineComponent({
     width: 40px;
 }
 .saved-list {
-    padding-left: 20px;
-    gap: 65px;
-    flex-grow: 5;
     display: flex;
-    justify-content: left;
-    flex-direction: row;
     flex-wrap: wrap;
-    padding-bottom: 65px;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.saved-patents-container {
+    margin-top: 106px;
+    margin-bottom: 28px;
+    width: 90vw;
+    min-height: 15vh;
+    max-height: 94vh;
+    overflow: scroll;
+}
+
+.saved-patents {
+    display: flex;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+}
+
+.patent-container {
+    flex-grow: 1;
+    width: 500px;
+    height: 325px;
+    max-height: 400px;
+}
+
+.patent-container:last-child {
+    flex-grow: 7;
+    visibility: hidden;
+    height: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.bottom-controls {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.empty-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 </style>
