@@ -16,61 +16,6 @@
                     -->
                     <path d="M0,0V 4L6,2Z" style="fill: black"></path>
                 </marker>
-                <!-- Types of checkmarks for patents -->
-                <pattern id="markOnce" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    <image
-                        xlink:href="../assets/singleTick.svg"
-                        style="fill-opacity: 0.5"
-                        stroke="black"
-                        x="-7"
-                        y="-7"
-                    ></image>
-                </pattern>
-                <pattern id="markOnceM" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    <image
-                        xlink:href="../assets/singleTickM.svg"
-                        style="fill-opacity: 0.5"
-                        stroke="black"
-                        x="0"
-                        y="-2"
-                    ></image>
-                </pattern>
-                <pattern id="markOnceL" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    <image
-                        xlink:href="../assets/singleTickL.svg"
-                        style="fill-opacity: 0.5"
-                        stroke="black"
-                        x="-5"
-                        y="-7"
-                    ></image>
-                </pattern>
-                <pattern id="markTwice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    <image
-                        xlink:href="../assets/doubleTick.svg"
-                        style="fill-opacity: 0.5"
-                        stroke="black"
-                        x="-7"
-                        y="-7"
-                    ></image>
-                </pattern>
-                <pattern id="markTwiceM" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    <image
-                        xlink:href="../assets/doubleTickM.svg"
-                        style="fill-opacity: 0.5"
-                        stroke="black"
-                        x="-1"
-                        y="-4"
-                    ></image>
-                </pattern>
-                <pattern id="markTwiceL" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    <image
-                        xlink:href="../assets/doubleTickL.svg"
-                        style="fill-opacity: 0.5"
-                        stroke="black"
-                        x="-6"
-                        y="-8"
-                    ></image>
-                </pattern>
             </defs>
         </svg>
         <div class="tooltip card box-shadow no-select">{{ tooltipOnNodes }}</div>
@@ -305,7 +250,7 @@ export default defineComponent({
                 .enter()
                 .append('svg:marker')
                 .attr('id', 'large')
-                .attr('refX', 19)
+                .attr('refX', 23)
                 .attr('refY', 2)
                 .attr('markerWidth', 8)
                 .attr('markerHeight', 8)
@@ -371,10 +316,7 @@ export default defineComponent({
                 .data(this.graph.nodes)
                 .enter()
                 .append('circle')
-                .attr('r', (d) =>
-                    // patent size is not given in advance like for others
-                    d.type === 'patent' ? (d.size = VisualizationHelperService.patentSize(d.id)) : d.size,
-                )
+                .attr('r', (d) => d.size)
                 .attr('class', (d: VisualPatentNode) => d.type)
                 .call(
                     drag<SVGCircleElement, VisualPatentNode>()
@@ -446,6 +388,9 @@ export default defineComponent({
                 authorsMap,
                 companyMap,
             );
+
+            const updatePatentSizes = this.graph.nodes.filter((n) => n.type === 'patent');
+            updatePatentSizes.forEach((n) => (n.size = VisualizationHelperService.patentSize(n.id)));
         },
 
         /**
@@ -831,35 +776,13 @@ circle.selected {
 }
 
 circle.markedOnce {
-    fill: url(#markOnce);
-    stroke: rgb(168, 133, 41);
-    stroke-width: 6px;
-}
-circle.markedOnceM {
-    fill: url(#markOnceM);
-    stroke: rgb(168, 133, 41);
-    stroke-width: 6px;
-}
-circle.markedOnceL {
-    fill: url(#markOnceL);
-    stroke: rgb(168, 133, 41);
-    stroke-width: 6px;
+    stroke: rgb(106, 83, 0);
+    stroke-width: 8px;
 }
 
 circle.markedTwice {
-    fill: url(#markTwice);
-    stroke: rgb(168, 133, 41);
-    stroke-width: 6px;
-}
-circle.markedTwiceM {
-    fill: url(#markTwiceM);
-    stroke: rgb(168, 133, 41);
-    stroke-width: 6px;
-}
-
-circle.markedTwiceL {
-    fill: url(#markTwiceL);
-    stroke: rgb(168, 133, 41);
-    stroke-width: 6px;
+    fill: rgb(106, 83, 0);
+    stroke: rgb(106, 83, 0);
+    stroke-width: 3px;
 }
 </style>

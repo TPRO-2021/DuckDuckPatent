@@ -5,7 +5,7 @@ import { VisualizationOptions } from '@/models/VisualizationOptions';
 import { RelationMap } from '@/models/RelationMap';
 
 export default class VisualizationHelperService {
-    static linkDataset: { source: string; target: string }[]; // contains the list of patents and their sources. Set in getLinks method. TODO: check if to be changed
+    static linkDataset: { source: string; target: string }[]; // contains the list of patents and their sources. Set in getLinks method.
     /**
      * Processes the passed patents and returns them as nodes for D3 to display them.
      * A SimulationNodeDatum needs a unique identifier which we can provide by using the
@@ -364,14 +364,11 @@ export default class VisualizationHelperService {
      */
     static patentSize(id: string): number {
         if (!this.linkDataset) {
-            return 15;
+            return 10;
         }
 
-        let count = this.linkDataset.filter((e) => e.target === id).length;
-        if (count < 3) count = 15;
-        else if (count <= 5) count = 20;
-        else count = 25;
-        return count;
+        const count = this.linkDataset.filter((e) => e.target === id).length;
+        return count * 2 + 10;
     }
     /**
      * Assigns a checkmark class based on patent size
@@ -383,9 +380,7 @@ export default class VisualizationHelperService {
     ): void {
         marked.forEach((e: string) => {
             const target = graph.filter((d: VisualPatentNode) => d.id === e);
-            target.filter((d: VisualPatentNode) => d.size > 20).classed(checkmarkType + 'L', true);
-            target.filter((d: VisualPatentNode) => d.size === 20).classed(checkmarkType + 'M', true);
-            target.filter((d: VisualPatentNode) => d.size < 20).classed(checkmarkType, true);
+            target.classed(checkmarkType, true);
         });
     }
 
