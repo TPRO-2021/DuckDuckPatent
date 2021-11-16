@@ -77,6 +77,9 @@ import Chip from '@/components/Chip.vue';
 import ExplorationHelperService from '@/services/exploration-helper.service';
 import ChipButton from '@/components/ChipButton.vue';
 
+/**
+ * View which is responsible for displaying the /about page for DuckDuckPatent
+ */
 export default defineComponent({
     name: 'About.vue',
     components: {
