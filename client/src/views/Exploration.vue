@@ -499,10 +499,6 @@ export default defineComponent({
     z-index: 100;
 }
 
-.divider-label {
-    font-family: 'Saira', sans-serif;
-}
-
 .back-btn {
     height: 40px;
     width: 40px;

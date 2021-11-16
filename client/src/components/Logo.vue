@@ -16,4 +16,10 @@ export default defineComponent({
     top: -50px;
     height: 110px;
 }
+
+@media screen and (max-width: 650px) {
+    .logo {
+        height: 90px;
+    }
+}
 </style>

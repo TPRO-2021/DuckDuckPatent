@@ -1,8 +1,8 @@
 <template>
-    <div class="container logo-container">
+    <div class="container logo-container no-select">
         <Logo class="logo" />
     </div>
-    <div class="container searchbar-container">
+    <div class="container searchbar-container no-select">
         <Searchbar
             v-on:on-add-keyword="onAddKeyword($event)"
             v-on:on-remove-keyword="onRemoveKeyword($event)"
@@ -11,6 +11,13 @@
         />
 
         <KeywordSuggestions :provided-keywords="suggestedTerms" v-on:on-add-keyword="onAddKeyword"></KeywordSuggestions>
+    </div>
+    <div class="about-section">
+        <a class="gh-logo" href="https://github.com/TPRO-2021/DuckDuckPatent" target="_blank"
+            ><img src="../assets/github-icon.png" alt="Github"
+        /></a>
+        <div class="separator">|</div>
+        <a class="about-link" href="/about">About</a>
     </div>
 </template>
 
@@ -36,6 +43,12 @@ export default defineComponent({
     created(): void {
         this.$store.commit('HIDE_LOADING_BAR');
         this.$store.dispatch('resetSavedState');
+
+        // adds the loading screen for 0.5s
+        this.$store.commit('SHOW_LOADING_SCREEN');
+        setTimeout(() => {
+            this.$store.commit('HIDE_LOADING_SCREEN');
+        }, 800);
     },
     computed: {
         searchTerms(): string[] {
@@ -78,6 +91,9 @@ export default defineComponent({
             this.$store.commit('HIDE_LOADING_BAR');
         },
 
+        /**
+         * On search handler which triggers the search for patents with the current keywords
+         */
         onSearch() {
             this.$store.commit('SHOW_LOADING_SCREEN');
             this.$router.push({ path: 'search', query: { terms: this.searchTerms } });
@@ -94,6 +110,7 @@ export default defineComponent({
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 .logo-container {
@@ -112,8 +129,59 @@ export default defineComponent({
     justify-content: flex-start;
     bottom: 0;
 
+    padding: 20px;
+
     div {
-        width: 600px;
+        max-width: 600px;
+    }
+}
+
+.about-section {
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    width: 100vw;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+}
+
+.gh-logo {
+    height: 1.6rem;
+    margin: 0.5rem;
+    img {
+        height: 100%;
+    }
+}
+
+.about-link {
+    text-decoration: none;
+    color: unset;
+}
+
+.gh-logo,
+.separator,
+.about-link {
+    opacity: 50%;
+}
+
+.gh-logo:hover,
+.about-link:hover {
+    opacity: 100%;
+    transition: all 1s ease;
+    cursor: pointer;
+}
+
+.separator,
+.about-link {
+    margin: 0.5rem;
+    font-size: 1.1rem;
+}
+
+@media screen and (max-width: 650px) {
+    .searchbar-container {
+        transform: translateY(-0px);
     }
 }
 </style>
