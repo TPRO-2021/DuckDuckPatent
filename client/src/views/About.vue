@@ -94,32 +94,33 @@ export default defineComponent({
         return {
             contributors: ExplorationHelperService.shuffle([
                 {
-                    name: 'Ion Cicala',
+                    name: 'icicala',
                     avatarUrl: 'https://avatars.githubusercontent.com/u/34209362?v=4',
                     ghProfile: 'https://github.com/icicala',
                 },
                 {
-                    name: 'Fiordi Doma',
+                    name: 'fiordidoma',
                     avatarUrl: 'https://avatars.githubusercontent.com/u/35006400?v=4',
                     ghProfile: 'https://github.com/fiordidoma',
                 },
                 {
-                    name: 'Micah DeVyldere',
-                    avatarUrl: 'https://avatars.githubusercontent.com/u/646155?v=4',
+                    name: 'micahh2',
+                    avatarUrl:
+                        'https://camo.githubusercontent.com/f43d4cf8180884493e328a1bdd38015088bfc07d81cf1972f5c7a1f99831190e/68747470733a2f2f312e67726176617461722e636f6d2f6176617461722f36633631313636366163323462366137396466656337643631383466333135623f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d6726733d3330',
                     ghProfile: 'https://github.com/micahh2',
                 },
                 {
-                    name: 'Samuel Hübner',
+                    name: 'samuelhuebner',
                     avatarUrl: 'https://avatars.githubusercontent.com/u/36863168?v=4',
                     ghProfile: 'https://github.com/samuelhuebner',
                 },
                 {
-                    name: 'Duaa Kelzi',
+                    name: 'duaakelzi',
                     avatarUrl: 'https://avatars.githubusercontent.com/u/73340604?v=4',
                     ghProfile: 'https://github.com/duaakelzi',
                 },
                 {
-                    name: 'Albina Muzafarova',
+                    name: 'AlbinaMuzafarova',
                     avatarUrl: 'https://avatars.githubusercontent.com/u/36408342?v=4',
                     ghProfile: 'https://github.com/AlbinaMuzafarova',
                 },
