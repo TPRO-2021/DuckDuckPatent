@@ -63,19 +63,16 @@ export default class VisualizationHelperService {
                 .filter((citationId) => !patentMap[citationId]) // Remove patent-node to patent-node citations (these nodes are already shown)
                 .filter((citationId) => {
                     // Default to only showing citations that are cited by multiple patents (for clarity)
-                    if (citationMap[citationId].length > 1) {
+                    // or show it if it has been selected
+                    if (citationMap[citationId].length > 1 || selectedNode?.id === citationId) {
                         return true;
                     }
                     // If none selected (and not multiple citaitons), don't show
                     if (selectedNode == null) {
                         return false;
                     }
-                    // If a node is selected, only show if connected to it
-                    let connectedPatents = [selectedNode.patent.id];
-                    if (selectedNode.type === 'citation') {
-                        connectedPatents = citationMap[selectedNode.id] || []; // TODO: citations should always have atleast one
-                    }
-                    return connectedPatents.some((t) => citationMap[citationId].includes(t));
+                    // If a patent is selected, only show if directly connected to it
+                    return selectedNode.type == 'patent' && citationMap[citationId].includes(selectedNode.patent.id);
                 })
                 .map((citationId) => {
                     const citingPatents = citationMap[citationId]; // With the citations of this patent
