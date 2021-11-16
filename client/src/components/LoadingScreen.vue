@@ -9,7 +9,8 @@
 import { defineComponent } from 'vue';
 
 /**
- * This component resembles the loading screen.
+ * This component contains the loading screen which can be shown by setting the
+ * state variable 'showLoadingScreen' to true
  */
 export default defineComponent({
     name: 'LoadingScreen',

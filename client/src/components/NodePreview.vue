@@ -14,7 +14,7 @@
                 <div class="node-preview-subtitle">{{ current.subTitle }}</div>
             </div>
         </template>
-        <!--            Previewing the Patent title and the patent number-->
+        <!-- Previewing the Patent title and the patent number -->
         <div class="node-preview-body">
             <div
                 v-for="rel in current.relatedPatents"
@@ -46,11 +46,14 @@ export default defineComponent({
     },
     data() {
         return {
-            showOptionsMenu: false,
             model: null as NodePreview | null,
+            showOptionsMenu: false,
         };
     },
     watch: {
+        /**
+         * Watches the input property. On change it should hide the options menu
+         */
         current() {
             this.showOptionsMenu = false;
         },

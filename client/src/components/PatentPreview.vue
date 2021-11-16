@@ -56,7 +56,7 @@ import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 
 /**
- * This component previews the content of a patent
+ * This component previews the content of a patent inside of a small modal using PrimeVue's Dialog component
  */
 export default defineComponent({
     name: 'PatentPreview',
@@ -81,7 +81,6 @@ export default defineComponent({
     data() {
         return {
             isCollapsed: true,
-            settingsMenu: false,
             /**
              * Holds the info about available buttons
              */
@@ -90,21 +89,28 @@ export default defineComponent({
                 { iconKey: 'read_more', action: this.showMore },
             ],
             previewAvailable: true,
+            settingsMenu: false,
         };
     },
     computed: {
+        /**
+         * Determines whether data is available or still loading
+         */
         dataAvailable(): boolean {
             return this.isAsyncResource ? !!this.current : true;
         },
     },
     watch: {
+        /**
+         * Watches the current patent. If it changes the components state should be reset
+         */
         current() {
             this.resetState();
         },
     },
     methods: {
         /**
-         * Method to check if next button is clicked then emit an event to ask the parent to send next patent
+         * Checks if next button is clicked then emit an event to ask the parent to send next patent
          */
         displayNextPatent(): void {
             this.$emit('onChangePatent', { direction: 'next' });
@@ -112,7 +118,7 @@ export default defineComponent({
         },
 
         /**
-         * Method to check if back button is clicked then emit an event to ask the parent to send previous patent
+         * Checks if back button is clicked then emit an event to ask the parent to send previous patent
          */
         displayPreviousPatent(): void {
             this.$emit('onChangePatent', { direction: 'previous' });
@@ -129,14 +135,7 @@ export default defineComponent({
         },
 
         /**
-         * Hides a patent from the results page
-         */
-        hidePatent(): void {
-            // TODO: Implement hide patent functionality
-        },
-
-        /**
-         * Display the DetailedPatentView on Click Show more
+         * Displays the DetailedPatentView on Click Show more
          */
         showMore(): void {
             const id = this.current?.id as string;

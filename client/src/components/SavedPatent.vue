@@ -14,6 +14,10 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { Patent } from '@/models/Patent';
+
+/**
+ * Component which shows a preview of a saved patent
+ */
 export default defineComponent({
     name: 'savedPatent',
     props: {
@@ -22,6 +26,9 @@ export default defineComponent({
     },
     emits: ['onRemove'],
     computed: {
+        /**
+         * Gets the patents from the state
+         */
         patents(): Patent[] {
             return this.$store.state.patents;
         },

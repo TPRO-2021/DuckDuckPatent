@@ -47,6 +47,9 @@ export default defineComponent({
     },
     emits: ['onClicked'],
     computed: {
+        /**
+         * Returns whether the badge should be displayed on the button
+         */
         hasBadge(): boolean {
             if (!this.badgeValue) {
                 return false;

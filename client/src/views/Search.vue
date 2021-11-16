@@ -1,7 +1,10 @@
 <template>
+    <!-- DuckDuckPatent's logo -->
     <div class="container logo-container no-select">
         <Logo class="logo" />
     </div>
+
+    <!-- Searchbar and keyword suggestions -->
     <div class="container searchbar-container no-select">
         <Searchbar
             v-on:on-add-keyword="onAddKeyword($event)"
@@ -12,6 +15,8 @@
 
         <KeywordSuggestions :provided-keywords="suggestedTerms" v-on:on-add-keyword="onAddKeyword"></KeywordSuggestions>
     </div>
+
+    <!-- Bottom links -->
     <div class="about-section">
         <a class="gh-logo" href="https://github.com/TPRO-2021/DuckDuckPatent" target="_blank"
             ><img src="../assets/github-icon.png" alt="Github"
@@ -28,6 +33,9 @@ import Searchbar from '@/components/Searchbar.vue';
 import Logo from '@/components/Logo.vue';
 import KeywordSuggestions from '@/components/KeywordSuggestions.vue';
 
+/**
+ * View which is responsible for displaying the landing page at '/'
+ */
 export default defineComponent({
     name: 'Search',
     components: {
@@ -41,13 +49,20 @@ export default defineComponent({
         };
     },
     created(): void {
+        // when created the loading bar should be hidden as well as resetting the saved state to clear filters, ...
         this.$store.commit('HIDE_LOADING_BAR');
         this.$store.dispatch('resetSavedState');
     },
     computed: {
+        /**
+         * Returns the search terms from the state
+         */
         searchTerms(): string[] {
             return this.$store.state.searchTerms;
         },
+        /**
+         * Returns the suggested terms from the state
+         */
         suggestedTerms(): string[] {
             return this.$store.state.suggestedTerms;
         },
@@ -86,7 +101,7 @@ export default defineComponent({
         },
 
         /**
-         * On search handler which triggers the search for patents with the current keywords
+         * Event handler which shows the loading screen and triggers the search by pushing the search terms to the url
          */
         onSearch() {
             this.$store.commit('SHOW_LOADING_SCREEN');

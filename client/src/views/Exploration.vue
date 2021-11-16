@@ -1,4 +1,5 @@
 <template>
+    <!-- Page controls (back-btn, navigation-btn, saved-btn -->
     <div class="page-controls">
         <RoundButton class="back-btn" icon-key="reply" @click="goBack"></RoundButton>
         <div class="column btn-exploration">
@@ -15,6 +16,7 @@
         </div>
     </div>
 
+    <!-- Exploration content -->
     <div class="explore-container">
         <div class="patent-information card box-shadow duckduckpatent">
             <!-- Patent information -->
@@ -164,6 +166,7 @@
         </div>
     </div>
 
+    <!-- Detailed patent card -->
     <DetailedPatentView
         :extended-patent="selectedPatent"
         :is-saved-page="false"
@@ -190,6 +193,9 @@ import PatentPlaceholder from '@/components/PatentPlaceholder.vue';
 import ChipButton from '@/components/ChipButton.vue';
 import ExplorationHelperService from '@/services/exploration-helper.service';
 
+/**
+ * View which is responsible for displaying the /exploration page for a selected patent
+ */
 export default defineComponent({
     name: 'Exploration',
     components: {
@@ -203,18 +209,26 @@ export default defineComponent({
     },
     data() {
         return {
+            applicants: [] as string[],
+            applicantSuggestions: [] as Patent[],
+            citations: [] as Patent[],
+            inventors: [] as string[],
+            inventorSuggestions: [] as Patent[],
             patentService: new PatentService(),
             selectedPatent: null as ExtendedPatent | null,
             selectedItemType: 'patent' as 'patent' | 'citation',
-            citations: [] as Patent[],
-            inventors: [] as string[],
-            applicants: [] as string[],
-            applicantSuggestions: [] as Patent[],
-            inventorSuggestions: [] as Patent[],
         };
     },
     watch: {
+        /**
+         * Watches for route changes and re-initializes the data to provide the ability
+         * of navigating through patents
+         *
+         * @param newVal The new route
+         */
         $route(newVal) {
+            // since this hook is only deregistered after the component was destroyed we need to prevent the reinitialization
+            // on other paths
             if (!(newVal.path === '/explore')) {
                 return;
             }
@@ -224,23 +238,41 @@ export default defineComponent({
         },
     },
     computed: {
+        /**
+         * Returns the id of the patent from the current query parameter 'patentId'
+         */
         patentId(): string {
             return (this.$route.query.patentId as string) || '';
         },
+        /**
+         * Returns the search terms from the state
+         */
         searchTerms(): string[] {
             return this.$store.state.searchTerms;
         },
+        /**
+         * Returns true if the loading placeholders should be shown based on the value of the patentId and the family
+         */
         loading(): boolean {
             if (!this.patentId) return true;
 
             return !this.family;
         },
+        /**
+         * Returns the family for the current patent from the store
+         */
         family(): Patent[] {
             return this.$store.state.patentFamilies[this.patentId];
         },
+        /**
+         * Returns the current patent from the store
+         */
         patent(): ExtendedPatent {
             return this.$store.state.extendedPatents[this.patentId];
         },
+        /**
+         * Returns the saved patents count as a string
+         */
         savedPatentsCount(): string {
             const items = Object.keys(this.$store.state.savedPatents).length;
             if (items === 0) {
@@ -249,18 +281,33 @@ export default defineComponent({
 
             return items.toString();
         },
+        /**
+         * Returns whether citations are available or not based on the length of the citations array reference
+         */
         citationsAvailable(): boolean {
             return this.citations.length > 0;
         },
+        /**
+         * Returns whether the exploration button should be shown or not
+         */
         showExplorationButton(): boolean {
             return this.selectedItemType === 'citation';
         },
+        /**
+         * Returns if the current patent is saved in the store
+         */
         isSaved(): boolean {
             return this.$store.state.savedPatents[this.patentId];
         },
+        /**
+         * Returns whether an applicant is available on the current patent
+         */
         applicantAvailable(): boolean {
             return this.applicantSuggestions.length > 0;
         },
+        /**
+         * Returns whether an inventor is available on the current patent
+         */
         inventorAvailable(): boolean {
             return this.inventorSuggestions.length > 0;
         },
@@ -272,9 +319,13 @@ export default defineComponent({
             this.$store.commit('HIDE_LOADING_SCREEN');
         }, 500);
 
+        // initialize view
         await this.initView();
     },
     methods: {
+        /**
+         * Attempts to go to the previous route
+         */
         goBack(): void {
             // if no search terms are present (after reload) go back to homepage
             this.$router.back();
@@ -311,6 +362,7 @@ export default defineComponent({
                 promises.push(this.loadFamily());
             }
 
+            // Citations and related (inventors and applicants) patents can be loaded in parallel to reduce loading time
             await Promise.all(promises.concat([this.loadCitations(), this.loadRelated()]));
 
             //  after all loading has finished hide the indicator
@@ -376,9 +428,9 @@ export default defineComponent({
         },
 
         /**
-         * Set a patent as the selected patent and mark it twice on preview
-         * @param patent
-         * @param type
+         * Event handler which sets a patent as the selected patent
+         * @param patent    The selected patent
+         * @param type      The type of the selected patent
          */
         onSelectPatent(patent: Patent, type = 'patent' as 'citation' | 'patent'): void {
             this.selectedItemType = type;
@@ -446,8 +498,8 @@ export default defineComponent({
 
         /**
          * Queries the backend for applicants and inventors
-         * @param queryList
-         * @param type
+         * @param queryList The list of patents which should be loaded
+         * @param type  The type of the patent-relation
          */
         queryRelatedPatents(queryList: string[], type: 'applicant' | 'inventor') {
             return queryList.map((related) => {
@@ -473,8 +525,8 @@ export default defineComponent({
         },
 
         /**
-         * Saves a patent to the vuex store
-         * @param event
+         * Event handler which saves a patent to the vuex store
+         * @param event The event containing the extended patent
          */
         onSave(event: { patent: ExtendedPatent }) {
             this.$store.commit('ADD_SAVED_PATENT', event.patent);

@@ -1,4 +1,5 @@
 <template>
+    <!-- The prime vue dialog -->
     <Dialog
         v-model:visible="patentAvailable"
         :close-on-escape="true"
@@ -29,11 +30,13 @@
                 <RoundButton class="round-btn" icon-key="open_in_new" @click="this.showPatentPage" />
             </div>
         </div>
+
+        <!-- patent title and first applicant -->
         <template #header>
             <div>
                 <div
                     class="patent-title"
-                    v-html="highlightTitle(this.extendedPatent.patent.title, this.extendedPatent.searchTerms)"
+                    v-html="highlightText(this.extendedPatent.patent.title, this.extendedPatent.searchTerms)"
                 ></div>
                 <div class="patent-owner">
                     <span v-for="(applicant, index) in extendedPatent.patent.applicants" :key="index">
@@ -44,12 +47,15 @@
                 </div>
             </div>
         </template>
+
+        <!-- Patent abstract -->
         <h3>Abstract</h3>
         <div
             class="patent-abstract"
-            v-html="highlightAbstract(this.extendedPatent.patent.abstract, this.extendedPatent.searchTerms)"
+            v-html="highlightText(this.extendedPatent.patent.abstract, this.extendedPatent.searchTerms)"
         ></div>
 
+        <!-- Patent info (inventors, applicants) -->
         <div class="patent-info">
             <div>
                 <h3>Inventors</h3>
@@ -65,10 +71,12 @@
             </div>
         </div>
 
+        <!-- Footer containing searched keywords, attachments and exploration button -->
         <template #footer>
             <!-- Divide the card in 3 column:First column hold the attachments second the keywords and last the exploration button -->
             <div class="footer-container">
                 <div class="patent-additional-info">
+                    <!-- Searched keywords -->
                     <div class="keywords">
                         <div class="label-keywords">Searched keywords:</div>
                         <span class="keyword-chips">
@@ -80,6 +88,7 @@
                             ></Chip>
                         </span>
                     </div>
+                    <!-- patents attachments -->
                     <div class="attachments" v-if="!noDocuments">
                         <div class="label-attachment">Attachments</div>
                         <div class="attachment-items" v-if="documents">
@@ -98,6 +107,7 @@
                         </div>
                     </div>
                 </div>
+                <!-- Exploration button -->
                 <div class="column btn-exploration" v-if="explorationAvailable && showExploreBtn">
                     <Button icon-key="travel_explore" btn-text="Start exploration" @click="openExploration" />
                 </div>
@@ -118,7 +128,14 @@ import Attachment from '@/components/Attachment.vue';
 import PatentService from '@/services/patent.service';
 
 /**
- * This component previews the content of a patent
+ * This component previews the content of a patent inside of a PrimeVue-Dialog overlay.
+ *
+ * Since it is displayed over other content it emits several events which can be used by the parent
+ * component:
+ *      - on-close (emitted when the dialog is closed)
+ *      - on-open-exploration (emitted when the exploration button is clicked)
+ *      - on-save-patent-detailed (emitted when the save-patent button is clicked)
+ *      - remove-from-saved (emitted when the patent is removed from the saved page)
  */
 export default defineComponent({
     name: 'DetailedPatentView',
@@ -152,16 +169,19 @@ export default defineComponent({
             familyAvailable: false,
             index: 0,
             isSubMenuOpen: false,
-            pageDisplay: '',
             noDocuments: false,
-            // Holds the submenu buttons
             optionButtons: [{ iconKey: 'bookmark', action: this.savePatent }],
+            pageDisplay: '',
             patentAvailable: false,
             patentService: new PatentService(),
             saved: true,
         };
     },
     watch: {
+        /**
+         * Watch the extendedPatent reference and load information when it changes
+         * @param newVal    The new value of the extended patent
+         */
         async extendedPatent(newVal: ExtendedPatent): Promise<void> {
             this.patentAvailable = !!newVal;
 
@@ -169,19 +189,29 @@ export default defineComponent({
                 return;
             }
 
+            // load documents and family for the patent
             await Promise.all([this.loadDocuments(), this.loadFamily()]);
         },
     },
     created() {
+        // load the patents family when the component is created
         this.loadFamily();
     },
     unmounted() {
+        // hide the dialog mask when the component is destroyed
         this.$store.commit('HIDE_DIALOG_MASK');
     },
     computed: {
+        /**
+         * Determines whether the exploration mode button should be displayed based on a family or citations
+         * being available
+         */
         explorationAvailable() {
             return this.familyAvailable || (this.extendedPatent || ({} as ExtendedPatent))?.patent.citations.length > 0;
         },
+        /**
+         * Determines whether the patent is saved
+         */
         isSaved(): boolean {
             return (this.$store.state.savedPatents || {})[this.extendedPatent?.patent?.id];
         },
@@ -197,10 +227,18 @@ export default defineComponent({
             this.noDocuments = false;
             this.$emit('onClose');
         },
+
+        /**
+         * Emits the save patent event and also closes the option menu
+         */
         savePatent(): void {
             this.$emit('onSavePatentDetailed', { patent: this.extendedPatent as ExtendedPatent });
             this.isSubMenuOpen = false;
         },
+
+        /**
+         * Opens the patent page for the current patent inside of a new tab
+         */
         showPatentPage(): void {
             const patent = this.extendedPatent as ExtendedPatent;
             this.$store.commit('STORE_PATENT', patent);
@@ -213,6 +251,7 @@ export default defineComponent({
             window.open(route.href, '_blank');
             this.$store.commit('HIDE_DIALOG_MASK');
         },
+
         /**
          * Closes the modal and emits the removeFromSave event
          */
@@ -221,25 +260,24 @@ export default defineComponent({
             this.$emit('removeFromSaved');
         },
 
-        highlightTitle(title: string, keywords: string[]) {
+        /**
+         * Highlights keywords in a provided text
+         * @param title The text which should be highlighted
+         * @param keywords  The keyword which should be highlighted
+         */
+        highlightText(title: string, keywords: string[]) {
             const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
             return title.replace(pattern, (match) => {
                 return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
             });
         },
 
-        highlightAbstract(abstract: string, keywords: string[]) {
-            const pattern = new RegExp(`(${keywords.join('|')})`, 'gi');
-            return abstract.replace(pattern, (match) => {
-                return '<mark style="background-color:rgba(245, 255, 129, 1)">' + match + '</mark>';
-            });
-        },
-
         /**
          * Opens the document view and passes the document as a query parameter
-         * @param document
+         * @param document  The document which should be opened
          */
         openDocument(document: DocumentInformation) {
+            // create a route reference
             const routeData = this.$router.resolve({
                 name: 'Document',
                 query: {
@@ -249,6 +287,7 @@ export default defineComponent({
                 },
             });
 
+            // opens the route in a new tab
             window.open(routeData.href, '_blank');
         },
 
@@ -256,14 +295,15 @@ export default defineComponent({
          * Loads the documents for the current patent
          */
         async loadDocuments() {
-            // if a new patent is available load the documents for it
             this.$store.commit('SHOW_LOADING_BAR');
+
             try {
                 this.documents = await this.documentService.query((this.extendedPatent as ExtendedPatent)?.patent?.id);
             } catch (err) {
                 this.noDocuments = true;
                 console.error(err);
             }
+
             this.$store.commit('HIDE_LOADING_BAR');
         },
 
@@ -295,12 +335,11 @@ export default defineComponent({
         },
 
         /**
-         * Opens the exploration page
+         * Opens the exploration page for a patent
          */
         async openExploration() {
             const patent = this.extendedPatent as ExtendedPatent;
 
-            //TODO: Save current state in vuex store
             this.$store.commit('STORE_PATENT', patent);
 
             await this.$router.push({

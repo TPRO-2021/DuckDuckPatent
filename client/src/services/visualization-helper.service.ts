@@ -5,11 +5,22 @@ import { VisualizationOptions } from '@/models/VisualizationOptions';
 import { RelationMap } from '@/models/RelationMap';
 import { VisualPatentLink } from '@/models/VisualPatentLink';
 
+/**
+ * Service which provides utility functions used by the visualization component
+ */
 export default class VisualizationHelperService {
     /**
      * Processes the passed patents and returns them as nodes for D3 to display them.
      * A SimulationNodeDatum needs a unique identifier which we can provide by using the
      * unique patent id
+     *
+     * @param patents       The patents array for which to create nodes
+     * @param citationMap   The citation map
+     * @param familyMap     The family map
+     * @param vizOptions    The options for the visualization
+     * @param selectedNode  The currently selected node
+     * @param authorsMap    The authors map
+     * @param companyMap    The company map
      */
     static getNodes(
         patents: Patent[],
@@ -110,6 +121,12 @@ export default class VisualizationHelperService {
 
     /**
      * Processes the passed patents and finds relations between them.
+     *
+     * @param nodes The nodes used for relation
+     * @param citationMap   The citation map
+     * @param familyMap The family map
+     * @param authorsMap    The authors map
+     * @param companyMap    The company map
      */
     static getLinks(
         nodes: VisualPatentNode[],
@@ -182,6 +199,8 @@ export default class VisualizationHelperService {
 
     /**
      * Create a key -> value map that allows for easy look up of all patents that have cited a specific citation
+     *
+     * @param patents   The patents for which to create the map
      */
     static getCitationMap(patents: Patent[]): { [id: string]: string[] } {
         return patents
@@ -219,8 +238,9 @@ export default class VisualizationHelperService {
 
     /**
      * Gets a map for creators of patents (inventors or applicants)
-     * @param patents
-     * @param path
+     *
+     * @param patents   The patents for which the map should be created
+     * @param path  The path of the data (either inventors or applicants)
      */
     static getCreatorMap(patents: Patent[], path: 'inventors' | 'applicants'): { [id: string]: string[] } {
         return patents
@@ -249,10 +269,11 @@ export default class VisualizationHelperService {
 
     /**
      * Gets links for creators (authors or company)
-     * @param nodes
-     * @param nodeMap
-     * @param nodeType
-     * @param relationMap
+     *
+     * @param nodes The nodes for which to get the creator links
+     * @param nodeMap   The map containing the nodes for fast access
+     * @param nodeType  The type of the node (author or company)
+     * @param relationMap   The map containing the relations
      */
     static getCreatorLinks(
         nodes: VisualPatentNode[],
@@ -276,12 +297,12 @@ export default class VisualizationHelperService {
 
     /**
      * Gets creator nodes (authors | company)
-     * @param stakeholders
-     * @param stakeholderMap
-     * @param selectedNode
-     * @param patentMap
-     * @param nodeColor
-     * @param stakeholderType
+     *
+     * @param stakeholders  The stakeholders array (author, company)
+     * @param stakeholderMap    The map containing the stakeholders for fast access
+     * @param selectedNode  The selected node
+     * @param patentMap The patent map for fast access
+     * @param stakeholderType   The type of stakeholder for which to get the nodes
      */
     static getCreatorNodes(
         stakeholders: string[],
@@ -324,6 +345,8 @@ export default class VisualizationHelperService {
 
     /**
      * Create a key -> value map that allows for easy look up of patents for given familyId
+     *
+     * @param patents   The patents for which to create the map
      */
     static getFamilyMap(patents: Patent[]): { [id: string]: string[] } {
         return patents.reduce((map: { [id: string]: string[] }, b: Patent) => {
@@ -338,6 +361,9 @@ export default class VisualizationHelperService {
 
     /**
      * Create a key -> value map that allows for easy look up of something for given Id
+     *
+     * @param items The items which should be combined into a map
+     * @param idKey The id of the key which should be used
      */
     static buildMap<T>(items: T[], idKey: keyof T): { [id: string]: T } {
         return items.reduce((map, b) => {

@@ -12,6 +12,10 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
+/**
+ * Placeholder component for a patent preview which shows a loading skeleton and can be used to indicate that a patent is currently
+ * being loaded
+ */
 export default defineComponent({
     name: 'PreviewPlaceholder.vue',
 });

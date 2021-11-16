@@ -4,11 +4,15 @@ import { PatentMap } from '@/models/PatentMap';
 import { PatentPreview } from '@/models/PatentPreview';
 import { NodePreview } from '@/models/NodePreview';
 
+/**
+ * Service which provides utility functions used to create patent preview items
+ */
 export default class PreviewHelperService {
     /**
-     * Helper to get the title, abstract for the patent preview on cliking on the node
-     * @param patent
-     * @param savedPatents
+     * Helper to get the title, abstract for the patent preview on clicking on the node
+     *
+     * @param patent    The patent for which to get the preview
+     * @param savedPatents  The patents which should be saved
      */
     static getPatentPreview(patent: Patent, savedPatents: PatentMap): PatentPreview {
         let author = (patent?.applicants ?? [])[0] ?? '';
@@ -30,10 +34,10 @@ export default class PreviewHelperService {
 
     /**
      * Helper to get the citation number and related patent for node preview
-     * @param node
-     * @param patents
+     *
+     * @param node  The node for which to get the preview
+     * @param patents   The patents array
      */
-
     static getCitationPreview(node: NodeInfo, patents: Patent[]): NodePreview {
         const citedPatents = patents.filter((t) => t?.citations?.some((t) => t.id === node?.id));
         return {
@@ -47,34 +51,28 @@ export default class PreviewHelperService {
 
     /**
      * Helper to get the author name and the invented patents for node preview
-     * @param node
-     * @param patents
+     *
+     * @param node  The node for which to get the preview
+     * @param patents   The patents array
+     * @param path  The path of the data on a patent
+     * @param titlePrefix   The prefix used for the title
+     * @param subTitle  The subtitle of the preview
      */
+    static getPreview(
+        node: NodeInfo,
+        patents: Patent[],
+        path: 'inventors' | 'applicants',
+        titlePrefix = '',
+        subTitle = '',
+    ): NodePreview {
+        const authorPatents = patents.filter((patent) => patent[path]?.includes(node.id));
 
-    static getAuthorPreview(node: NodeInfo, patents: Patent[]): NodePreview {
-        const authorPatents = patents.filter((patent) => patent.inventors?.includes(node.id));
         return {
             id: node.id,
-            title: `${node.id}`,
+            title: `${titlePrefix}${node.id}`,
             type: node.type,
-            subTitle: 'Inventor of',
+            subTitle: subTitle,
             relatedPatents: authorPatents,
-        };
-    }
-
-    /**
-     * Helper to get the company name and current assignee to the patents
-     * @param node
-     * @param patents
-     */
-    static getCompanyPreview(node: NodeInfo, patents: Patent[]): NodePreview {
-        const companyPatents = patents.filter((patent) => patent.applicants?.includes(node.id));
-        return {
-            id: node.id,
-            title: `${node.id}`,
-            type: node.type,
-            subTitle: 'Applicant of',
-            relatedPatents: companyPatents,
         };
     }
 }

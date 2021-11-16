@@ -15,6 +15,10 @@
 import { defineComponent } from 'vue';
 import FilterHelperService from '@/services/filter-helper.service';
 import { Filter } from '@/models/Filter';
+
+/**
+ * Filter component which is used in the OptionsMenu
+ */
 export default defineComponent({
     name: 'Filter',
     props: {
@@ -24,19 +28,22 @@ export default defineComponent({
     },
     emits: ['edit', 'delete'],
     computed: {
+        /**
+         * Returns if the current filter is valid
+         */
         isValid() {
             return FilterHelperService.isValid(this.$props.filter as Filter);
         },
     },
     methods: {
         /**
-         *  @function emits an event remove a filter
+         *  Event handler for the delete button which emits the 'delete' event to the parent component
          */
         onRemoveClicked(): void {
             this.$emit('delete'); // Emit delete
         },
         /**
-         *  @function emits an event to edit a filter
+         * Event handler for the edit button which emits the 'edit' event to the parent component
          */
         onEditClicked(): void {
             this.$emit('edit'); // Emit edit

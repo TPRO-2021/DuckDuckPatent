@@ -56,10 +56,12 @@ export class AppState extends SavedAppState {
      * Id of patent currently previewed (on Results page)
      */
     public patentID = '' as string;
+
     /**
      * Type of node currently highlighted
      */
     public patentType = '' as string;
+
     /**
      * Highlight border of a node upon its click or preview
      */

@@ -30,6 +30,7 @@
                 />
             </div>
         </div>
+        <!-- Result visualization component -->
         <div class="result-wrapper">
             <ResultsVisualization
                 :visualization-options="visualizationOptions"
@@ -39,6 +40,7 @@
                 v-on:on-clear-node-selected="onClearNodeSelected"
             />
         </div>
+
         <!-- This div contains the bottom controls (timeline toggle, mode-toggle) -->
         <div class="bottom-controls">
             <Button
@@ -48,6 +50,7 @@
                 btn-text="Load more"
             ></Button>
         </div>
+
         <!-- This div contains the top right controls (saved button) -->
         <div class="top-controls">
             <Button
@@ -58,6 +61,7 @@
             />
         </div>
 
+        <!-- Patent/Node Previews -->
         <div class="patent-preview" v-if="isPreviewActive">
             <PatentPreviewComponent
                 v-if="currentPatentPreview"
@@ -82,6 +86,8 @@
                 v-on:on-select-patent="selectPatent($event)"
             />
         </div>
+
+        <!-- Detailed patent view that shows up if the detailed view is requested for a patent -->
         <DetailedPatentView
             :extended-patent="detailedPatent"
             v-on:on-close="
@@ -115,17 +121,20 @@ import DetailedPatentView from '@/components/DetailedPatentView.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
 import FilterHelperService from '@/services/filter-helper.service';
 
+/**
+ * View which is responsible for displaying the /search page containing the results
+ */
 export default defineComponent({
     name: 'Results',
     components: {
-        Searchbar,
-        PatentPreviewComponent,
-        NodePreviewComponent,
-        KeywordSuggestions,
-        OptionsMenu,
-        ResultsVisualization,
         Button,
         DetailedPatentView,
+        KeywordSuggestions,
+        NodePreviewComponent,
+        OptionsMenu,
+        PatentPreviewComponent,
+        ResultsVisualization,
+        Searchbar,
     },
     data() {
         return {
@@ -145,6 +154,10 @@ export default defineComponent({
         };
     },
     watch: {
+        /**
+         * Watches the filters and refreshes the result after a specified timeout
+         * @param filters
+         */
         filters(filters: Filter[]): void {
             // On every change of the filters we need to check if we should update the results
             // Create a filter string that we can compare to recently sent ones (this could be refactored)
@@ -157,78 +170,137 @@ export default defineComponent({
             }
         },
     },
-    /**
-     * Computed property that helps avoiding the continuous reference the global store:searchTerms, suggestedTerms
-     * and patents from store/index.ts
-     */
     computed: {
+        /**
+         * Gets the loading bar status from the store
+         */
         showLoadingBar(): boolean {
             return this.$store.state.showLoadingBar;
         },
+        /**
+         * Gets the filters from the store
+         */
         filters(): Filter[] {
             return this.$store.state.filters;
         },
+        /**
+         * Gets the visualization options from the store
+         */
         visualizationOptions(): string[] {
             return this.$store.state.visualizationOptions;
         },
+        /**
+         * Gets the search terms from the store
+         */
         terms(): string[] {
             return this.$store.state.searchTerms;
         },
+        /**
+         * Gets the suggested terms from the store
+         */
         suggestedTerms(): string[] {
             return this.$store.state.suggestedTerms;
         },
+        /**
+         * Gets the current patents from the store
+         */
         patents(): Patent[] {
             return this.$store.state.patents;
         },
+        /**
+         * Gets the total count from the store
+         */
         totalCount(): number {
             return this.$store.state.totalCount;
         },
+        /**
+         * Returns the number of available pages based on the total count returned from OPS. Currently
+         * a page size of 100 is used, since that is the max. amount of patents we are able to retrieve from
+         * OPS with one request
+         */
         availablePages(): number {
             return this.totalCount / 100;
         },
+        /**
+         * Gets the current page number from the store
+         */
         currentPage(): number {
             return this.$store.state.pageCount;
         },
+        /**
+         * Returns the number of currently saved patents which is used to display
+         * a badge on the saved button
+         */
         savedPatentsCount(): string {
+            // if no patent is saved no badge should be displayed!
             if (Object.keys(this.$store.state.savedPatents).length === 0) {
                 return '';
             }
 
             return Object.keys(this.$store.state.savedPatents).length.toString();
         },
+        /**
+         * Returns the current PatentPreview object which is used for displaying the patent
+         * preview. If no patent is selected it returns null
+         */
         currentPatentPreview(): PatentPreview | null {
+            // no patent node selected --> return null
             if (this.selectedNode == null || this.selectedNode.type !== 'patent') {
                 return null;
             }
 
+            // find the patent in the current patents array;
             const patent = this.patents.find((t) => t.id === this.selectedNode?.id);
 
             if (patent == undefined) {
                 return null;
             }
+
             const savedPatents = this.$store.state.savedPatents;
             return PreviewHelperService.getPatentPreview(patent, savedPatents);
         },
         /**
-         * Non-patent node is check to which type belongs and the helper function is called to preview info into the card
+         * Returns the current NodePreview based on the selected node type. If node is null or no matching node type
+         * was found it will return null
          */
         currentNodePreview(): NodePreview | null {
             switch (this.selectedNode?.type) {
                 case 'author':
-                    return PreviewHelperService.getAuthorPreview(this.selectedNode, this.$store.state.patents);
+                    return PreviewHelperService.getPreview(
+                        this.selectedNode,
+                        this.$store.state.patents,
+                        'inventors',
+                        '',
+                        'Inventor of',
+                    );
                 case 'company':
-                    return PreviewHelperService.getCompanyPreview(this.selectedNode, this.$store.state.patents);
+                    return PreviewHelperService.getPreview(
+                        this.selectedNode,
+                        this.$store.state.patents,
+                        'applicants',
+                        '',
+                        'Applicant of',
+                    );
+                default:
+                    return null;
             }
-            return null;
         },
+        /**
+         * Returns a boolean which indicates whether the preview is active or not. The value is determined
+         * by using the locally available selectedNode reference
+         */
         isPreviewActive(): boolean {
             return this.selectedNode != null;
         },
+        /**
+         * Returns a string array of all patentIds derived from the patents array
+         */
         allPatentIds(): string[] {
             return this.patents.map((t) => t.id);
         },
     },
     async created() {
+        // show loading screen
         this.$store.commit('SHOW_LOADING_SCREEN');
 
         // since the store is not preserved in a refresh we need to check the current URL for keywords
@@ -239,7 +311,7 @@ export default defineComponent({
             await this.$router.push({ path: '/' });
         }
 
-        // refresh results
+        // refresh results and keywords
         this.refreshKeywords();
         await this.refreshResults();
 
@@ -248,13 +320,14 @@ export default defineComponent({
     },
     methods: {
         /**
-         * Function which delays refreshing the screen for provided time, i.e. debounces client requests.
+         * Function which delays refreshing the screen for provided time, i.e. debounce client requests.
          * Since the Searchbar.vue is only responsible for converting terms to chips and sending them over,
          * delay of the requests is fully handled here.
          *
          * If input focused, delay increases by half the time. Oftentimes users don't click the icon to initiate search,
          * hence it might be better to simply prolong existing delay to allow for further search inputs.
          *
+         * @param debounceTime  The debounce time in milliseconds
          */
         debounce(debounceTime: number): void {
             if (this.debounceHandler) {
@@ -271,6 +344,7 @@ export default defineComponent({
                 this.selectedNode = null; //to reset the patent preview if it was active before
             }, debounceTime);
         },
+
         /**
          * Adds a keyword to the current search terms and triggers a result refresh + debouncing the request
          *
@@ -289,9 +363,14 @@ export default defineComponent({
          * @param event
          */
         async onRemoveKeyword(event: { value: string; index: number }) {
+            // cancel timout if new debounce was requested
             this.resetWaiting ? this.cancelReset() : '';
+
+            // remove the search term and refresh keywords
             this.$store.commit('REMOVE_SEARCH_TERM', event);
             this.refreshKeywords();
+
+            // schedule a debounce again!
             this.debounce(2000);
         },
 
@@ -311,7 +390,10 @@ export default defineComponent({
         async refreshResults(): Promise<void> {
             // start showing the smaller loading indicator
             this.$store.commit('SHOW_LOADING_BAR');
+
+            // add search terms to the url so that it is shareable
             await this.$router.push({ query: { terms: this.terms } });
+
             try {
                 // in order to have a more consistent experience the loading screen should appear at least 1s
                 const [result] = await Promise.all([
@@ -320,16 +402,21 @@ export default defineComponent({
                 ]);
 
                 const { patents, totalCount } = result;
+
+                // add the patents to the store
                 this.$store.dispatch('addPatents', { patents, totalCount });
                 // eslint-disable-next-line
             } catch (e: any) {
+                // show an error message based on the error type
                 e.message === 'Not Found.'
                     ? this.$store.commit('SHOW_NORESULT_TOAST')
                     : this.$store.commit('SHOW_ERROR_TOAST');
+
+                // reset all result dependent variables
                 this.reset();
             }
 
-            //hideScreen
+            // hide loading indicators
             this.$store.commit('HIDE_LOADING_SCREEN');
             this.$store.commit('HIDE_LOADING_BAR');
 
@@ -341,23 +428,31 @@ export default defineComponent({
          * Extend the search with a new page (99 more results)
          */
         async extendSearch() {
+            this.$store.commit('SHOW_LOADING_BAR');
+
+            // increment the page
             const newPage = this.currentPage + 1;
 
-            this.$store.commit('SHOW_LOADING_BAR');
             const { patents, totalCount } = await this.patentService.query(this.terms, this.filters, newPage);
+
+            // add patents and incremented page to store
             this.$store.dispatch('addPatents', {
                 patents: this.patents.concat(patents),
                 totalCount,
                 page: newPage,
             });
 
+            // check results
             this.checkResult();
+
+            // hide loading indicator
             this.$store.commit('HIDE_LOADING_BAR');
         },
 
         /**
-         * Event handler which sets the current index to the passed
-         * @param e
+         * Event handler which sets a node as selected
+         *
+         * @param e The event containing the selected node
          */
         onNodeSelected(e: { node: NodeInfo }) {
             this.citationSelected = false;
@@ -370,7 +465,7 @@ export default defineComponent({
         },
 
         /**
-         * Event handler which resets the current node index
+         * Event handler which deselects the current node variables
          */
         onClearNodeSelected() {
             this.selectedNode = null;
@@ -381,7 +476,10 @@ export default defineComponent({
          * Handle the navigation back and forward for patent preview
          */
         onChangeNode(e: { direction: string }, collection: string[], type: NodeType): void {
+            // get the index of the current node
             let selectedIndex = collection.findIndex((t) => t === this.selectedNode?.id);
+
+            // increment or decrement the index based on the direction. Also handle edge cases
             switch (e.direction) {
                 case 'next':
                     selectedIndex = (selectedIndex + 1) % collection.length;
@@ -391,31 +489,39 @@ export default defineComponent({
                     selectedIndex = selectedIndex < 0 ? collection.length - 1 : selectedIndex;
                     break;
             }
+
+            // set the selected node reference to the next node
             this.selectedNode = {
                 id: collection[selectedIndex],
                 type,
             };
 
-            // only patents on preview will get a highlight/checkmark from preview actions
+            // highlight the current node
             this.highlightOnPreview();
+
+            // if node type is of kind 'patent' also set the preview marker
             if (this.selectedNode.type === 'patent') {
                 this.setMarkOnPreview();
             }
         },
 
         /**
-         * Handle selecting a patent
+         * Event handler for selecting a patent
+         *
+         * @param event The event containing the patent ID of the selected patent
          */
         selectPatent(event: { id: string }) {
             this.citationSelected = false;
             this.selectedNode = { id: event.id, type: 'patent' };
         },
+
         /**
-         * Highlight of previewed patent on
+         * Sets the preview highlight on a node
          */
         highlightOnPreview(): void {
             // reset highlight on node
             this.$store.commit('HIGHLIGHT_NODE_OFF');
+
             // turn highlight on node on. Timeout so to have the component react to state change
             setTimeout(() => {
                 this.$store.commit('HIGHLIGHT_NODE_ON', {
@@ -424,32 +530,39 @@ export default defineComponent({
                 });
             });
         },
+
         /**
-         * Checkmark of previewed patent on
+         * Sets the checkmark for a previewed patent to 'ON'
          */
         setMarkOnPreview(): void {
             //set mark once on viewed node
             this.$store.commit('ADD_MARK', { pID: this.selectedNode?.id, twice: false });
         },
+
         /**
-         * Shows the detailed patent view
+         * Event handler which will show the detailed patent view for a selected patent
          * Is called when the user clicks on the show-more button of a patent
-         * @param event
+         *
+         * @param event The event containing the id of the selected patent and the current searchTerms
          */
         onShowMore(event: { id: string; searchTerms: string[] }) {
             let patent = this.patents.find((t) => t.id === event.id);
 
+            // for citation nodes the patent data might be available in the stores
             if (!patent) {
                 patent = this.$store.state.extendedPatents[event.id].patent;
             }
 
+            // remove highlight from the node and show the blur-mask
             this.$store.commit('HIGHLIGHT_NODE_OFF');
             this.$store.commit('SHOW_DIALOG_MASK');
 
+            // set correct detailed patent reference for the DetailedView to show up
             this.detailedPatent = { patent, searchTerms: event.searchTerms } as ExtendedPatent;
 
             //set mark twice on viewed node
             this.$store.commit('ADD_MARK', { pID: this.detailedPatent?.patent.id, twice: true });
+
             // highlight node
             setTimeout(() => {
                 this.$store.commit('HIGHLIGHT_NODE_ON', { pID: this.detailedPatent?.patent.id, nodeType: 'patent' });
@@ -457,22 +570,22 @@ export default defineComponent({
         },
 
         /**
-         * Resets to landing page after some time, if no results returned. All input is cleared.
-         * If user adds/removes keywords, it should cancel going back to the landing page
-         *
+         * Resets all variables used for the visualization (patents, selectedNodes, ...) and shows
+         * a no-results message to the user
          */
         reset(): void {
             this.$store.dispatch('addPatents', { patents: [] as Patent[], totalCount: 0 });
             this.selectedNode = null;
             this.resetWaiting = true;
+
             this.resetHandler = setTimeout(async () => {
                 this.$store.commit('HIDE_NORESULT_TOAST');
                 this.resetWaiting = false;
             }, 6000);
         },
+
         /**
          * Cancels going back to the landing page.
-         *
          */
         cancelReset(): void {
             if (this.resetHandler == null) {
@@ -482,13 +595,6 @@ export default defineComponent({
             this.resetWaiting = false;
             this.$store.commit('HIDE_NORESULT_TOAST');
         },
-        /**
-         * Toggles the visibility of the timeline
-         * @param $event
-         */
-        toggleTimeline($event: boolean): void {
-            this.showTimeline = $event;
-        },
 
         /**
          * Checks the current URL for query parameters and commits them to the store
@@ -497,7 +603,6 @@ export default defineComponent({
         checkUrl(): void {
             // If only one query parameter is sent it's treated as a string, not an array
             let queryParams = this.$route.query.terms as string | string[];
-
             if (typeof queryParams === 'string') {
                 queryParams = [queryParams];
             }
@@ -506,27 +611,31 @@ export default defineComponent({
         },
 
         /**
-         * Checks if there need to be any additional actions done for the result
+         * Checks if there needs to be any additional actions done for the result
          */
         checkResult(): void {
+            // set more data available value to true or false depending on the left pages (after page 18 OPS will throw an error)
             this.moreDataAvailable =
                 this.totalCount > 99 && this.currentPage < this.availablePages - 1 && this.currentPage <= 18;
         },
 
         /**
-         * Opens the saved page
+         * Event handler which opens the saved page
          */
         openSavePage(): void {
             this.$router.push({ path: '/saved' });
         },
 
         /**
-         * Adds a patent to the saved list
-         * @param event
+         * Event handler which adds a patent to the saved list
+         * @param event The event containing the patent which should be saved
          */
         onSavePatent(event: { id: string }): void {
+            // get the full patent and save it to the store.
             const patent = this.patents.find((t) => t.id === event.id);
             this.$store.commit('ADD_SAVED_PATENT', { patent, searchTerms: this.terms });
+
+            // reset the selected reference to hide the preview
             this.selectedNode = null;
         },
 
@@ -540,8 +649,8 @@ export default defineComponent({
         },
 
         /**
-         * Saves a patent
-         * @param event
+         * Event handler which saves a patent to the store
+         * @param event The event containing the extended patent
          */
         onSavePatentDetailed(event: { patent: ExtendedPatent }): void {
             this.$store.commit('ADD_SAVED_PATENT', {
@@ -551,31 +660,8 @@ export default defineComponent({
         },
 
         /**
-         * Arrow navigation for Node Preview for citation,
-         * @param e
-         * @param collection
-         * @param indexNode
-         * @param type
-         */
-        navigationNodes(e: { direction: string }, collection: string[], indexNode: number, type: NodeType) {
-            switch (e.direction) {
-                case 'next':
-                    indexNode = (indexNode + 1) % collection.length;
-                    break;
-                case 'previous':
-                    indexNode = indexNode - 1;
-                    indexNode = indexNode < 0 ? collection.length - 1 : indexNode;
-                    break;
-            }
-            this.selectedNode = {
-                id: collection[indexNode],
-                type,
-            };
-        },
-
-        /**
          * Loads a citation and sets the current citation reference to it
-         * @param node
+         * @param node  The node containing the id of the patent
          */
         async loadCitation(node: { id: string }) {
             this.currentCitation = null;
