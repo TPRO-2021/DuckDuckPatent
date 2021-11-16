@@ -43,12 +43,6 @@ export default defineComponent({
     created(): void {
         this.$store.commit('HIDE_LOADING_BAR');
         this.$store.dispatch('resetSavedState');
-
-        // adds the loading screen for 0.5s
-        this.$store.commit('SHOW_LOADING_SCREEN');
-        setTimeout(() => {
-            this.$store.commit('HIDE_LOADING_SCREEN');
-        }, 800);
     },
     computed: {
         searchTerms(): string[] {
@@ -160,15 +154,8 @@ export default defineComponent({
     color: unset;
 }
 
-.gh-logo,
-.separator,
-.about-link {
-    opacity: 50%;
-}
-
 .gh-logo:hover,
 .about-link:hover {
-    opacity: 100%;
     transition: all 1s ease;
     cursor: pointer;
 }
