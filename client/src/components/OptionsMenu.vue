@@ -4,14 +4,15 @@
         class="settingsBtn"
         icon-key="settings"
         type="light"
-        v-show="openMenu === false"
-        @click="openMenu = true"
+        @click="this.openMenu = !this.openMenu"
+        :class="{ openMenu: openMenu }"
     />
 
     <!--  This div the menu container with nodes, togglers, and filters  -->
     <div
         class="main-container box-shadow card no-select"
-        v-show="openMenu === true"
+        v-if="openMenu"
+        v-vue-click-away="onClickAwayMenu"
         @mouseleave="timeOut()"
         @mouseenter="resetTimer()"
     >
@@ -53,10 +54,14 @@ import { defineComponent } from 'vue';
 import RoundButton from '../components/RoundButton.vue';
 import ToggleSwitch from '../components/ToggleSwitch.vue';
 import Filters from '../components/Filters.vue';
+import { directive } from 'vue3-click-away';
 
 export default defineComponent({
     name: 'OptionsMenu',
     components: { RoundButton, ToggleSwitch, Filters },
+    directives: {
+        VueClickAway: directive,
+    },
     data() {
         return {
             openMenu: false,
@@ -130,6 +135,14 @@ export default defineComponent({
                     return type;
             }
         },
+
+        /**
+         * On clicking away from option menu dialog the card is closing and the filters a clean
+         */
+        onClickAwayMenu(): void {
+            this.$store.commit('CLOSE_CLEAN_FILTERS');
+            this.openMenu = !this.openMenu;
+        },
     },
 });
 </script>
@@ -185,5 +198,12 @@ export default defineComponent({
     display: flex;
     width: 50%;
     justify-content: flex-end;
+}
+.settingsBtn:hover {
+    background: #d3d3d3;
+    border-color: #d3d3d3;
+}
+.openMenu {
+    display: none;
 }
 </style>
