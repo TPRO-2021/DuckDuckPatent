@@ -233,14 +233,55 @@ export default defineComponent({
 
             const svg = this.selections.svg;
 
-            // Define the arrow marker
-            svg.append('svg:defs')
-                .selectAll('marker')
-                .data(['end']) // Different link/path types can be defined here
+            const selected = svg.append('svg:defs').selectAll('marker');
+            selected
+                .data(['small']) // small links for node size < 20
                 .enter()
                 .append('svg:marker') // This section adds in the arrows
-                .attr('id', String)
-                .attr('refX', 13.5) // Prevents arrowhead from being covered by circle
+                .attr('id', 'small')
+                .attr('refX', 14) // Prevents arrowhead from being covered by circle
+                .attr('refY', 2)
+                .attr('markerWidth', 8)
+                .attr('markerHeight', 8)
+                .attr('orient', 'auto')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M0,0V 4L6,2Z')
+                .attr('style', 'fill: black');
+            selected
+                .data(['middle']) //  links for node size > 15 & <20
+                .enter()
+                .append('svg:marker')
+                .attr('id', 'middle')
+                .attr('refX', 17)
+                .attr('refY', 2)
+                .attr('markerWidth', 8)
+                .attr('markerHeight', 8)
+                .attr('orient', 'auto')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M0,0V 4L6,2Z')
+                .attr('style', 'fill: black');
+            selected
+                .data(['large']) // links for node size > 20
+                .enter()
+                .append('svg:marker')
+                .attr('id', 'large')
+                .attr('refX', 19)
+                .attr('refY', 2)
+                .attr('markerWidth', 8)
+                .attr('markerHeight', 8)
+                .attr('orient', 'auto')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M0,0V 4L6,2Z')
+                .attr('style', 'fill: black');
+            selected
+                .data(['extralarge']) // links for node size > 40
+                .enter()
+                .append('svg:marker')
+                .attr('id', 'extralarge')
+                .attr('refX', 27)
                 .attr('refY', 2)
                 .attr('markerWidth', 8)
                 .attr('markerHeight', 8)
@@ -326,7 +367,8 @@ export default defineComponent({
                 .attr('marker-end', (d) => {
                     // Caption items doesn't have source and target
                     if (d.source && d.target && d.source.index === d.target.index) return 'url(#end-self)';
-                    else return 'url(#end)';
+                    //arrow marker adjusted based on the target size
+                    return VisualizationHelperService.getArrowMark(d);
                 });
 
             //handle checkmarks and highlights no click

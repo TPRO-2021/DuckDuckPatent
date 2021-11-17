@@ -3,6 +3,7 @@ import { VisualPatentNode } from '@/models/VisualPatentNode';
 import { SimulationLinkDatum } from 'd3';
 import { VisualizationOptions } from '@/models/VisualizationOptions';
 import { RelationMap } from '@/models/RelationMap';
+import { VisualPatentLink } from '@/models/VisualPatentLink';
 
 export default class VisualizationHelperService {
     /**
@@ -349,6 +350,17 @@ export default class VisualizationHelperService {
             }
             return { ...map, [key]: b }; // extend the object with a specific key
         }, {});
+    }
+
+    /**
+     * Adapts arrow marker based on node size
+     * @node - node that is target for the arrow
+     */
+    static getArrowMark(node: VisualPatentLink<VisualPatentNode>): string {
+        if (node.target.size > 40) return 'url(#extralarge)';
+        else if (node.target.size > 20) return 'url(#large)';
+        else if (node.target.size > 15) return 'url(#middle)';
+        else return 'url(#small)';
     }
 
     /**
