@@ -1,7 +1,7 @@
 <template>
     <div class="loading-screen" v-if="showLoadingScreen">
         <img src="../assets/graph.svg" alt="Loading indicator" />
-        <p class="sub-heading">Preparing your results <span class="sub-heading-dots">...</span></p>
+        <p class="sub-heading">Loading <span class="sub-heading-dots">...</span></p>
     </div>
 </template>
 
@@ -77,6 +77,14 @@ export default defineComponent({
 
     100% {
         transform: scale(1);
+    }
+}
+
+@media screen and (max-width: 650px) {
+    .loading-screen {
+        img {
+            width: 400px;
+        }
     }
 }
 </style>

@@ -4,8 +4,8 @@
         <div class="middle">{{ value }}</div>
         <div class="tail">
             <div>
-                <span class="control-icon material-icons no-select" @click="onEditClicked()">edit</span>
-                <span class="control-icon material-icons no-select" @click="onRemoveClicked()">delete</span>
+                <span class="control-icon material-icons no-select" @click.stop="onEditClicked()">edit</span>
+                <span class="control-icon material-icons no-select" @click.stop="onRemoveClicked()">delete</span>
             </div>
         </div>
     </div>

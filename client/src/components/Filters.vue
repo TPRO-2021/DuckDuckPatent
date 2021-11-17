@@ -27,7 +27,11 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
-        <div v-if="filter.type === 'empty' || filter.isSelectionOpen" class="type-selection" v-click-away="onLostFocus">
+        <div
+            v-if="filter.type === 'empty' || filter.isSelectionOpen"
+            class="type-selection"
+            v-vue-click-away="onLostFocus"
+        >
             <div>
                 <ChipButton
                     :class="{
@@ -54,7 +58,6 @@
                                 ref="dateFrom"
                                 :value="dateFilterFrom"
                                 type="number"
-                                @focus="updateFocus"
                                 @keyup="onDateChange('from', $event, filter)"
                             />
                             <input
@@ -62,7 +65,6 @@
                                 ref="dateTo"
                                 :value="dateFilterTo"
                                 type="number"
-                                @focus="updateFocus"
                                 @keyup="onDateChange('to', $event, filter)"
                             />
                         </div>
@@ -87,7 +89,6 @@
                     :selected="filter.value.split(',')"
                     :list="languageList"
                     v-on:select="onListItemSelected(filter, $event.key)"
-                    v-on:scroll="updateFocus"
                 />
             </div>
 
@@ -108,14 +109,13 @@
                     :selected="filter.value.split(',')"
                     :list="countryList"
                     v-on:select="onListItemSelected(filter, $event.key)"
-                    v-on:scroll="updateFocus"
                 />
             </div>
         </div>
     </div>
     <div class="filter-bottom-controls">
         <ChipButton
-            :class="{ invisible: currentFilter || hasAll, 'add-button': true }"
+            :class="{ isHidden: currentFilter || hasAll, 'add-button': true }"
             icon-key="add"
             text="Add"
             v-on:on-select="onAddClicked()"
@@ -132,7 +132,7 @@ import { Filter } from '@/models/Filter';
 import { directive } from 'vue3-click-away';
 import FilterHelperService from '@/services/filter-helper.service';
 
-const FOCUS_TIMEOUT_MS = 4000; // four seconds
+// const FOCUS_TIMEOUT_MS = 4000; // four seconds
 
 export default defineComponent({
     name: 'Filters',
@@ -144,11 +144,10 @@ export default defineComponent({
         },
     },
     directives: {
-        ClickAway: directive,
+        VueClickAway: directive,
     },
     data() {
         return {
-            focusTimeout: null as number | null,
             currentFilter: null as Filter | null,
             hasDate: false,
             hasLanguage: false,
@@ -257,6 +256,7 @@ export default defineComponent({
         onRemoveClicked(id: number): void {
             // Emit remove filter
             this.$emit('removeFilter', id);
+            // this.updateFocus();
         },
         /**
          *  @function onEditClicked emits an event to shift a filter into edit mode
@@ -267,7 +267,7 @@ export default defineComponent({
             this.showOnEdit = { status: true, filterType: this.$store.state.filters[id].type };
             // Emit update filter that shifts a filter into edit mode
             this.$emit('updateFilter', { prop: 'isSelectionOpen', value: true, id });
-            this.updateFocus(); // Update the focus so the user doesn't have to make a change if they don't want
+            // this.updateFocus(); // Update the focus so the user doesn't have to make a change if they don't want
         },
         /**
          *  @function onUpdateFilter emits an event update a filter
@@ -297,28 +297,14 @@ export default defineComponent({
                 const dateRange = `${fromValue}-${toValue}`; // Create new date range
                 this.$emit('updateFilter', { prop: 'value', value: dateRange, id: filter.id }); // Emit update filter with new date range
             }, 500); // .5 sec
-            this.updateFocus(); // Update the focus so the user doesn't get kicked out of editing
-        },
-
-        /**
-         *  @function updateFocus updates the timer that goes off when the user hasn't done anything for a set amount of time
-         */
-        updateFocus() {
-            // This timeout might be null
-            if (this.focusTimeout != null) {
-                clearTimeout(this.focusTimeout); // Stop the scheduled timeout
-            }
-            this.focusTimeout = setTimeout(() => {
-                // Create a new scheduled timeout
-                this.onLostFocus(); // Shift back from edit when called
-            }, FOCUS_TIMEOUT_MS); // Timeout given here
+            // this.updateFocus(); // Update the focus so the user doesn't get kicked out of editing
         },
         /**
          *  @function  onLostFocus shifts the current filter from edit mode to not edit mode.
          *  When user clicks away from filters, it's treated as lost focus too.
          */
         onLostFocus() {
-            if (this.currentFilter == null) {
+            if (this.currentFilter === null) {
                 return;
             } // If there isn't a currently focused element then forget about it
 
@@ -346,7 +332,7 @@ export default defineComponent({
             }
 
             this.onUpdateFilter('value', newCodes.join(','), filter.id); // Join new list together with commas and update the value
-            this.updateFocus(); // Update focus so the user doesn't just randomly get knocked out of edit mode
+            // this.updateFocus(); // Update focus so the user doesn't just randomly get knocked out of edit mode
         },
         /**
          *  Checks whether filter meets all conditions to be displayed to user
@@ -396,9 +382,7 @@ export default defineComponent({
 }
 
 .filter-container {
-    margin-top: 10px;
-    margin-right: 5px;
-    margin-left: 5px;
+    margin: 10px 5px;
 }
 .filter-bottom-controls {
     margin-right: 5px;
@@ -418,6 +402,9 @@ export default defineComponent({
 }
 .invisible {
     visibility: hidden;
+}
+.isHidden {
+    display: none;
 }
 .value-selector {
     margin-top: -2.1em;
