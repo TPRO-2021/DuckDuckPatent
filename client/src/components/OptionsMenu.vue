@@ -91,14 +91,18 @@ export default defineComponent({
         isOptionOn(type: string) {
             return this.$props.options.includes(type);
         },
+
         /**
          *  @function to hide the options menu once the mouse left the panel for 5 seconds
          * - openMenu is set to false
          * - timeout can be adjusted, if needed
          */
         timeOut(): void {
-            this.timer = setTimeout(() => (this.openMenu = !this.openMenu), 5000);
+            this.timer = setTimeout(() => {
+                this.openMenu = false;
+            }, 5000);
         },
+
         /**
          *  @function to reset the timer once the mouse enters the panel again
          * - timer var is reset
