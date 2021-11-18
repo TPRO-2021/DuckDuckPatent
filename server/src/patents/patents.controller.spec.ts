@@ -3,11 +3,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PatentsService } from './patents.service';
 import { Response as Res } from 'express';
 
+/**
+ * PatentsController Unit test
+ */
 describe('PatentsController', () => {
     let patentsController: PatentsController;
     let mockResponse: Res;
 
     beforeEach(async () => {
+        // instantiate the patent module
         const app: TestingModule = await Test.createTestingModule({
             controllers: [PatentsController],
             providers: [
@@ -37,6 +41,9 @@ describe('PatentsController', () => {
         };
     });
 
+    /**
+     * Test the patent search
+     */
     describe('/search', () => {
         it('Should return "[]" for empty search', async () => {
             const patents = await patentsController.query(

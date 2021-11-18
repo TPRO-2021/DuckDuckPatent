@@ -4,10 +4,13 @@ import { KeywordService } from './keyword.service';
 import { HttpService } from '@nestjs/axios';
 import { FactoryProvider } from '@nestjs/common';
 import { of } from 'rxjs';
-import { SuggestionAPIResponse } from '../models';
+import { SuggestionAPIResponse } from './models';
 
+/**
+ * KeywordController Unit test
+ */
 describe('KeywordController', () => {
-    let keywordContoller: KeywordController;
+    let keywordController: KeywordController;
     let httpService: HttpService = {} as HttpService;
 
     beforeAll(async () => {
@@ -22,9 +25,12 @@ describe('KeywordController', () => {
             providers: [KeywordService, HttpServiceProvider],
         }).compile();
 
-        keywordContoller = app.get<KeywordController>(KeywordController);
+        keywordController = app.get<KeywordController>(KeywordController);
     });
 
+    /**
+     * Test retrieval of keyword suggestions
+     */
     describe('/keyword', () => {
         it('should return one or more results for flour', async () => {
             const data: SuggestionAPIResponse = [['bread', 0.4]];
@@ -37,7 +43,7 @@ describe('KeywordController', () => {
                     config: {},
                 });
             };
-            const suggestions = await keywordContoller.query({ flour: true });
+            const suggestions = await keywordController.query({ flour: true });
             expect(suggestions.length).toBeGreaterThan(0);
         });
     });

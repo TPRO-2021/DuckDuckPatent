@@ -8,7 +8,7 @@ import { useToast } from 'primevue/usetoast';
 import Toast from 'primevue/toast';
 
 /**
- * This component resembles the toasts
+ * This component resembles the toast-message which can be shown to the user with information regarding errors/warnings, ...
  */
 export default defineComponent({
     name: 'Toasts',
@@ -25,9 +25,11 @@ export default defineComponent({
                 life: 5000,
             });
         };
+
         const showErrorToast = () => {
             toast.add({ severity: 'error', summary: 'Error', detail: 'Error occurred', life: 3000 });
         };
+
         return { showNoPatentsToast, showErrorToast };
     },
     computed: {
@@ -45,11 +47,19 @@ export default defineComponent({
         },
     },
     watch: {
+        /**
+         * Watches the showResults variable
+         * @param newVal    The new value
+         */
         showNoResults(newVal) {
             if (newVal) {
                 this.showNoPatentsToast();
             }
         },
+        /**
+         * Watches the showError variable
+         * @param newVal    The new value
+         */
         showError(newVal) {
             if (newVal) {
                 this.showErrorToast();

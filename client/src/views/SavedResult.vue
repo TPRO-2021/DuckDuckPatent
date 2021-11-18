@@ -1,12 +1,19 @@
 <template>
+    <!-- Saved page container -->
     <div class="saved-page">
+        <!-- Page controls (BackButton, Info Button) -->
         <div class="page-controls">
             <RoundButton class="back-btn" icon-key="reply" @click="goBack"></RoundButton>
             <Button class="saved-btn" iconKey="bookmark" :btnText="btnText">Saved</Button>
         </div>
+
+        <!-- Saved items container -->
         <div class="saved-list">
             <div class="saved-patents-container card box-shadow">
+                <!-- Placeholder if no saved patents available -->
                 <div v-if="Object.keys(savedPatents).length === 0" class="empty-placeholder">No saved patents yet!</div>
+
+                <!-- Saved patents list -->
                 <div class="saved-patents">
                     <savedPatent
                         class="patent-container"
@@ -18,9 +25,12 @@
                         v-on:on-remove="this.removeFromSaved(savedPatent.patent)"
                         v-on:on-close="this.selectedPatent = null"
                     />
+
+                    <!-- Last child to avoid spacing issues (invisible) -->
                     <div class="card box-shadow patent-container"></div>
                 </div>
 
+                <!-- Bottom controls (clear button) -->
                 <div class="bottom-controls" v-if="Object.keys(savedPatents).length > 0">
                     <ChipButton
                         text="Clear saved items"
@@ -51,9 +61,12 @@ import RoundButton from '@/components/RoundButton.vue';
 import { Patent } from '@/models/Patent';
 import DetailedPatentView from '@/components/DetailedPatentView.vue';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
-import { RouteLocationNormalized } from 'vue-router';
 import ChipButton from '@/components/ChipButton.vue';
+import { PatentMap } from '@/models/PatentMap';
 
+/**
+ * View which is responsible for displaying the /saved page
+ */
 export default defineComponent({
     name: 'SavedResult',
     components: {
@@ -70,26 +83,29 @@ export default defineComponent({
         };
     },
     computed: {
+        /**
+         * Returns patents from the store
+         */
         patents(): Patent[] {
             return this.$store.state.patents;
         },
-        savedPatents(): ExtendedPatent[] {
+        /**
+         * Returns saved patents map from the store
+         */
+        savedPatents(): PatentMap {
             return this.$store.state.savedPatents;
         },
+        /**
+         * Returns search terms from the store
+         */
         searchTerms(): string[] {
             return this.$store.state.searchTerms;
         },
+        /**
+         * Returns button text depending on the amount of saved item(s)
+         */
         btnText(): string {
             return Object.keys(this.savedPatents).length === 1 ? 'Saved item' : 'Saved items';
-        },
-        previousPage(): RouteLocationNormalized | null {
-            const previous = this.$route.query.previous as string;
-
-            if (!previous) {
-                return null;
-            }
-
-            return JSON.parse(atob(previous));
         },
     },
     mounted() {
@@ -110,29 +126,37 @@ export default defineComponent({
                 return;
             }
 
+            // use the routers back function to go back
             this.$router.back();
         },
 
         /**
-         * Removes a patent from the saved page
-         * @param patent
+         * Removes a patent from the saved items collection
+         *
+         * @param patent The patent which should be removed
          */
         removeFromSaved(patent: Patent): void {
             this.$store.commit('REMOVE_SAVED_PATENT', { patent });
         },
 
         /**
-         * Set a patent as the selected patent and mark it twice on preview
-         * @param patent
+         * Sets a patent as the selected patent and marks it twice on preview
+         *
+         * @param patent The patent which should be selected & marked
          */
         onSelectPatent(patent: ExtendedPatent): void {
             //highlight and mark off
             this.$store.commit('HIGHLIGHT_NODE_OFF');
 
-            this.selectedPatent = patent;
+            // show blur mask
             this.$store.commit('SHOW_DIALOG_MASK');
+
+            // set selected patent to the patent reference
+            this.selectedPatent = patent;
+
             //set mark twice on viewed node
             this.$store.commit('ADD_MARK', { pID: patent.patent.id, twice: true });
+
             //set mark twice on viewed node
             setTimeout(() => {
                 this.$store.commit('HIGHLIGHT_NODE_ON', { pID: patent.patent.id, nodeType: 'patent' });

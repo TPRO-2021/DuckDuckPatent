@@ -1,5 +1,6 @@
 <template>
     <div v-for="filter in filters" :key="filter.id" class="filter-container">
+        <!-- Date filter -->
         <div v-if="eligible(filter, 'date')">
             <FilterComponent
                 name="date"
@@ -9,6 +10,8 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
+
+        <!-- Language filter -->
         <div v-if="eligible(filter, 'language')">
             <FilterComponent
                 name="language"
@@ -18,6 +21,8 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
+
+        <!-- Country filter -->
         <div v-if="eligible(filter, 'country')">
             <FilterComponent
                 name="country"
@@ -27,6 +32,8 @@
                 v-on:delete="onRemoveClicked(filter.id)"
             />
         </div>
+
+        <!-- Filter buttons -->
         <div
             v-if="filter.type === 'empty' || filter.isSelectionOpen"
             class="type-selection"
@@ -132,8 +139,9 @@ import { Filter } from '@/models/Filter';
 import { directive } from 'vue3-click-away';
 import FilterHelperService from '@/services/filter-helper.service';
 
-// const FOCUS_TIMEOUT_MS = 4000; // four seconds
-
+/**
+ * Filters component which adds language, country and date filters
+ */
 export default defineComponent({
     name: 'Filters',
     components: { ChipButton, ListPicker, FilterComponent },
@@ -205,6 +213,11 @@ export default defineComponent({
         };
     },
     watch: {
+        /**
+         * Watches the filters array and updates the filters on a change
+         *
+         * @param value The new filters value
+         */
         filters(value): void {
             if (value == null) {
                 return;
@@ -229,9 +242,10 @@ export default defineComponent({
     emits: ['addFilter', 'removeFilter', 'updateFilter'],
     methods: {
         /**
-         *  @function returns a display value for a given key
-         *  @param keys: string, keys to convert to display value
-         *  @param list
+         *  Returns a display value for a given key
+         *
+         *  @param keys The keys to convert to display value
+         *  @param list The current list of keys
          */
         displayValue(list: { key: string; value: string }[], keys: string): string {
             const codes = keys.split(',') as string[]; // Get the codes by spliting apart
@@ -240,8 +254,9 @@ export default defineComponent({
                 .filter((t) => t) // Remove values that could be found
                 .join(', '); // Join together with a space and comma between each
         },
+
         /**
-         *  @function onAddClicked emits an event to add an empty filter
+         *  Event handler which emits the 'add-filter' event which should add an empty filter
          */
         onAddClicked(): void {
             //reset Edit
@@ -249,31 +264,35 @@ export default defineComponent({
             // Emit add filter
             this.$emit('addFilter');
         },
+
         /**
-         *  @function onRemoveClicked emits an event to remove a filter
-         *  @param id: number, the client id of the filter being removed
+         *  Event handler which emits the 'remove-filter' event to the parent
+         *
+         *  @param id   The client id of the filter being removed
          */
         onRemoveClicked(id: number): void {
             // Emit remove filter
             this.$emit('removeFilter', id);
-            // this.updateFocus();
         },
+
         /**
-         *  @function onEditClicked emits an event to shift a filter into edit mode
-         *  @param id: number, the client id of the filter being shifted into edit mode
+         *  Event handler which emits the 'update-filter'-event to shift a filter into edit mode
+         *
+         *  @param id the client id of the filter being shifted into edit mode
          */
         onEditClicked(id: number): void {
             // if editing a filter, other options should not show
             this.showOnEdit = { status: true, filterType: this.$store.state.filters[id].type };
             // Emit update filter that shifts a filter into edit mode
             this.$emit('updateFilter', { prop: 'isSelectionOpen', value: true, id });
-            // this.updateFocus(); // Update the focus so the user doesn't have to make a change if they don't want
         },
+
         /**
-         *  @function onUpdateFilter emits an event update a filter
-         *  @param id: number, the client id of the filter being removed
-         *  @param prop: K, the property to be updated
-         *  @param value: Filter[K], the value of the new prop
+         *  Event handler which emits the 'update-filter' event to the parent component
+         *
+         *  @param id   The client id of the filter being removed
+         *  @param prop The property to be updated
+         *  @param value    The value of the new prop
          */
         onUpdateFilter<K extends keyof Filter>(prop: K, value: Filter[K], id: number): void {
             // Emit update filter
@@ -281,13 +300,16 @@ export default defineComponent({
         },
 
         /**
-         *  @function onDateChange handles text input event that should update a date filter
-         *  @param fromTo: 'from' | 'to', either 'from' or 'to'
-         *  @param event: Event, the input element event
-         *  @param filter: Filter[K], the value of the new prop
+         *  Handles text input event that should update a date filter
+         *
+         *  @param fromTo   The date type ('from' or 'to')
+         *  @param event    The input element event
+         *  @param filter   The value of the new prop
          */
         onDateChange(fromTo: 'from' | 'to', event: Event, filter: Filter) {
+            // clearing the previous timeout to avoid duplicate requests
             clearTimeout(this.dateChangeDebounce);
+
             this.dateChangeDebounce = setTimeout(() => {
                 // Because this gets called on every keyup, we need to "debounce" it
                 const fromElem = this.$refs.dateFrom as HTMLInputElement; // Cast int HTMLInputElement to make TS happy
@@ -297,10 +319,10 @@ export default defineComponent({
                 const dateRange = `${fromValue}-${toValue}`; // Create new date range
                 this.$emit('updateFilter', { prop: 'value', value: dateRange, id: filter.id }); // Emit update filter with new date range
             }, 500); // .5 sec
-            // this.updateFocus(); // Update the focus so the user doesn't get kicked out of editing
         },
+
         /**
-         *  @function  onLostFocus shifts the current filter from edit mode to not edit mode.
+         *  Event handler which shifts the current filter from edit mode to not edit mode.
          *  When user clicks away from filters, it's treated as lost focus too.
          */
         onLostFocus() {
@@ -321,7 +343,10 @@ export default defineComponent({
         },
 
         /**
-         *  @function onListItemSelected handles updating lists when items are selected
+         * Event handler which handles updating lists when items are selected
+         *
+         * @param filter    The current filter
+         * @param key   The filter key
          */
         onListItemSelected(filter: Filter, key: string) {
             const codes = (filter.value || '').split(',').filter((t) => t); // Get all the current comma delinated items
@@ -332,10 +357,13 @@ export default defineComponent({
             }
 
             this.onUpdateFilter('value', newCodes.join(','), filter.id); // Join new list together with commas and update the value
-            // this.updateFocus(); // Update focus so the user doesn't just randomly get knocked out of edit mode
         },
+
         /**
-         *  Checks whether filter meets all conditions to be displayed to user
+         * Checks whether filter meets all conditions to be displayed to user
+         *
+         * @param filter    The filter which should be checked
+         * @param filterType    The filter type
          */
         eligible(filter: Filter, filterType: string): boolean {
             return FilterHelperService.showFilter(filter, filterType);

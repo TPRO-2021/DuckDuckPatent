@@ -13,7 +13,7 @@
                 <div class="text-wrapper">
                     <!-- About -->
                     <div class="about-text">
-                        Duckduckpatent is an innovative patent search engine which is designed for researchers,
+                        DuckDuckPatent is an innovative patent search engine which is designed for researchers,
                         exploring the world of patents! The visualization of patents and related entities allows you to
                         quickly get an overview of your search result. Additional information (e.g. Inventors,
                         Applicants or Citations) can be dynamically added to the visualization by the user.

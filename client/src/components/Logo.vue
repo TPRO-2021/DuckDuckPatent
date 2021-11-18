@@ -5,6 +5,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
+/**
+ * Component which contains DuckDuckPatent's logo
+ */
 export default defineComponent({
     name: 'Logo',
 });

@@ -1,9 +1,13 @@
 import { Patent } from '@/models/Patent';
 
+/**
+ * Service which provides utility functions used by the exploration view
+ */
 export default class ExplorationHelperService {
     /**
-     * adapted from https://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array
      * Shuffles array in place. ES6 version
+     * Adapted from https://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array
+     *
      * @param a items   An array containing the items.
      */
     public static shuffle<T>(a: T[]): T[] {
@@ -16,7 +20,8 @@ export default class ExplorationHelperService {
 
     /**
      * Returns a single patent array containing the content from the passed collection
-     * @param patentsCollection
+     *
+     * @param patentsCollection The patent collection which should be merged into one array
      */
     public static getPatentsArray(patentsCollection: (Patent[] | null)[]): Patent[] {
         let cits = [] as Patent[];
@@ -31,7 +36,8 @@ export default class ExplorationHelperService {
 
     /**
      * Processes an inventors/applicants name by removing parts containing '[', ']' characters
-     * @param name
+     *
+     * @param name The inventor/applicant name
      */
     public static processRelatedName(name: string): string {
         return name.split('[')[0].trimEnd();

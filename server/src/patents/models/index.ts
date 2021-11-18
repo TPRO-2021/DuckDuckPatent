@@ -48,6 +48,9 @@ export interface PatentQueryResponse {
     };
 }
 
+/**
+ * This interface represents the structure of the family response from OPS
+ */
 export interface PatentFamilyResponse {
     'ops:world-patent-data': {
         'ops:patent-family': {
@@ -78,6 +81,9 @@ export interface AuthResponse {
     status: string;
 }
 
+/**
+ * This interface represents the structure of an OPS patent object
+ */
 export interface OpsPatent {
     'ops:world-patent-data': {
         'exchange-documents': {
@@ -157,8 +163,6 @@ export interface OpsBiblioData {
 
 /**
  * Interface for OPS patent-classifications
- *
- * TODO: Describe purpose!
  */
 export interface OpsClassifications {
     '@sequence': string;
@@ -175,6 +179,9 @@ export interface OpsClassifications {
     'generating-office': OpsStringData;
 }
 
+/**
+ * This interface represents the structure of an OPS-family-member
+ */
 export interface OpsFamilyMember {
     '@family-id': string;
     'publication-reference': OpsPublicationReference;
@@ -186,21 +193,39 @@ export interface OpsFamilyMember {
     'exchange-document': OpsExchangeDocument;
 }
 
+/**
+ * This interface represents the structure of an OPS-patent title
+ */
 export interface OpsPatentTitle {
     $: string;
     '@lang': string;
 }
+
+/**
+ * This interface represents the structure of an OPS-party
+ */
 export interface OpsParty {
     inventors: { inventor: OpsInventor[] };
     applicants: { applicant: OpsApplicant[] };
 }
+
+/**
+ * This interface represents the structure of an OPS-inventor
+ */
 export interface OpsInventor {
-    'inventor-name': { name: { $: string } };
-}
-export interface OpsApplicant {
-    'applicant-name': { name: { $: string } };
+    'inventor-name': { name: OpsStringData };
 }
 
+/**
+ * This interface represents the structure of an OPS-applicant
+ */
+export interface OpsApplicant {
+    'applicant-name': { name: OpsStringData };
+}
+
+/**
+ * This interface represents the structure of an OPS-publication reference
+ */
 export interface OpsPublicationReference {
     'document-id': {
         '@document-id-type': 'epodoc' | 'docdb';
@@ -210,6 +235,9 @@ export interface OpsPublicationReference {
     };
 }
 
+/**
+ * This interface represents the structure of an OPS-document instance
+ */
 export interface OpsDocumentInstance {
     '@system': string;
     '@number-of-pages': string;
@@ -219,12 +247,17 @@ export interface OpsDocumentInstance {
     'ops:document-section': { '@name': string; '@start-page': string }[];
 }
 
+/**
+ * This interface represents the structure of the OPS format options
+ */
 export interface OpsDocumentFormatOptions {
     'ops:document-format': OpsStringData[];
 }
 
 /**
- * DuckDuckPatent related models
+ ********************************************************
+ * DuckDuckPatent-API related models
+ ********************************************************
  */
 
 /**

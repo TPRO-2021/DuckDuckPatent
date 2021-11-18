@@ -15,6 +15,9 @@
 import { defineComponent } from 'vue';
 import Chip from '@/components/Chip.vue';
 
+/**
+ * Component which shows available keyword suggestions as green chips
+ */
 export default defineComponent({
     name: 'KeywordSuggestions',
     props: {
@@ -25,6 +28,11 @@ export default defineComponent({
     },
     emits: ['onAddKeyword'],
     methods: {
+        /**
+         * Event handler which emits the 'on-add-keyword' to the parent component
+         *
+         * @param keyword   The keyword which should be added
+         */
         addKeyword(keyword: string) {
             this.$emit('onAddKeyword', { value: keyword });
         },

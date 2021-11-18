@@ -17,6 +17,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
+/**
+ * List picker component which adds a checkbox dropdown from which filter values can be selected
+ */
 export default defineComponent({
     name: 'ListPicker',
     props: {
@@ -35,7 +38,7 @@ export default defineComponent({
     emits: ['select', 'scroll'],
     methods: {
         /**
-         *  @function emits an event to pick an item from the list
+         *  Event handler which emits the 'select' event to the parent
          */
         onSelected(key: string, value: string): void {
             this.$emit('select', { key, value }); // Emit select
@@ -55,8 +58,7 @@ export default defineComponent({
     flex-direction: column;
     border-radius: 5px;
     background-color: white;
-    padding: 5px;
-    box-shadow: 0px 0px 10px grey;
+    box-shadow: 0 0 10px grey;
     box-sizing: border-box;
     padding: 10px 5px;
     max-height: 300px;
@@ -84,6 +86,6 @@ export default defineComponent({
     border-radius: 5px;
     background: lightgrey;
     border: none;
-    padding: 0px 5px;
+    padding: 0 5px;
 }
 </style>

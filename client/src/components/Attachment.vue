@@ -9,6 +9,12 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
+/**
+ * Component which provides an attachment button
+ *
+ * The attachment can receive a attachment type which is used to determine the icon as well as the attachments url.
+ * Its emitting the 'on-open' event on clicking the attachment
+ * */
 export default defineComponent({
     name: 'Attachment',
     props: {
@@ -17,6 +23,10 @@ export default defineComponent({
     },
     emits: ['onOpen'],
     methods: {
+        /**
+         * Gets the icon key depending on the attachment type
+         * @param type  The type of the attachment
+         */
         getIconKey(type: string): string {
             switch (type) {
                 case 'drawing':
@@ -28,6 +38,11 @@ export default defineComponent({
                     return 'image';
             }
         },
+
+        /**
+         * Gets the text for the attachment button based on the attachments type
+         * @param type  The type of the attachment
+         */
         getText(type: string): string {
             switch (type) {
                 case 'drawing':

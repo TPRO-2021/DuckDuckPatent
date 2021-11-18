@@ -1,3 +1,10 @@
+/**
+ * Service which provides utilities that should be used by all resource accessing services.
+ * It provides following base functionality:
+ *      - Creating http requests using the fetch api
+ *      - Option to abort pending requests,
+ *      - Error handling
+ */
 export default class HttpService {
     protected requestPending: boolean;
     protected controller?: AbortController;
@@ -40,7 +47,8 @@ export default class HttpService {
 
     /**
      * Distinguishes between general and patent not found error and rethrows that error
-     * @param status
+     *
+     * @param status    The status of the request
      * @private
      */
     protected static throwError(status: number): void {
@@ -53,7 +61,8 @@ export default class HttpService {
 
     /**
      * Attempts to abort a already dispatched request
-     * @param reqController
+     *
+     * @param reqController The reference to the request controller
      * @private
      */
     protected static abortRequest(reqController: AbortController): void {

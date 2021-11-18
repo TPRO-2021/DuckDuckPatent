@@ -113,6 +113,7 @@ export default createStore({
                     };
                 });
         },
+
         /**
          * On click away on the option menu the filters are clean and closed
          * @param state
