@@ -35,6 +35,7 @@ export class SavedAppState {
      * One checkmark will be added to all saved node indices
      */
     public markedOnce = [] as string[];
+
     /**
      * Two checkmarks will be added to all saved node indices
      */

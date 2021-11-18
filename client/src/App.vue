@@ -1,10 +1,19 @@
 <template>
+    <!-- Loading indicator -->
     <div class="progress-bar">
         <ProgressBar mode="indeterminate" v-if="showLoadingBar"></ProgressBar>
     </div>
+
+    <!-- Loading screen -->
     <LoadingScreen></LoadingScreen>
+
+    <!-- Dialog Mask -->
     <DialogMask></DialogMask>
+
+    <!-- Notification toast -->
     <Toasts />
+
+    <!-- Router outlet -->
     <router-view />
 </template>
 
@@ -14,6 +23,9 @@ import LoadingScreen from '@/components/LoadingScreen.vue';
 import Toasts from '@/components/Toasts.vue';
 import DialogMask from '@/components/DialogMask.vue';
 
+/**
+ * App component which is used to add the router-outlet as well as general components to the app
+ */
 export default defineComponent({
     name: 'App',
     components: { LoadingScreen, Toasts, DialogMask },
@@ -21,6 +33,9 @@ export default defineComponent({
         this.$store.dispatch('loadSavedState');
     },
     computed: {
+        /**
+         * Returns true if the loading bar should be shown
+         */
         showLoadingBar(): boolean {
             return this.$store.state.showLoadingBar;
         },
@@ -29,6 +44,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
+// importing global stylesheet
 @import '~@/styles/global.scss';
 
 #app {
@@ -37,8 +53,6 @@ export default defineComponent({
     text-align: center;
     color: #2c3e50;
 }
-
-/* You can add global styles to this file, and also import other style files */
 
 // removes default border from button
 button {

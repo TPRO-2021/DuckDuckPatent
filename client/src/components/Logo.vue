@@ -5,6 +5,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
+/**
+ * Component which contains DuckDuckPatent's logo
+ */
 export default defineComponent({
     name: 'Logo',
 });
@@ -15,5 +18,11 @@ export default defineComponent({
     position: relative;
     top: -50px;
     height: 110px;
+}
+
+@media screen and (max-width: 650px) {
+    .logo {
+        height: 90px;
+    }
 }
 </style>

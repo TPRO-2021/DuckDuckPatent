@@ -3,12 +3,24 @@ import { VisualPatentNode } from '@/models/VisualPatentNode';
 import { SimulationLinkDatum } from 'd3';
 import { VisualizationOptions } from '@/models/VisualizationOptions';
 import { RelationMap } from '@/models/RelationMap';
+import { VisualPatentLink } from '@/models/VisualPatentLink';
 
+/**
+ * Service which provides utility functions used by the visualization component
+ */
 export default class VisualizationHelperService {
     /**
      * Processes the passed patents and returns them as nodes for D3 to display them.
      * A SimulationNodeDatum needs a unique identifier which we can provide by using the
      * unique patent id
+     *
+     * @param patents       The patents array for which to create nodes
+     * @param citationMap   The citation map
+     * @param familyMap     The family map
+     * @param vizOptions    The options for the visualization
+     * @param selectedNode  The currently selected node
+     * @param authorsMap    The authors map
+     * @param companyMap    The company map
      */
     static getNodes(
         patents: Patent[],
@@ -63,19 +75,16 @@ export default class VisualizationHelperService {
                 .filter((citationId) => !patentMap[citationId]) // Remove patent-node to patent-node citations (these nodes are already shown)
                 .filter((citationId) => {
                     // Default to only showing citations that are cited by multiple patents (for clarity)
-                    if (citationMap[citationId].length > 1) {
+                    // or show it if it has been selected
+                    if (citationMap[citationId].length > 1 || selectedNode?.id === citationId) {
                         return true;
                     }
                     // If none selected (and not multiple citaitons), don't show
                     if (selectedNode == null) {
                         return false;
                     }
-                    // If a node is selected, only show if connected to it
-                    let connectedPatents = [selectedNode.patent.id];
-                    if (selectedNode.type === 'citation') {
-                        connectedPatents = citationMap[selectedNode.id] || []; // TODO: citations should always have atleast one
-                    }
-                    return connectedPatents.some((t) => citationMap[citationId].includes(t));
+                    // If a patent is selected, only show if directly connected to it
+                    return selectedNode.type == 'patent' && citationMap[citationId].includes(selectedNode.patent.id);
                 })
                 .map((citationId) => {
                     const citingPatents = citationMap[citationId]; // With the citations of this patent
@@ -112,6 +121,12 @@ export default class VisualizationHelperService {
 
     /**
      * Processes the passed patents and finds relations between them.
+     *
+     * @param nodes The nodes used for relation
+     * @param citationMap   The citation map
+     * @param familyMap The family map
+     * @param authorsMap    The authors map
+     * @param companyMap    The company map
      */
     static getLinks(
         nodes: VisualPatentNode[],
@@ -184,6 +199,8 @@ export default class VisualizationHelperService {
 
     /**
      * Create a key -> value map that allows for easy look up of all patents that have cited a specific citation
+     *
+     * @param patents   The patents for which to create the map
      */
     static getCitationMap(patents: Patent[]): { [id: string]: string[] } {
         return patents
@@ -221,8 +238,9 @@ export default class VisualizationHelperService {
 
     /**
      * Gets a map for creators of patents (inventors or applicants)
-     * @param patents
-     * @param path
+     *
+     * @param patents   The patents for which the map should be created
+     * @param path  The path of the data (either inventors or applicants)
      */
     static getCreatorMap(patents: Patent[], path: 'inventors' | 'applicants'): { [id: string]: string[] } {
         return patents
@@ -251,10 +269,11 @@ export default class VisualizationHelperService {
 
     /**
      * Gets links for creators (authors or company)
-     * @param nodes
-     * @param nodeMap
-     * @param nodeType
-     * @param relationMap
+     *
+     * @param nodes The nodes for which to get the creator links
+     * @param nodeMap   The map containing the nodes for fast access
+     * @param nodeType  The type of the node (author or company)
+     * @param relationMap   The map containing the relations
      */
     static getCreatorLinks(
         nodes: VisualPatentNode[],
@@ -278,12 +297,12 @@ export default class VisualizationHelperService {
 
     /**
      * Gets creator nodes (authors | company)
-     * @param stakeholders
-     * @param stakeholderMap
-     * @param selectedNode
-     * @param patentMap
-     * @param nodeColor
-     * @param stakeholderType
+     *
+     * @param stakeholders  The stakeholders array (author, company)
+     * @param stakeholderMap    The map containing the stakeholders for fast access
+     * @param selectedNode  The selected node
+     * @param patentMap The patent map for fast access
+     * @param stakeholderType   The type of stakeholder for which to get the nodes
      */
     static getCreatorNodes(
         stakeholders: string[],
@@ -326,6 +345,8 @@ export default class VisualizationHelperService {
 
     /**
      * Create a key -> value map that allows for easy look up of patents for given familyId
+     *
+     * @param patents   The patents for which to create the map
      */
     static getFamilyMap(patents: Patent[]): { [id: string]: string[] } {
         return patents.reduce((map: { [id: string]: string[] }, b: Patent) => {
@@ -340,6 +361,9 @@ export default class VisualizationHelperService {
 
     /**
      * Create a key -> value map that allows for easy look up of something for given Id
+     *
+     * @param items The items which should be combined into a map
+     * @param idKey The id of the key which should be used
      */
     static buildMap<T>(items: T[], idKey: keyof T): { [id: string]: T } {
         return items.reduce((map, b) => {
@@ -352,6 +376,17 @@ export default class VisualizationHelperService {
             }
             return { ...map, [key]: b }; // extend the object with a specific key
         }, {});
+    }
+
+    /**
+     * Adapts arrow marker based on node size
+     * @node - node that is target for the arrow
+     */
+    static getArrowMark(node: VisualPatentLink<VisualPatentNode>): string {
+        if (node.target.size > 40) return 'url(#extralarge)';
+        else if (node.target.size > 20) return 'url(#large)';
+        else if (node.target.size > 15) return 'url(#middle)';
+        else return 'url(#small)';
     }
 
     /**

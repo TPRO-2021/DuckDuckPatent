@@ -1,12 +1,15 @@
 <template>
+    <!-- Top controls (back-button & save button) -->
     <div class="patent-controls">
         <RoundButton class="back-btn" icon-key="reply" @click="goBack"></RoundButton>
     </div>
-
     <div class="top-controls">
         <Button btnText="Saved" iconKey="turned_in" :badge-value="savedPatentsCount" v-on:on-clicked="openSavePage" />
     </div>
+
+    <!-- Patent content -->
     <div class="patent-container">
+        <!-- Patent title and owner -->
         <div>
             <div class="patent-title" v-html="highlightText(patent?.patent.title, patent?.searchTerms)"></div>
             <div class="patent-owner">
@@ -17,11 +20,12 @@
                 </span>
             </div>
         </div>
+
+        <!-- Patent abstract, inventors and applicants -->
         <div class="patent-abstract">
             <h2>Abstract</h2>
             <div v-html="highlightText(patent?.patent.abstract, patent?.searchTerms)"></div>
         </div>
-
         <div class="patent-info">
             <div>
                 <h3>Inventors</h3>
@@ -36,8 +40,11 @@
                 </ul>
             </div>
         </div>
+
+        <!-- Footer containing the searched keyword chips as well as the attachments and the exploration button -->
         <div class="footer-container">
             <div class="patent-additional-info">
+                <!-- Keyword-Chips -->
                 <div class="keywords">
                     <div class="label-keywords">Searched keywords:</div>
                     <span class="keyword-chips">
@@ -49,6 +56,8 @@
                         ></Chip>
                     </span>
                 </div>
+
+                <!-- Attachments -->
                 <div class="attachments" v-if="!noDocuments">
                     <div class="label-attachment">Attachments</div>
                     <div class="attachment-items" v-if="documents">
@@ -59,6 +68,7 @@
                             v-on:on-open="openDocument(attachment)"
                         ></Attachment>
                     </div>
+
                     <!-- Display skeleton to indicate loading -->
                     <div class="attachment-items" v-if="!documents">
                         <div class="card box-shadow" v-for="(_item, index) in [1, 2, 3]" :key="index">
@@ -67,6 +77,8 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Explore Button -->
             <div class="column btn-exploration" v-if="explorationAvailable">
                 <Button icon-key="travel_explore" btn-text="Start exploration" @click="openExploration" />
             </div>
@@ -86,31 +98,49 @@ import Attachment from '@/components/Attachment.vue';
 import Chip from '@/components/Chip.vue';
 import { Patent } from '@/models/Patent';
 
+/**
+ * View which is responsible for displaying the /patent page for a selected patent
+ */
 export default defineComponent({
     name: 'Patent',
     components: { RoundButton, Attachment, Button, Chip },
     data() {
         return {
-            patentService: new PatentService(),
             documents: null as DocumentInformation[] | null,
             documentService: new DocumentService(),
-            noDocuments: false,
             explorationAvailable: false,
+            noDocuments: false,
+            patentService: new PatentService(),
         };
     },
     computed: {
+        /**
+         * Returns the patentId taken from the query parameter 'patentId' of the current URL
+         */
         patentId(): string {
             return (this.$route.query.patentId as string) || '';
         },
+        /**
+         * Returns the searchTerms from the store
+         */
         searchTerms(): string[] {
             return this.$store.state.searchTerms;
         },
+        /**
+         * Returns the extended patent from the store
+         */
         patent(): ExtendedPatent {
             return this.$store.state.extendedPatents[this.patentId];
         },
+        /**
+         * Returns the patent family from the store
+         */
         family(): Patent[] {
             return this.$store.state.patentFamilies[this.patentId];
         },
+        /**
+         * Returns the saved patents count from the store
+         */
         savedPatentsCount(): string {
             const items = Object.keys(this.$store.state.savedPatents).length;
             if (items === 0) {
@@ -121,17 +151,22 @@ export default defineComponent({
         },
     },
     async created() {
+        // check the url to make sure the query params are applied
         this.checkUrl();
 
+        // if no patent is available (after a refresh or sharing the link) the patent should be loaded
         if (!this.patent) {
             await this.loadPatent();
         }
 
+        // if no family is available (after a refresh or sharing the link) it should be loaded
         if (!this.family) {
             await this.loadFamily();
         } else {
             this.explorationAvailable = true;
         }
+
+        // load documents for the patent
         await this.loadDocuments();
     },
     methods: {
@@ -139,7 +174,6 @@ export default defineComponent({
          * Attempts to take the user back to the previous page
          */
         goBack(): void {
-            // if no search terms are present (after reload) go back to homepage
             this.$router.back();
         },
 
@@ -166,21 +200,24 @@ export default defineComponent({
          * Loads a patent from the backend
          */
         async loadPatent() {
+            // if no patent id is present we can return
             if (!this.patentId) return;
 
+            this.$store.commit('SHOW_LOADING_BAR');
+
             try {
-                this.$store.commit('SHOW_LOADING_BAR');
                 const patent = await this.patentService.get(this.patentId);
 
                 this.$store.commit('STORE_PATENT', { patent, searchTerms: this.searchTerms });
             } catch (err) {
                 console.error(err);
             }
+
             this.$store.commit('HIDE_LOADING_BAR');
         },
 
         /**
-         * Loads the family of a patent
+         * Loads the family of the current patent
          */
         async loadFamily() {
             // if no exploration button should be shown we don't need to load the data
@@ -188,10 +225,10 @@ export default defineComponent({
 
             if (!extPatent) return;
 
-            try {
-                this.$store.commit('SHOW_LOADING_BAR');
-                const family = await this.patentService.queryFamily(this.patentId);
+            this.$store.commit('SHOW_LOADING_BAR');
 
+            try {
+                const family = await this.patentService.queryFamily(this.patentId);
                 this.$store.commit('STORE_FAMILY', { patentId: this.patentId, family });
                 this.explorationAvailable = true;
             } catch (err) {
@@ -204,7 +241,7 @@ export default defineComponent({
 
         /**
          * Opens the document view and passes the document as a query parameter
-         * @param document
+         * @param document  The document that should be opened
          */
         openDocument(document: DocumentInformation) {
             const routeData = this.$router.resolve({
@@ -220,33 +257,35 @@ export default defineComponent({
         },
 
         /**
-         * Loads the documents for the current patent
+         * Loads the documents for the current patent from the backend
          */
         async loadDocuments() {
-            // if a new patent is available load the documents for it
             this.$store.commit('SHOW_LOADING_BAR');
+
             try {
                 this.documents = await this.documentService.query(this.patentId);
             } catch (err) {
                 this.noDocuments = true;
                 console.error(err);
             }
+
             this.$store.commit('HIDE_LOADING_BAR');
         },
 
         /**
-         * Opens the exploration mode
+         * Opens the exploration mode for a patent
          */
         openExploration() {
             const patent = this.patent as ExtendedPatent;
 
-            //TODO: Save current state in vuex store
             this.$store.commit('STORE_PATENT', patent);
 
             this.$router.push({
                 path: '/explore',
                 query: { patentId: patent.patent.id, searchTerms: patent.searchTerms },
             });
+
+            // finally hide the dialog mask since otherwise it would blur the exploration mode
             this.$store.commit('HIDE_DIALOG_MASK');
         },
 

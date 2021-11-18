@@ -1,3 +1,4 @@
+// import google fonts (icons & saira font)
 @import url('https://fonts.googleapis.com/css2?family=Saira:wght@100;300;400&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
@@ -11,8 +12,6 @@
 :root {
     --primary-color: #00000;
 }
-
-
 
 .no-select {
     -webkit-user-select: none;
@@ -36,8 +35,8 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    -ms-overflow-style: none;  /* hide scrollbar on IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none; /* hide scrollbar on IE and Edge */
+    scrollbar-width: none; /* Firefox */
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -49,6 +48,7 @@
 #app,
 input,
 button,
+.divider-label,
 .p-dialog-header,
 .p-dialog-content,
 .p-dialog-footer {
@@ -90,7 +90,6 @@ button,
 .p-dialog-header-icons {
     visibility: hidden;
 }
-
 
 /**
  * Speed dial component

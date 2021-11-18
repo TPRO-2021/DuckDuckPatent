@@ -1,6 +1,8 @@
 <template>
     <div :class="{ 'd3-container': true, updating: updating }">
+        <!-- The d3 svg -->
         <svg xmlns="http://www.w3.org/2000/svg" @click="canvasClicked">
+            <!-- the marker & pattern defs -->
             <defs>
                 <marker
                     id="endarrow"
@@ -36,6 +38,7 @@
                 </pattern>
             </defs>
         </svg>
+        <!-- Tooltip div -->
         <div class="tooltip card box-shadow no-select">{{ tooltipOnNodes }}</div>
     </div>
 </template>
@@ -78,6 +81,9 @@ type d3Selection = {
     tooltip: Selection<HTMLElement, unknown, HTMLElement, unknown>;
 };
 
+/**
+ * Component which is responsible for displaying a d3 force graph for the provided patents, applicants, inventors and citations
+ */
 export default defineComponent({
     name: 'ResultVisualization',
     props: {
@@ -140,15 +146,27 @@ export default defineComponent({
             }
             return 'No Data';
         },
+        /**
+         * Returns whether the save button is clicked from the state
+         */
         onClickSave(): boolean {
             return this.$store.state.onClickSave;
         },
+        /**
+         * Gets the nodes
+         */
         nodes(): VisualPatentNode[] {
             return this.graph.nodes;
         },
+        /**
+         * Gets the links
+         */
         links(): SimulationLinkDatum<VisualPatentNode>[] {
             return this.graph.links;
         },
+        /**
+         * Gets the highlight node value from the store
+         */
         highlightNode(): boolean {
             return this.$store.state.highlightNode;
         },
@@ -161,15 +179,18 @@ export default defineComponent({
             this.updateData();
             this.updateGraph();
         },
+
         /**
-         * Once the visualization options change the simulation needs to be updated
+         * Watches the visualization options.
+         * Once they change the simulation needs to be updated
          */
         visualizationOptions() {
             this.updateData();
             this.updateGraph();
         },
+
         /**
-         * If drag is active the tooltip needs to be hidden, otherwise it will be buggy
+         * Watches the dragActive value. If drag is active the tooltip needs to be hidden, otherwise it will be buggy
          * @param newVal
          */
         dragActive(newVal): void {
@@ -182,13 +203,15 @@ export default defineComponent({
         },
 
         /**
-         * Call highlight once previewing node's card is true
+         * Watches the highlightNode value. Call highlight once previewing node's card is true
          */
         highlightNode(newVal) {
-            if (newVal) {
-                this.highlightOnPreview(this.$store.state.patentID as string, this.$store.state.patentType as string);
-                this.updateMarks();
+            if (!newVal) {
+                return;
             }
+
+            this.highlightOnPreview(this.$store.state.patentID as string, this.$store.state.patentType as string);
+            this.updateMarks();
         },
     },
     created() {
@@ -215,6 +238,7 @@ export default defineComponent({
         this.updateForces();
     },
     mounted() {
+        // setup and update the graph in the next rendering tick to make sure they already are rendered on the canvas
         this.$nextTick(() => {
             this.setupGraph();
             this.updateGraph();
@@ -225,6 +249,9 @@ export default defineComponent({
         window.removeEventListener('resize', this.onResize);
     },
     methods: {
+        /**
+         * Sets up the svg graph components
+         */
         setupGraph() {
             // Selecting the svg as the root for the d3 simulation
             this.container = select('.d3-container');
@@ -233,14 +260,55 @@ export default defineComponent({
 
             const svg = this.selections.svg;
 
-            // Define the arrow marker
-            svg.append('svg:defs')
-                .selectAll('marker')
-                .data(['end']) // Different link/path types can be defined here
+            const selected = svg.append('svg:defs').selectAll('marker');
+            selected
+                .data(['small']) // small links for node size < 20
                 .enter()
                 .append('svg:marker') // This section adds in the arrows
-                .attr('id', String)
-                .attr('refX', 13.5) // Prevents arrowhead from being covered by circle
+                .attr('id', 'small')
+                .attr('refX', 14) // Prevents arrowhead from being covered by circle
+                .attr('refY', 2)
+                .attr('markerWidth', 8)
+                .attr('markerHeight', 8)
+                .attr('orient', 'auto')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M0,0V 4L6,2Z')
+                .attr('style', 'fill: black');
+            selected
+                .data(['middle']) //  links for node size > 15 & <20
+                .enter()
+                .append('svg:marker')
+                .attr('id', 'middle')
+                .attr('refX', 17)
+                .attr('refY', 2)
+                .attr('markerWidth', 8)
+                .attr('markerHeight', 8)
+                .attr('orient', 'auto')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M0,0V 4L6,2Z')
+                .attr('style', 'fill: black');
+            selected
+                .data(['large']) // links for node size > 20
+                .enter()
+                .append('svg:marker')
+                .attr('id', 'large')
+                .attr('refX', 19)
+                .attr('refY', 2)
+                .attr('markerWidth', 8)
+                .attr('markerHeight', 8)
+                .attr('orient', 'auto')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M0,0V 4L6,2Z')
+                .attr('style', 'fill: black');
+            selected
+                .data(['extralarge']) // links for node size > 40
+                .enter()
+                .append('svg:marker')
+                .attr('id', 'extralarge')
+                .attr('refX', 27)
                 .attr('refY', 2)
                 .attr('markerWidth', 8)
                 .attr('markerHeight', 8)
@@ -326,7 +394,8 @@ export default defineComponent({
                 .attr('marker-end', (d) => {
                     // Caption items doesn't have source and target
                     if (d.source && d.target && d.source.index === d.target.index) return 'url(#end-self)';
-                    else return 'url(#end)';
+                    //arrow marker adjusted based on the target size
+                    return VisualizationHelperService.getArrowMark(d);
                 });
 
             //handle checkmarks and highlights no click
@@ -407,7 +476,8 @@ export default defineComponent({
 
         /**
          * Zoom handler for zooming the canvas
-         * @param event
+         *
+         * @param event The zooming event
          */
         zoomed(event: D3ZoomEvent<SVGGraphicsElement, unknown>) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -428,8 +498,9 @@ export default defineComponent({
 
         /**
          * Drag started handler for a node
-         * @param event
-         * @param d
+         *
+         * @param event The drag event
+         * @param d The node
          */
         dragStart(event: D3DragEvent<SVGCircleElement, unknown, unknown>, d: VisualPatentNode) {
             this.selections.tooltip.style('visibility', 'hidden');
@@ -448,8 +519,9 @@ export default defineComponent({
 
         /**
          * Drag handler for a node
-         * @param event
-         * @param d
+         *
+         * @param event The dragged event
+         * @param d The node
          */
         dragged(event: DragEvent, d: VisualPatentNode) {
             d.fx = event.x;
@@ -463,8 +535,9 @@ export default defineComponent({
 
         /**
          * Drag-end handler for a node
-         * @param event
-         * @param d
+         *
+         * @param event The drop event
+         * @param d The node
          */
         drop(event: D3DragEvent<SVGCircleElement, unknown, unknown>, d: VisualPatentNode) {
             if (!event.active) {
@@ -476,8 +549,9 @@ export default defineComponent({
 
         /**
          * Called when the mouse is moved over a node
-         * @param event
-         * @param node
+         *
+         * @param event The mouse event
+         * @param node  The node
          */
         mouseOver(event: MouseEvent, node: VisualPatentNode) {
             // set current node to the value of the hovered node
@@ -518,7 +592,8 @@ export default defineComponent({
         /**
          * Event handler for the 'mousemove' event on a node. It will move the tooltip relative to the current mouse
          * position
-         * @param e
+         *
+         * @param e The mouse event
          */
         mouseMove(e: MouseEvent): void {
             this.selections.tooltip
@@ -550,8 +625,9 @@ export default defineComponent({
 
         /**
          * Selects the clicked node
-         * @param event
-         * @param node
+         *
+         * @param event The click event
+         * @param node  The node
          */
         nodeClick(event: PointerEvent, node: VisualPatentNode) {
             this.$emit('onNodeSelected', { node: node });
@@ -616,7 +692,6 @@ export default defineComponent({
 
         /**
          * Highlights border color of a node, once node or preview cards are viewed. Some preview is shown without node click
-         *
          */
         highlightOnPreview(nodeID: string, nodeType: string): void {
             // reset highlight
@@ -632,9 +707,9 @@ export default defineComponent({
             //highlight it
             target.classed('selected', true);
         },
+
         /**
          * Any clicked node should be highlighted
-         *
          */
         highlightOnClick(): void {
             // currently non-patents will not be marked as visited
@@ -644,9 +719,9 @@ export default defineComponent({
                 .filter((td) => td === this.selectedNode)
                 .classed('selected', true);
         },
+
         /**
          * If patent clicked, it should get marked
-         *
          */
         setMarkOnClick(): void {
             //set mark once on viewed node
@@ -655,9 +730,9 @@ export default defineComponent({
                 twice: false,
             });
         },
+
         /**
          * Once the visualization changes, the marks need to be set again
-         *
          */
         updateMarks(): void {
             if (!this.selections.graph) return;

@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import { SuggestionAPIResponse } from '../models';
+import { SuggestionAPIResponse } from './models';
 
+// placeholder keywords for development
 const mockKeywords: SuggestionAPIResponse = [
     ['grain', 0.5],
     ['water', 0.5],
@@ -13,11 +14,18 @@ const mockKeywords: SuggestionAPIResponse = [
 // How many keywords we want to return
 const MAX_KEYWORDS = 6;
 
+/**
+ * Contains the business logic for keyword suggestion retrieval
+ */
 @Injectable()
 export class KeywordService {
     constructor(private readonly httpService: HttpService) {}
 
-    /* Get suggestions for terms */
+    /**
+     * Attempts to get keyword suggestions for provided keywords from an external KeywordSuggestionAPI
+     *
+     * @param keywords The provided keywords for which suggestions should be requested
+     */
     async getSuggestions(keywords: string[] = []): Promise<string[]> {
         // The number of suggestions that we should display should be tempered by the number of keywords given
         // This is a simple algorithm, but we could reach for complex ones later as needed

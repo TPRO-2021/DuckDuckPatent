@@ -1,3 +1,6 @@
+/**
+ * This model represents all available visualization options
+ */
 export interface VisualizationOptions {
     center: {
         x: number;

@@ -33,6 +33,9 @@
 import Chip from '@/components/Chip.vue';
 import { defineComponent } from 'vue';
 
+/**
+ * Searchbar component which allows the user to input & change inputs
+ */
 export default defineComponent({
     name: 'Searchbar',
     components: {
@@ -42,21 +45,11 @@ export default defineComponent({
         searchTerms: Array,
     },
     emits: {
-        onAddKeyword: (event: { value: string }) => {
-            return event;
-        },
-        onRemoveKeyword: (event: { index: number; value: string }) => {
-            return event;
-        },
-        onSearch: (event: { searchTerms: string[] }) => {
-            return event;
-        },
-        inputFocused: (event: boolean) => {
-            return event;
-        },
-        inputNotFocused: (event: boolean) => {
-            return event;
-        },
+        onAddKeyword: (event: { value: string }) => event,
+        onRemoveKeyword: (event: { index: number; value: string }) => event,
+        onSearch: (event: { searchTerms: string[] }) => event,
+        inputFocused: (event: boolean) => event,
+        inputNotFocused: (event: boolean) => event,
     },
     data() {
         return {
@@ -67,7 +60,7 @@ export default defineComponent({
     watch: {
         /**
          * Watcher which checks the current search input for a space bar input
-         * @param val
+         * @param val   The new search input
          */
         currentKeyword(val: string): void {
             if (!val || val.charAt(val.length - 1) !== ' ') {
@@ -101,7 +94,7 @@ export default defineComponent({
 
         /**
          * Removes an item from the enteredKeywords array specified by the index
-         * @param index
+         * @param index The index of the keyword to be removed
          */
         removeKeyword(index: number): string {
             const value = (this.$props.searchTerms || [])[index] as string;

@@ -25,6 +25,9 @@ export default defineComponent({
     },
     emits: ['onClicked'],
     methods: {
+        /**
+         * Toggles the buttons value
+         */
         toggle(): void {
             this.isActive = !this.isActive;
             this.$emit('onClicked', this.isActive);
@@ -64,6 +67,11 @@ export default defineComponent({
         },
     },
     watch: {
+        /**
+         * Watches the current state value
+         *
+         * @param val   The new value
+         */
         defaultState(val: boolean): void {
             this.currentState = val;
         },

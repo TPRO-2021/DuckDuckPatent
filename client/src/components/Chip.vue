@@ -42,8 +42,13 @@ export default defineComponent({
     },
     emits: ['onSelect'],
     computed: {
+        /**
+         * Returns the chip color. It will attempt to use the custom color property. By default it will return
+         * a black background color
+         */
         chipColor(): string {
             let color;
+
             if (this.customColor) {
                 color = this.customColor;
             } else if (this.isSuggestion) {

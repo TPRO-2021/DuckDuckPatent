@@ -5,6 +5,7 @@ import { saveStatePlugin } from './SaveStatePlugin';
 import { AppState } from './AppState';
 import { SavedAppState } from './SavedAppState';
 import { ExtendedPatent } from '@/models/ExtendedPatent';
+import FilterHelperService from '@/services/filter-helper.service';
 
 /**
  * The entire application views will have global containers to share data between components which is the state
@@ -55,13 +56,6 @@ export default createStore({
             state.showErrorToast = true;
         },
 
-        /**
-         * Hides the ErrorToast
-         * @param state
-         */
-        HIDE_ERROR_TOAST(state) {
-            state.showErrorToast = false;
-        },
         /**
          * Add visualization option
          */
@@ -121,6 +115,21 @@ export default createStore({
         },
 
         /**
+         * On click away on the option menu the filters are clean and closed
+         * @param state
+         * @constructor
+         */
+
+        CLOSE_CLEAN_FILTERS(state) {
+            state.filters = state.filters.filter(FilterHelperService.isValid).map((filter) => {
+                if (filter.isSelectionOpen) {
+                    return { ...filter, isSelectionOpen: false };
+                }
+                return filter;
+            });
+        },
+
+        /**
          * Update the state searchTerms array with new keyword
          * @param state mutations always have access to state as the first parameter
          * @param searchTerm the second parameter is option and represent the payload
@@ -172,15 +181,6 @@ export default createStore({
             state.searchTerms = state.searchTerms.filter((_t, index) => index !== event.index);
         },
 
-        /**
-         * Clears the keywords and suggestions in input field
-         * @param state
-         * @constructor
-         */
-        CLEAR_INPUT(state) {
-            state.searchTerms = [];
-            state.suggestedTerms = [];
-        },
         /**
          * Shows loading bar
          * @param state
